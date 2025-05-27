@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+asyncpg
+sqlalchemy
+python-dotenv
+pytz
+email_validator
+passlib[bcrypt]==1.7.4
+shortuuid==1.0.13
+python-jose[cryptography]
+httpx 
+pydantic-settings>=2.0
+requests
+python-multipart

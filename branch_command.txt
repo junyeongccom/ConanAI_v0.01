@@ -1,0 +1,43 @@
+개발 워크플로우:
+마이크로서비스 단위로 작업 분담 (예: A는 gateway_service, B는 user_service)
+
+1. 새 기능 개발 시 브랜치 생성 작업
+# 브랜치 생성 및 전환
+git checkout -b feature/SKY-(이슈번호)-service-name/feature-description
+ex. git checkout -b feature/SKY-94-user-service/login-api
+# 변경 사항 확인
+git status
+# 변경된 파일 스테이징
+git add .
+# 작업브랜치에 커밋
+git commit -m "SKY-(이슈번호): 구현 내용 간략히 설명"
+ex. git commit -m "user_service: 로그인 API 구현"
+# 작업브랜치에 푸쉬
+git push -u origin 브랜치이름
+
+2. PR(Pull Request) 생성 및 병합
+- GitHub에서 PR 생성하기:
+GitHub 저장소 페이지로 이동
+상단에 "Compare & pull request" 버튼이 표시되면 클릭 (최근에 푸시한 브랜치에 대해 표시됨)
+또는 "Pull requests" 탭으로 이동 후 "New pull request" 버튼 클릭
+베이스 브랜치(보통 main)와 비교할 브랜치(개발한 브랜치, 예: feature/user-login) 선택
+PR 제목과 설명 작성 (변경사항 요약, 관련 이슈 등 포함)
+"Create pull request" 버튼 클릭
+- 코드 리뷰 요청 및 진행:
+PR 페이지에서 우측의 "Reviewers" 섹션에서 리뷰어 지정
+리뷰어는 코드를 검토하고 코멘트, 변경 요청 또는 승인 가능
+요청된 변경사항이 있다면 로컬에서 수정 후 다시 커밋 및 푸시
+모든 리뷰가 완료되고 승인되면 병합 가능
+- PR 병합하기:
+PR 페이지에서 "Merge pull request" 버튼 클릭
+병합 방식 선택 (일반적으로 "Merge commit", "Squash and merge", "Rebase and merge" 옵션 제공)
+"Confirm merge" 버튼 클릭
+브랜치 삭제 옵션이 나타나면 원격 브랜치 삭제 가능
+- 로컬 환경 동기화:
+로컬에서 main 브랜치로 전환: git checkout main
+원격 변경사항 가져오기: git pull
+필요 없는 로컬 브랜치 삭제: git branch -d feature/user-login
+새 기능 개발 시 최신 main에서 새 브랜치 생성: git checkout -b feature/new-feature
+
+
+깔깔

@@ -1,0 +1,138 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: hc_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: hc_user
+      POSTGRES_PASSWORD: hc_password
+      POSTGRES_DB: hc_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frotend
+      dockerfile: Dockerfile
+    container_name: hc_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_API_URL=http://gateway:8080
+    depends_on:
+      - gateway
+    networks:
+      - app-network
+
+  gateway:
+    build:
+      context: ./gateway_service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./gateway_service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  stocktrend:
+    container_name: stocktrend
+    build:
+      context: ./stocktrend_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./stocktrend_service:/app
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./stocktrend_service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  irsummary:
+    build:
+      context: ./irsummary_service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./irsummary_service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  chatbot:
+    build:
+      context: ./chatbot-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./chatbot-service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  esgdsd:
+    build:
+      context: ./esgdsd_service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    volumes:
+      - ./esgdsd_service:/app
+    env_file:
+      - ./esgdsd_service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  dsdgen:
+    build:
+      context: ./dsdgen_service
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    env_file:
+      - ./dsdgen_service/.env
+    depends_on:
+      - postgres
+    volumes:
+      - ./dart_documents:/app/app/dart_documents
+    networks:
+      - app-network
+
+  dsdcheck:
+    build:
+      context: ./dsdcheck_service
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./dsdcheck_service/app/resources:/app/app/resources
+    env_file:
+      - ./dsdcheck_service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,12 @@
+#railway DB접속
+$env:PGPASSWORD = "eOsxxfAyduDCmCLfzwhWioXppxufVcLY"
+psql -h crossover.proxy.rlwy.net -U postgres -p 47251 -d railway
+
+#postgre컨테이너 접속
+docker exec -it hc_postgres bash
+
+#db접속
+psql -U hc_user -d hc_db
+
+#컬럼확인
+\d dsd_source
