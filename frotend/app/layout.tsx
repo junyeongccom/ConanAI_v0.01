@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./styles/globals.css";
 import NavBar from "./components/NavBar";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -14,22 +15,41 @@ export const viewport: Viewport = {
   initialScale: 1.0,
   maximumScale: 1.0,
   userScalable: false,
+  themeColor: '#0070f3',
 };
 
 export const metadata: Metadata = {
-  title: "Conan AI",
-  description: "AI 기반 XBRL/DSD 공시 자동화 시스템 – 보고서 작성부터 검증까지 자동화합니다.",
+  title: "Sky-C",
+  description: "Sky-C - AWS 클라우드 개발 플랫폼",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Sky-C",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: "/icon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   openGraph: {
-    title: "Conan AI",
-    description: "AI 기반 XBRL/DSD 공시 자동화 시스템 – 보고서 작성부터 검증까지 자동화합니다.",
-    url: "https://conan.ai.kr",
-    siteName: "Conan AI",
+    title: "Sky-C",
+    description: "Sky-C - AWS 클라우드 개발 플랫폼",
+    url: "https://sky-c.com",
+    siteName: "Sky-C",
     images: [
       {
-        url: "https://conan.ai.kr/og-thumbnail.png",
+        url: "/og-thumbnail.png",
         width: 1200,
         height: 630,
-        alt: "Conan AI 썸네일",
+        alt: "Sky-C 썸네일",
       },
     ],
     locale: "ko_KR",
@@ -37,9 +57,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Conan AI – XBRL / DSD 공시 자동화",
-    description: "AI 기반 XBRL/DSD 공시 자동화 시스템 – 보고서 작성부터 검증까지 자동화합니다.",
-    images: ["https://conan.ai.kr/og-thumbnail.png"],
+    title: "Sky-C - AWS 클라우드 개발 플랫폼",
+    description: "Sky-C - AWS 클라우드 개발 플랫폼",
+    images: ["/og-thumbnail.png"],
   },
 };
 
@@ -50,11 +70,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        <link rel="apple-touch-icon" href="/icon/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/icon/favicon-16x16.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Sky-C" />
+        <meta name="application-name" content="Sky-C" />
+        <meta name="msapplication-TileColor" content="#0070f3" />
+        <meta name="msapplication-tap-highlight" content="no" />
+      </head>
       <body className={`${poppins.variable} font-pretendard bg-white text-[#23272F] min-h-screen`}>
         <NavBar />
         <main className="min-h-[calc(100vh-64px)] bg-white">
           {children}
         </main>
+        <PWAInstallPrompt />
       </body>
     </html>
   );
