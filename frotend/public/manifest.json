@@ -1,11 +1,14 @@
 {
-  "name": "My Next.js PWA App",
-  "short_name": "Next PWA",
-  "description": "My Next.js PWA Application",
+  "name": "Sky-C",
+  "short_name": "Sky-C",
+  "description": "Sky-C - AWS 클라우드 개발 플랫폼",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#0070f3",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "developer"],
+  "lang": "ko",
   "icons": [
     {
       "src": "/icon/favicon-16x16.png",
@@ -50,7 +53,8 @@
     {
       "src": "/icon/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon/icon-384x384.png",
@@ -60,13 +64,23 @@
     {
       "src": "/icon/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon/maskable-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "대시보드",
+      "short_name": "Dashboard",
+      "description": "메인 대시보드로 이동",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
 } 
