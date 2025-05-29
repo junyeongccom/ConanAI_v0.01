@@ -1,1 +1,0 @@
-# irsummary_factory.py 

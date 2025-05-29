@@ -1,1 +1,0 @@
-# irsummary_entity.py 
