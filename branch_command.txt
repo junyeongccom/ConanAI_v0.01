@@ -40,4 +40,4 @@ PR 페이지에서 "Merge pull request" 버튼 클릭
 새 기능 개발 시 최신 main에서 새 브랜치 생성: git checkout -b feature/new-feature
 
 
-깔깔
+zz
