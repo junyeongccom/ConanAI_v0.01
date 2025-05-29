@@ -17,11 +17,12 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            cd ~
             if [ ! -d "aws_develope" ]; then
               git clone https://github.com/junyeongccom/aws_develope.git
-            else
-              cd aws_develope && git pull origin main && cd ..
             fi
+            cd aws_develope
+            git pull origin main
 
             sudo yum update -y
             sudo yum install -y docker git
@@ -32,7 +33,6 @@ jobs:
             sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.6/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             sudo chmod +x /usr/local/bin/docker-compose
 
-            cd ~/aws_develope
             for dir in chatbot-service dsdcheck_service dsdgen_service esgdsd_service frontend gateway_service irsummary_service stocktrend_service
             do
               if [ ! -f "$dir/.env" ]; then
