@@ -35,6 +35,7 @@ app = FastAPI(
     title="Gateway API",
     description="Gateway API for conan.ai.kr",
     version="0.1.0",
+    docs_url="/docs",
     lifespan=lifespan
 )
 

@@ -25,7 +25,7 @@ const withPWA = require('next-pwa')({
 })
 
 const nextConfig = {
-  output: 'standalone',
+  // output: 'standalone' 제거 - Windows symlink 권한 문제 해결
 }
 
 module.exports = withPWA(nextConfig)

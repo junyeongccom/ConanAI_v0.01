@@ -7,21 +7,17 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # 패키지 매니저 파일들 복사
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-COPY .yarnrc.yml ./
-COPY .yarn ./.yarn
+COPY package.json pnpm-lock.yaml* ./
 
-# Yarn 설정 및 의존성 설치
+# pnpm 설정 및 의존성 설치
 RUN corepack enable
-RUN corepack prepare yarn@4.9.1 --activate
-RUN yarn install --frozen-lockfile
+RUN corepack prepare pnpm@9.0.0 --activate
+RUN pnpm install --frozen-lockfile
 
 # 빌드 스테이지
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/.yarn ./.yarn
-COPY --from=deps /app/.yarnrc.yml ./
 COPY . .
 
 # Next.js 텔레메트리 비활성화
@@ -29,8 +25,8 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 # 애플리케이션 빌드
 RUN corepack enable
-RUN corepack prepare yarn@4.9.1 --activate
-RUN yarn build
+RUN corepack prepare pnpm@9.0.0 --activate
+RUN pnpm build
 
 # 프로덕션 이미지 스테이지
 FROM base AS runner
@@ -43,12 +39,19 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# 빌드된 애플리케이션 복사
-COPY --from=builder /app/public ./public
+# pnpm 설치
+RUN corepack enable
+RUN corepack prepare pnpm@9.0.0 --activate
 
-# 자동으로 생성된 standalone 출력 활용
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# 필요한 파일들 복사
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/next.config.js ./next.config.js
+
+# 소유권 변경
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
@@ -57,4 +60,4 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"] 
+CMD ["pnpm", "start"] 
