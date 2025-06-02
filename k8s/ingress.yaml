@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+  - host: localhost
+    http:
+      paths:
+      # OpenAPI JSON 경로 (우선순위 높음)
+      - path: /openapi.json
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway
+            port:
+              number: 8080
+      # Swagger 문서 경로
+      - path: /docs
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway
+            port:
+              number: 8080
+      # API 경로
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway
+            port:
+              number: 8080
+      # Frontend 전용 경로
+      - path: /frontend
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
+      # 기본 경로 - 모든 나머지 요청은 Frontend로
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000

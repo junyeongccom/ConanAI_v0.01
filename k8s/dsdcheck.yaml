@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dsdcheck
+  labels:
+    app: dsdcheck
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dsdcheck
+  template:
+    metadata:
+      labels:
+        app: dsdcheck
+    spec:
+      containers:
+      - name: dsdcheck
+        image: dsdcheck:local
+        ports:
+        - containerPort: 8086
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://hc_user:hc_password@postgres:5432/hc_db"
+        - name: PYTHONPATH
+          value: "/app"
+        volumeMounts:
+        - name: dsdcheck-resources
+          mountPath: /app/app/resources
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: dsdcheck-resources
+        hostPath:
+          path: /tmp/dsdcheck_resources
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dsdcheck
+  labels:
+    app: dsdcheck
+spec:
+  selector:
+    app: dsdcheck
+  ports:
+  - port: 8086
+    targetPort: 8086
+    protocol: TCP
+  type: ClusterIP 
