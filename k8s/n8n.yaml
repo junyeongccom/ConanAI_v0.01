@@ -40,10 +40,26 @@ spec:
       labels:
         app: n8n
     spec:
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+      - name: workflow-init
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          echo "Copying workflow files..."
+          rm -rf /data/workflows/* && cp -v /workflow-templates/*.json /data/workflows/
+          echo "Workflow initialization complete"
+        volumeMounts:
+        - name: workflow-templates
+          mountPath: /workflow-templates
+        - name: n8n-workflows
+          mountPath: /data/workflows
       containers:
       - name: n8n
-        image: n8n-custom:latest
-        imagePullPolicy: Never
+        image: n8nio/n8n:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5678
         env:
@@ -53,12 +69,14 @@ spec:
           value: "5678"
         - name: N8N_PROTOCOL
           value: "http"
+        - name: N8N_PATH
+          value: "/n8n"
         - name: WEBHOOK_URL
-          value: "http://localhost:1123/n8n/"
+          value: "http://localhost:30078/"
         - name: N8N_EDITOR_BASE_URL
-          value: "http://localhost:1123/n8n/"
+          value: "http://localhost:30078/"
         - name: N8N_WEBHOOK_TUNNEL_URL
-          value: "http://localhost:1123/n8n/"
+          value: "http://localhost:30078/"
         - name: NODE_ENV
           value: "production"
         - name: TZ
@@ -76,9 +94,7 @@ spec:
         - name: DB_TYPE
           value: "sqlite"
         - name: DB_SQLITE_DATABASE
-          value: "/home/node/.n8n/database.sqlite"
-        - name: EXECUTIONS_PROCESS
-          value: "main"
+          value: "/data/n8n/database.sqlite"
         - name: EXECUTIONS_DATA_SAVE_ON_ERROR
           value: "all"
         - name: EXECUTIONS_DATA_SAVE_ON_SUCCESS
@@ -92,9 +108,9 @@ spec:
               key: slack_webhook
         volumeMounts:
         - name: n8n-data
-          mountPath: /home/node/.n8n
+          mountPath: /data/n8n
         - name: n8n-workflows
-          mountPath: /home/node/.n8n/workflows
+          mountPath: /data/workflows
         resources:
           requests:
             memory: "256Mi"
@@ -123,6 +139,9 @@ spec:
       - name: n8n-workflows
         persistentVolumeClaim:
           claimName: n8n-workflows
+      - name: workflow-templates
+        configMap:
+          name: n8n-workflows
 ---
 apiVersion: v1
 kind: Service
@@ -131,10 +150,11 @@ metadata:
   labels:
     app: n8n
 spec:
+  type: NodePort
   selector:
     app: n8n
   ports:
   - port: 5678
     targetPort: 5678
-    protocol: TCP
-  type: ClusterIP 
+    nodePort: 30078
+    protocol: TCP 

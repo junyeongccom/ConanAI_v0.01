@@ -19,3 +19,13 @@ kubectl rollout restart deployment dsdgen-deployment
 4. 한방에 하기기
 & "C:\Program Files\Git\bin\bash.exe" k8s/build-images.sh
 & "C:\Program Files\Git\bin\bash.exe" k8s/deploy.sh
+
+# 노드 상태 확인
+kubectl get nodes
+
+# 모든 포드 확인
+kubectl get pods --all-namespaces
+kubectl get pods
+
+# n8n로그확인??
+kubectl logs n8n-7547995bb8-clpnb
