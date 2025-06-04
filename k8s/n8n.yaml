@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-data
+  labels:
+    app: n8n
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: n8n-workflows
+  labels:
+    app: n8n
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n
+  labels:
+    app: n8n
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n8n
+  template:
+    metadata:
+      labels:
+        app: n8n
+    spec:
+      containers:
+      - name: n8n
+        image: n8n-custom:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5678
+        env:
+        - name: N8N_HOST
+          value: "0.0.0.0"
+        - name: N8N_PORT
+          value: "5678"
+        - name: N8N_PROTOCOL
+          value: "http"
+        - name: WEBHOOK_URL
+          value: "http://localhost:1123/n8n/"
+        - name: N8N_EDITOR_BASE_URL
+          value: "http://localhost:1123/n8n/"
+        - name: N8N_WEBHOOK_TUNNEL_URL
+          value: "http://localhost:1123/n8n/"
+        - name: NODE_ENV
+          value: "production"
+        - name: TZ
+          value: "Asia/Seoul"
+        - name: GENERIC_TIMEZONE
+          value: "Asia/Seoul"
+        - name: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
+          value: "false"
+        - name: N8N_USER_MANAGEMENT_DISABLED
+          value: "true"
+        - name: N8N_SECURE_COOKIE
+          value: "false"
+        - name: N8N_LOG_LEVEL
+          value: "info"
+        - name: DB_TYPE
+          value: "sqlite"
+        - name: DB_SQLITE_DATABASE
+          value: "/home/node/.n8n/database.sqlite"
+        - name: EXECUTIONS_PROCESS
+          value: "main"
+        - name: EXECUTIONS_DATA_SAVE_ON_ERROR
+          value: "all"
+        - name: EXECUTIONS_DATA_SAVE_ON_SUCCESS
+          value: "all"
+        - name: EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS
+          value: "true"
+        - name: SLACK_WEBHOOK_URL
+          valueFrom:
+            secretKeyRef:
+              name: n8n-secrets
+              key: slack_webhook
+        volumeMounts:
+        - name: n8n-data
+          mountPath: /home/node/.n8n
+        - name: n8n-workflows
+          mountPath: /home/node/.n8n/workflows
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5678
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 5678
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: n8n-data
+        persistentVolumeClaim:
+          claimName: n8n-data
+      - name: n8n-workflows
+        persistentVolumeClaim:
+          claimName: n8n-workflows
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: n8n
+  labels:
+    app: n8n
+spec:
+  selector:
+    app: n8n
+  ports:
+  - port: 5678
+    targetPort: 5678
+    protocol: TCP
+  type: ClusterIP 

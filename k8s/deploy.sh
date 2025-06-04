@@ -14,7 +14,11 @@ kubectl apply -f postgres.yaml
 echo "⏳ PostgreSQL 준비 대기 중..."
 kubectl wait --for=condition=ready pod -l app=postgres --timeout=60s
 
-# 2. 백엔드 서비스들 배포
+# 2. Secrets 배포
+echo "📦 Secrets 배포 중..."
+kubectl apply -f n8n-secrets.yaml
+
+# 3. 백엔드 서비스들 배포
 echo "📦 백엔드 서비스들 배포 중..."
 kubectl apply -f gateway.yaml
 kubectl apply -f dsdgen.yaml
@@ -26,7 +30,15 @@ kubectl wait --for=condition=ready pod -l app=gateway --timeout=60s
 kubectl wait --for=condition=ready pod -l app=dsdgen --timeout=60s
 kubectl wait --for=condition=ready pod -l app=dsdcheck --timeout=60s
 
-# 3. 프론트엔드 배포
+# 4. n8n 서비스 배포
+echo "📦 n8n 서비스 배포 중..."
+kubectl apply -f n8n.yaml
+
+# n8n이 준비될 때까지 대기
+echo "⏳ n8n 서비스 준비 대기 중..."
+kubectl wait --for=condition=ready pod -l app=n8n --timeout=60s
+
+# 5. 프론트엔드 배포
 echo "📦 프론트엔드 배포 중..."
 kubectl apply -f frontend.yaml
 
@@ -34,7 +46,7 @@ kubectl apply -f frontend.yaml
 echo "⏳ 프론트엔드 준비 대기 중..."
 kubectl wait --for=condition=ready pod -l app=frontend --timeout=60s
 
-# 4. Ingress 배포
+# 6. Ingress 배포
 echo "📦 Ingress 배포 중..."
 kubectl apply -f ingress.yaml
 
@@ -43,6 +55,7 @@ echo ""
 echo "🌐 접속 URL:"
 echo "  - Frontend: http://localhost:1123"
 echo "  - API Gateway: http://localhost:1123/api"
+echo "  - n8n 워크플로우: http://localhost:1123/n8n"
 echo ""
 echo "📊 상태 확인:"
 kubectl get pods

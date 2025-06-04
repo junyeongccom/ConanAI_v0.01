@@ -24,6 +24,8 @@ spec:
           value: "postgresql://hc_user:hc_password@postgres:5432/hc_db"
         - name: PYTHONPATH
           value: "/app"
+        - name: N8N_WEBHOOK_URL
+          value: "http://n8n:80/webhook/slack-notification"
         volumeMounts:
         - name: dart-documents
           mountPath: /app/app/dart_documents
