@@ -44,7 +44,7 @@ export default function StockTrendTable() {
 
   const fetchStocks = async () => {
     try {
-      const response = await fetch("https://railwaystocktrend-production.up.railway.app/api/stocktrend/stocks");
+      const response = await fetch("http://localhost:8080/api/stocktrend/stocks");
       const data = await response.json();
       console.log("💌API로 받은 데이터:", data);
       setStocks(data.companies);
