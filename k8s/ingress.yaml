@@ -25,6 +25,14 @@ spec:
             name: gateway
             port:
               number: 8080
+      # n8n 워크플로우 경로
+      - path: /n8n
+        pathType: Prefix
+        backend:
+          service:
+            name: n8n
+            port:
+              number: 80
       # API 경로
       - path: /api
         pathType: Prefix

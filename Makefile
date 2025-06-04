@@ -18,6 +18,22 @@ ps:
 
 # 🚀 마이크로서비스별 명령어
 
+## n8n
+build-n8n:
+	docker-compose build n8n
+
+up-n8n:
+	docker-compose up -d n8n
+
+down-n8n:
+	docker-compose stop n8n
+
+logs-n8n:
+	docker-compose logs -f n8n
+
+restart-n8n:
+	docker-compose down n8n && docker-compose up -d --build n8n
+
 ## frontend
 build-frontend:
 	docker-compose build frontend

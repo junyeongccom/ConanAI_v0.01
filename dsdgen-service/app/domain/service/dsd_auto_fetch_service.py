@@ -9,6 +9,7 @@ from app.domain.repository.dsdgen_r_repository import DsdgenReadRepository
 from app.domain.model.dsdgen_schema import DsdSourceSchema, DsdSourceListResponse
 from app.domain.service.opendart_service import OpenDartService
 from app.domain.service.xbrl_parser_service import XBRLParserService
+from app.platform.notification import send_slack_notification
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ class DsdAutoFetchService:
            a. OpenDART에서 기업 XBRL zip 파일 다운로드
            b. zip 파일을 파싱하여 데이터프레임으로 변환하고 DB에 저장
            c. DB에 저장이 끝나면 → 다시 dsd_source 테이블에서 해당 기업 데이터를 조회하고 반환
+           d. DSD 생성 완료 시 Slack 알림 전송
         
         Args:
             corp_code: 기업 코드
@@ -77,6 +79,9 @@ class DsdAutoFetchService:
             if not zip_path:
                 error_msg = f"OpenDART에서 기업코드 {corp_code}의 XBRL 파일 다운로드 실패"
                 logger.error(error_msg)
+                
+                # 실패 알림 전송
+                await self._send_failure_notification(corp_code, error_msg)
                 raise RuntimeError(error_msg)
             
             logger.info("OpenDART에서 기업코드 %s의 XBRL 파일 다운로드 성공: %s", corp_code, zip_path)
@@ -88,6 +93,9 @@ class DsdAutoFetchService:
             if df.empty:
                 error_msg = f"기업코드 {corp_code}의 XBRL 파일 파싱 결과가 비어있습니다."
                 logger.error(error_msg)
+                
+                # 실패 알림 전송
+                await self._send_failure_notification(corp_code, error_msg)
                 raise RuntimeError(error_msg)
             
             logger.info("기업코드 %s의 XBRL 파일 파싱 및 DB 저장 성공: %d 건", corp_code, len(df))
@@ -99,14 +107,65 @@ class DsdAutoFetchService:
             if not updated_sources or len(updated_sources) == 0:
                 error_msg = f"기업코드 {corp_code}의 DSD 소스 데이터가 DB에 저장되지 않았습니다."
                 logger.error(error_msg)
+                
+                # 실패 알림 전송
+                await self._send_failure_notification(corp_code, error_msg)
                 raise RuntimeError(error_msg)
             
             logger.info("기업코드 %s의 DSD 소스 데이터 재조회 성공: %d 건", corp_code, len(updated_sources))
             source_models = [DsdSourceSchema(**source) for source in updated_sources]
+            
+            # d. DSD 생성 완료 시 Slack 알림 전송
+            await self._send_success_notification(corp_code, len(updated_sources))
             
             return DsdSourceListResponse(success=True, data=source_models)
             
         except Exception as e:
             error_msg = f"DSD 소스 데이터 조회 또는 생성 중 오류 발생: {str(e)}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg) from e 
+            
+            # 예외 발생 시 실패 알림 전송
+            await self._send_failure_notification(corp_code, error_msg)
+            raise RuntimeError(error_msg) from e
+
+    async def _send_success_notification(self, corp_code: str, data_count: int) -> None:
+        """
+        DSD 생성 성공 알림을 전송합니다.
+        
+        Args:
+            corp_code: 기업 코드
+            data_count: 생성된 데이터 건수
+        """
+        try:
+            await send_slack_notification(
+                message=f"기업코드 {corp_code}의 DSD 데이터 생성이 완료되었습니다. (총 {data_count}건)",
+                title="DSD 생성 완료",
+                status="SUCCESS",
+                service="dsdgen",
+                corp_code=corp_code,
+                data_count=data_count,
+                environment="production"
+            )
+        except Exception as e:
+            logger.error("DSD 생성 성공 알림 전송 실패: %s", str(e))
+
+    async def _send_failure_notification(self, corp_code: str, error_message: str) -> None:
+        """
+        DSD 생성 실패 알림을 전송합니다.
+        
+        Args:
+            corp_code: 기업 코드
+            error_message: 오류 메시지
+        """
+        try:
+            await send_slack_notification(
+                message=f"기업코드 {corp_code}의 DSD 데이터 생성 중 오류가 발생했습니다.\n오류: {error_message}",
+                title="DSD 생성 실패",
+                status="ERROR",
+                service="dsdgen",
+                corp_code=corp_code,
+                error=error_message,
+                environment="production"
+            )
+        except Exception as e:
+            logger.error("DSD 생성 실패 알림 전송 실패: %s", str(e)) 
