@@ -1,0 +1,21 @@
+# 1. 빌드
+docker build -t gateway-service:latest ./gateway-service
+docker build -t frontend-service:latest ./frontend-service
+docker build -t dsdcheck-service:latest ./dsdcheck-service
+docker build -t dsdgen-service:latest ./dsdgen-service
+
+# 2. 이미지 가져오기
+k3d image import gateway-service:latest -c conanai-cluster
+k3d image import frontend-service:latest -c conanai-cluster
+k3d image import dsdcheck-service:latest -c conanai-cluster
+k3d image import dsdgen-service:latest -c conanai-cluster
+
+# 3. 쿠버네티스 배포 재시작 (롤링)
+kubectl rollout restart deployment gateway-deployment
+kubectl rollout restart deployment frontend-deployment
+kubectl rollout restart deployment dsdcheck-deployment
+kubectl rollout restart deployment dsdgen-deployment
+
+
+cd k8s
+bash build-images.sh

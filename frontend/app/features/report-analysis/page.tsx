@@ -44,7 +44,7 @@ export default function ReportAnalysisPage() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const res = await fetch('https://railwayirsummary-production.up.railway.app/api/irsummary/pdfsummary', {
+      const res = await fetch('http://localhost:8080/api/irsummary/pdfsummary', {
         method: 'POST',
         body: formData
       })

@@ -36,7 +36,7 @@ export default function EsgDsdPage() {
     formData.append('file', pdfFile);
     formData.append('page_num', pageNumber);
     try {
-      const response = await fetch('https://railwayesgdsd-production.up.railway.app/esgdsd/extract', {
+      const response = await fetch('http://localhost:8080/esgdsd/extract', {
         method: 'POST',
         body: formData,
       });
