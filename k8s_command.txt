@@ -16,6 +16,6 @@ kubectl rollout restart deployment frontend-deployment
 kubectl rollout restart deployment dsdcheck-deployment
 kubectl rollout restart deployment dsdgen-deployment
 
-
-cd k8s
-bash build-images.sh
+4. 한방에 하기기
+& "C:\Program Files\Git\bin\bash.exe" k8s/build-images.sh
+& "C:\Program Files\Git\bin\bash.exe" k8s/deploy.sh
