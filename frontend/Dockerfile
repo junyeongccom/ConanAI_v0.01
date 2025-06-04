@@ -9,9 +9,8 @@ WORKDIR /app
 # 패키지 매니저 파일들 복사
 COPY package.json pnpm-lock.yaml* ./
 
-# pnpm 설정 및 의존성 설치
-RUN corepack enable
-RUN corepack prepare pnpm@9.0.0 --activate
+# pnpm 설치 및 의존성 설치
+RUN npm install -g pnpm@9.0.0
 RUN pnpm install --frozen-lockfile
 
 # 빌드 스테이지
@@ -21,27 +20,31 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Next.js 텔레메트리 비활성화
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# API 베이스 URL 설정
+ENV NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+
+# pnpm 설치
+RUN npm install -g pnpm@9.0.0
 
 # 애플리케이션 빌드
-RUN corepack enable
-RUN corepack prepare pnpm@9.0.0 --activate
 RUN pnpm build
 
 # 프로덕션 이미지 스테이지
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 
 # 시스템 사용자 생성
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # pnpm 설치
-RUN corepack enable
-RUN corepack prepare pnpm@9.0.0 --activate
+RUN npm install -g pnpm@9.0.0
 
 # 필요한 파일들 복사
 COPY --from=deps /app/node_modules ./node_modules
@@ -57,7 +60,7 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 CMD ["pnpm", "start"] 
