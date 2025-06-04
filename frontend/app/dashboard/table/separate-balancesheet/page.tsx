@@ -95,7 +95,7 @@ export default function SeparateBalanceSheetPage() {
     const formData = new FormData();
     formData.append('file', dsdFile);
     // sheetName이 비어있으면 쿼리스트링에서 sheet_name 파라미터를 빼고 요청
-    let url = 'http://localhost:8080/api/dsdgen/upload';
+    let url = 'http://localhost:8080/api/dsdgen/dsdgen/upload';
     if (sheetName) {
       url += `?sheet_name=${sheetName}`;
     }

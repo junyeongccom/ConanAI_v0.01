@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: frontend:local
+        image: aws-develope-frontend:local
         ports:
         - containerPort: 3000
         env:

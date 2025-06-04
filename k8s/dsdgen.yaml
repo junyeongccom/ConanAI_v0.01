@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: dsdgen
-        image: dsdgen:local
+        image: aws-develope-dsdgen:local
         ports:
         - containerPort: 8085
         env:

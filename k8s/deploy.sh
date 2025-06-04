@@ -2,6 +2,10 @@
 
 echo "🚀 Kubernetes 배포 시작..."
 
+# 스크립트가 있는 디렉토리로 이동
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # 1. PostgreSQL 먼저 배포
 echo "📦 PostgreSQL 배포 중..."
 kubectl apply -f postgres.yaml
