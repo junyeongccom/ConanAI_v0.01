@@ -16,7 +16,7 @@ services:
 
   frontend:
     build:
-      context: ./frotend
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: hc_frontend_new
     ports:
@@ -32,12 +32,12 @@ services:
 
   gateway:
     build:
-      context: ./gateway_service
+      context: ./gateway-service
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     env_file:
-      - ./gateway_service/.env
+      - ./gateway-service/.env
     depends_on:
       - postgres
     networks:
@@ -46,12 +46,12 @@ services:
 
   dsdgen:
     build:
-      context: ./dsdgen_service
+      context: ./dsdgen-service
       dockerfile: Dockerfile
     ports:
       - "8085:8085"
     env_file:
-      - ./dsdgen_service/.env
+      - ./dsdgen-service/.env
     depends_on:
       - postgres
     volumes:
@@ -61,14 +61,14 @@ services:
 
   dsdcheck:
     build:
-      context: ./dsdcheck_service
+      context: ./dsdcheck-service
       dockerfile: Dockerfile
     ports:
       - "8086:8086"
     volumes:
-      - ./dsdcheck_service/app/resources:/app/app/resources
+      - ./dsdcheck-service/app/resources:/app/app/resources
     env_file:
-      - ./dsdcheck_service/.env
+      - ./dsdcheck-service/.env
     depends_on:
       - postgres
     networks:
