@@ -32,7 +32,7 @@ spec:
           service:
             name: n8n
             port:
-              number: 80
+              number: 5678
       # API 경로
       - path: /api
         pathType: Prefix
