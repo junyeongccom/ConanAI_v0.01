@@ -72,3 +72,6 @@ Thumbs.db
 dart_documents/
 dart_documents/extracted/
 
+# Taskmaster service (전체 디렉토리 제외)
+taskmaster/
+

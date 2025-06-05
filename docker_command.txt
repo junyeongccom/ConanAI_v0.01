@@ -1,12 +1,24 @@
-#railway DB접속
-$env:PGPASSWORD = "eOsxxfAyduDCmCLfzwhWioXppxufVcLY"
-psql -h crossover.proxy.rlwy.net -U postgres -p 47251 -d railway
-
 #postgre컨테이너 접속
-docker exec -it hc_postgres bash
+docker exec -it hc_postgres_new bash
 
 #db접속
 psql -U hc_user -d hc_db
 
-#컬럼확인
-\d dsd_source
+#모든 테이블 목록 보기
+\dt
+
+#테이블, 뷰, 시퀀스 등 모든 관계 보기
+\d
+
+#테이블의 데이터 조회
+SELECT * FROM heatwave_summary;
+
+#pager 비활성화 (출력이 길어도 한번에 표시)
+\pset pager off
+
+#간단한 행 수 확인
+SELECT COUNT(*) FROM heatwave_summary;
+
+#처음 10개 행만 보기
+SELECT * FROM heatwave_summary LIMIT 10;
+
