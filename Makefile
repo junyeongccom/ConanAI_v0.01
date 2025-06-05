@@ -162,3 +162,19 @@ logs-chatbot:
 restart-chatbot:
 	docker-compose down chatbot && docker-compose up -d --build chatbot
 
+## climate-service
+build-climate:
+	docker-compose build climate-service
+
+up-climate:
+	docker-compose up -d climate-service
+
+down-climate:
+	docker-compose stop climate-service
+
+logs-climate:
+	docker-compose logs -f climate-service
+
+restart-climate:
+	docker-compose down climate-service && docker-compose up -d --build climate-service
+

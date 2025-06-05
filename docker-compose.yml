@@ -74,6 +74,19 @@ services:
     networks:
       - app-network
 
+  climate-service:
+    build:
+      context: ./climate-service
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8087"
+    env_file:
+      - ./climate-service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
   n8n:
     build:
       context: ./n8n-service
