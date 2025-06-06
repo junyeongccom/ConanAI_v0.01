@@ -6,9 +6,6 @@ import pandas as pd
 import asyncpg
 import os
 from typing import List, Dict, Any
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class ClimateRepository:
@@ -25,16 +22,16 @@ class ClimateRepository:
     
     async def get_connection(self):
         """DB 연결 생성"""
-        logger.info(f"레퍼지토리: DB 연결 시도 - {self.db_config['host']}:{self.db_config['port']}")
+        print(f"🔌 레퍼지토리: DB 연결 시도 - {self.db_config['host']}:{self.db_config['port']}")
         return await asyncpg.connect(**self.db_config)
     
     async def save_heatwave_data(self, df: pd.DataFrame) -> None:
         """전처리된 폭염일수 데이터를 DB에 저장"""
         try:
-            logger.info("레퍼지토리: DB 연결 시작")
+            print("🔌 레퍼지토리: DB 연결 시작")
             conn = await self.get_connection()
             
-            logger.info("레퍼지토리: 기존 데이터 삭제 시작")
+            print("🗑️ 레퍼지토리: 기존 데이터 삭제 시작")
             # 기존 데이터 삭제 (같은 지역의 데이터가 있다면)
             regions = df['지역명'].unique().tolist()
             for region in regions:
@@ -43,7 +40,7 @@ class ClimateRepository:
                     region
                 )
             
-            logger.info(f"레퍼지토리: 새 데이터 삽입 시작 - {len(df)}행")
+            print(f"💾 레퍼지토리: 새 데이터 삽입 시작 - {len(df)}행")
             # 새 데이터 삽입
             for _, row in df.iterrows():
                 await conn.execute("""
@@ -57,14 +54,14 @@ class ClimateRepository:
                     float(row['폭염일수']),
                     float(row['변화량(일수)']),
                     float(row['변화율(%)']) if pd.notna(row['변화율(%)']) else None,
-                    float(row['폭염일수']) if row['연도구간'] == '2025' else None
+                    float(row['폭염일수']) if row['연도구간'] == '현재기후' else None
                 )
             
             await conn.close()
-            logger.info(f"레퍼지토리: DB 저장 완료 - {len(df)}행")
+            print(f"✅ 레퍼지토리: DB 저장 완료 - {len(df)}행")
             
         except Exception as e:
-            logger.error(f"레퍼지토리: DB 저장 실패 - {str(e)}")
+            print(f"❌ 레퍼지토리: DB 저장 실패 - {str(e)}")
             raise
     
     async def get_heatwave_data(self, region: str = None, scenario: str = None) -> List[Dict[str, Any]]:
@@ -91,5 +88,5 @@ class ClimateRepository:
             return [dict(row) for row in rows]
             
         except Exception as e:
-            logger.error(f"레퍼지토리: DB 조회 실패 - {str(e)}")
+            print(f"❌ 레퍼지토리: DB 조회 실패 - {str(e)}")
             raise 

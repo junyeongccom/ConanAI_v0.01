@@ -2,21 +2,18 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useRef } from 'react';
-import Tabs from './components/Tabs';
+import { useRef } from 'react';
 import Link from 'next/link';
 import ChatbotLauncher from './components/ChatbotLauncher';
 
 const SLIDES = [
-  { label: '업계 주가', href: '/features/stock' },
   { label: '재무 DSD', href: '/dashboard/table/separate-balancesheet' },
-  { label: '증권리포트 분석', href: '/features/report-analysis' },
   { label: 'ESG DSD', href: '/features/esg-dsd' },
+  { label: '지역별 기후리스크 평가', href: '/features/climate-risk' },
 ];
 
 export default function Home() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('financial');
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const handleButtonClick = (path: string) => {

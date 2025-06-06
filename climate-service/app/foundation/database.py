@@ -8,11 +8,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
 import os
+import logging
 from typing import Generator
 
-from foundation.logger import setup_logger
-
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # 환경변수에서 데이터베이스 설정 읽기
 DATABASE_URL = os.getenv(
@@ -68,29 +67,6 @@ def get_db_session() -> Generator[Session, None, None]:
         raise
     finally:
         db.close()
-
-
-async def init_database():
-    """
-    데이터베이스 초기화
-    테이블 생성 및 기본 데이터 설정
-    """
-    try:
-        from domain.model.climate_data_entity import Base
-        
-        # 테이블 생성
-        Base.metadata.create_all(bind=engine)
-        logger.info("✅ 데이터베이스 테이블 생성 완료")
-        
-        # 기본 지역 데이터 삽입
-        await _insert_default_regions()
-        
-        logger.info("✅ 데이터베이스 초기화 완료")
-        
-    except Exception as e:
-        logger.error(f"❌ 데이터베이스 초기화 실패: {str(e)}")
-        raise
-
 
 
 def check_database_connection() -> bool:

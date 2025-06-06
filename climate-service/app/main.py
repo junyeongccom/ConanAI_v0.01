@@ -5,16 +5,17 @@ Task 001: 프로젝트 기반 인프라 구축 구현
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.climate_router import router as climate_router
 from contextlib import asynccontextmanager
 import uvicorn
 import os
+import logging
 from dotenv import load_dotenv
 
 # 환경변수 로드
 load_dotenv()
 
 # 기본 로거 설정
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -48,9 +49,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# API 라우터 import
-from api.climate_router import router as climate_router
 
 # 라우터 등록
 app.include_router(climate_router)

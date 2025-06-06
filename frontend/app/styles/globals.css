@@ -216,5 +216,78 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-pretendard);
+    color: rgb(var(--foreground));
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgb(var(--background))
+      )
+      rgb(var(--background));
   }
+}
+
+/* Leaflet Map Styles */
+.map-tooltip {
+  background: rgba(0, 0, 0, 0.9) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+.map-tooltip::before {
+  border-top-color: rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Leaflet container styles */
+.leaflet-container {
+  font-family: var(--font-pretendard), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  background: #f8fafc !important;
+}
+
+/* Leaflet popup styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.leaflet-popup-content {
+  margin: 16px !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* Hide leaflet attribution */
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Zoom control styling */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.leaflet-control-zoom a {
+  background: white !important;
+  color: #374151 !important;
+  border: 1px solid #e5e7eb !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 30px !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #f3f4f6 !important;
+  color: #1f2937 !important;
 }

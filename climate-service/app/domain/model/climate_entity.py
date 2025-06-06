@@ -20,7 +20,7 @@ class HeatwaveSummary(Base):
     heatwave_days = Column(Float, nullable=False, comment="폭염일수")
     change_amount = Column(Float, nullable=True, comment="변화량(일수)")
     change_rate = Column(Float, nullable=True, comment="변화율(%)")
-    baseline_value = Column(Float, nullable=True, comment="기준값(2025년)")
+    baseline_value = Column(Float, nullable=True, comment="기준값(현재기후)")
     created_at = Column(DateTime, default=func.now(), comment="생성일시")
     
     def __repr__(self):

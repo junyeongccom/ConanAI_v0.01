@@ -41,4 +41,24 @@ class PreprocessResponse(BaseModel):
     )
 
 
+# === 폭염일수 데이터 조회 API 스키마 ===
+
+class HeatwaveDataItem(BaseModel):
+    """폭염일수 데이터 항목"""
+    scenario: str = Field(description="기후변화 시나리오")
+    region: str = Field(description="지역명")
+    year: str = Field(description="연도구간")
+    heatwave_days: float = Field(description="폭염일수")
+    change_days: Optional[float] = Field(default=None, description="변화량(일수)")
+    change_rate: Optional[float] = Field(default=None, description="변화율(%)")
+
+
+class HeatwaveDataResponse(BaseModel):
+    """폭염일수 데이터 조회 응답"""
+    status: str = Field(default="success", description="응답 상태")
+    message: str = Field(description="응답 메시지")
+    data: List[HeatwaveDataItem] = Field(description="폭염일수 데이터 목록")
+    total_count: int = Field(description="총 데이터 개수")
+
+
  
