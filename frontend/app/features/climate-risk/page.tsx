@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import ProvinceMap from '../../components/ProvinceMap';
 import MunicipalityMap from '../../components/MunicipalityMap';
-import L from 'leaflet';
 
 interface HeatwaveData {
   scenario: string;
@@ -21,7 +20,7 @@ interface RegionOption {
 
 interface ProvinceInfo {
   name: string;
-  bounds: L.LatLngBounds | null;
+  bounds: any | null;
   code?: string;
 }
 
@@ -203,7 +202,7 @@ export default function ClimateRiskPage() {
         console.log(`🗺️ 지도 위험도 데이터 조회: ${selectedScenario}`);
         
         const response = await fetch(
-          `http://localhost:8087/api/heatwave/map/scenario/${selectedScenario}/year/2030`,
+          `http://localhost:8087/api/heatwave/map/scenario/${selectedScenario}`,
           {
             method: 'GET',
             headers: {
@@ -252,7 +251,7 @@ export default function ClimateRiskPage() {
   };
 
   // 지도에서 시도 선택 시 호출되는 함수 (통합된 단일 setState)
-  const handleProvinceSelect = (name: string, bounds: L.LatLngBounds, code?: string) => {
+  const handleProvinceSelect = (name: string, bounds: any, code?: string) => {
     console.log('Province selected:', name, 'with code:', code);
     
     // 지도에서 클릭한 지역명을 DB 지역명으로 매핑

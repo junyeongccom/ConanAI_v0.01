@@ -167,7 +167,7 @@ export default function MunicipalityMap({ provinceInfo }: MunicipalityMapProps) 
       // 3) 새 레이어 생성 및 추가
       try {
         const geoJsonData = {
-          type: "FeatureCollection",
+          type: "FeatureCollection" as const,
           features: filtered
         };
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import L from 'leaflet';
 
 // Leaflet CSS import
 import 'leaflet/dist/leaflet.css';
@@ -10,18 +9,32 @@ import 'leaflet/dist/leaflet.css';
 // SSR 환경에서 window 객체 체크
 const isClient = typeof window !== 'undefined';
 
+// Leaflet 타입 정의
+interface LeafletTypes {
+  Map: any;
+  LatLngBounds: any;
+  Icon: any;
+  GeoJSON: any;
+}
+
+let L: LeafletTypes | null = null;
+
 // Fix for default markers in react-leaflet (클라이언트에서만 실행)
 if (isClient) {
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  // Dynamic import leaflet only on client side
+  import('leaflet').then((leaflet) => {
+    L = leaflet.default;
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    });
   });
 }
 
 interface ProvinceMapProps {
-  onProvinceSelect?: (provinceName: string, provinceBounds: L.LatLngBounds, provinceCode?: string) => void;
+  onProvinceSelect?: (provinceName: string, provinceBounds: any, provinceCode?: string) => void;
   selectedProvince?: string;
   riskData?: { [regionName: string]: number }; // 지역별 위험도 데이터 (변화율)
   scenario?: string;
@@ -36,8 +49,19 @@ export default function ProvinceMap({ onProvinceSelect, selectedProvince, riskDa
   const [provincesData, setProvincesData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const provinceLayerRef = useRef<L.GeoJSON | null>(null);
+  const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const mapRef = useRef<any>(null);
+  const provinceLayerRef = useRef<any>(null);
+
+  // Load leaflet on client side
+  useEffect(() => {
+    if (isClient && !leafletLoaded) {
+      import('leaflet').then((leaflet) => {
+        L = leaflet.default;
+        setLeafletLoaded(true);
+      });
+    }
+  }, [leafletLoaded]);
 
   // 지역명 매핑 함수 (GeoJSON 지역명 → DB 지역명)
   const mapRegionNameForDB = (geoJsonRegionName: string): string => {
@@ -84,7 +108,7 @@ export default function ProvinceMap({ onProvinceSelect, selectedProvince, riskDa
     loadProvinceData();
   }, []);
 
-  const onEachProvinceFeature = (feature: any, layer: L.Layer) => {
+  const onEachProvinceFeature = (feature: any, layer: any) => {
     if (!feature || !feature.properties) return;
     
     const provinceName = feature.properties.name;
@@ -94,16 +118,16 @@ export default function ProvinceMap({ onProvinceSelect, selectedProvince, riskDa
     });
     
     layer.on({
-      click: (e) => {
+      click: (e: any) => {
         e.originalEvent?.stopPropagation();
         
         console.log('Province clicked:', provinceName);
         console.log('Feature properties:', feature.properties);
         
         // bounds 가드: getBounds가 유효한지 확인
-        if (onProvinceSelect && typeof (layer as any).getBounds === 'function') {
+        if (onProvinceSelect && typeof layer.getBounds === 'function') {
           try {
-            const bounds = (layer as any).getBounds();
+            const bounds = layer.getBounds();
             
             // bounds가 유효한지 확인
             if (bounds && bounds.isValid && bounds.isValid()) {
@@ -118,7 +142,7 @@ export default function ProvinceMap({ onProvinceSelect, selectedProvince, riskDa
           }
         }
       },
-      mouseover: (e) => {
+      mouseover: (e: any) => {
         const layer = e.target;
         layer.setStyle({
           weight: 2,
@@ -128,7 +152,7 @@ export default function ProvinceMap({ onProvinceSelect, selectedProvince, riskDa
         });
         layer.bringToFront();
       },
-      mouseout: (e) => {
+      mouseout: (e: any) => {
         if (provinceLayerRef.current) {
           provinceLayerRef.current.resetStyle(e.target);
         }
@@ -174,9 +198,21 @@ export default function ProvinceMap({ onProvinceSelect, selectedProvince, riskDa
     };
   };
 
-  const handleMapCreated = (map: L.Map) => {
+  const handleMapCreated = (map: any) => {
     mapRef.current = map;
   };
+
+  // Don't render until leaflet is loaded on client side
+  if (!isClient || !leafletLoaded) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-[#f0f4ff] rounded-lg">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+          <p className="text-gray-600 text-sm">지도 라이브러리 로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

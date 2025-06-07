@@ -52,20 +52,19 @@ class ClimateController:
         print("✅ 컨트롤러: 폭염일수 데이터 조회 완료")
         return result
     
-    async def get_risk_levels_for_map(self, scenario: str, year: str) -> dict:
+    async def get_risk_levels_for_map(self, scenario: str) -> dict:
         """
         지도 색칠을 위한 모든 지역의 위험도 데이터 조회
         
         Args:
             scenario: 기후변화 시나리오
-            year: 연도
             
         Returns:
-            dict: 지역별 위험도 데이터
+            dict: 지역별 평균 변화량 데이터
         """
-        print(f"🎯 컨트롤러: 지도 위험도 데이터 조회 시작 - {scenario}, {year}")
-        result = await self.heatwave_service.get_risk_levels_by_scenario_and_year(
-            scenario, year
+        print(f"🎯 컨트롤러: 지도 위험도 데이터 조회 시작 - {scenario}")
+        result = await self.heatwave_service.get_average_change_amounts_by_scenario(
+            scenario
         )
         print("✅ 컨트롤러: 지도 위험도 데이터 조회 완료")
         return {

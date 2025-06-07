@@ -78,6 +78,48 @@ class HeatwaveService:
                 detail=f"폭염일수 데이터 조회 중 오류가 발생했습니다: {str(e)}"
             )
     
+    async def get_average_change_amounts_by_scenario(
+        self, 
+        scenario: str
+    ) -> List[dict]:
+        """
+        특정 시나리오의 모든 지역 평균 변화량 데이터 조회 (지도 색칠용)
+        
+        2030, 2040, 2050년의 평균 변화량을 계산하여 반환
+        
+        Args:
+            scenario: 기후변화 시나리오
+            
+        Returns:
+            지역별 평균 변화량 데이터 리스트
+            [
+                {
+                    "region": "서울특별시",
+                    "avg_change_amount": 15.2
+                },
+                ...
+            ]
+        """
+        try:
+            logger.info(f"🎨 지도 평균 변화량 데이터 조회 시작: {scenario}")
+            
+            with get_db_session() as db:
+                repository = HeatwaveRepository(db)
+                risk_data = await repository.get_average_change_amounts_by_scenario(
+                    scenario
+                )
+            
+            if not risk_data:
+                logger.warning(f"⚠️ 평균 변화량 데이터 없음: {scenario}")
+                return []
+            
+            logger.info(f"✅ 지도 평균 변화량 데이터 조회 성공: {len(risk_data)}개 지역")
+            return risk_data
+            
+        except Exception as e:
+            logger.error(f"❌ 지도 평균 변화량 데이터 조회 실패: {str(e)}")
+            return []
+
     async def get_risk_levels_by_scenario_and_year(
         self, 
         scenario: str, 

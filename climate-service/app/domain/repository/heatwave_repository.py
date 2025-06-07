@@ -71,6 +71,61 @@ class HeatwaveRepository:
             logger.error(f"❌ 폭염일수 데이터 조회 실패: {region_name}, {scenario} - {str(e)}")
             raise
     
+    async def get_average_change_amounts_by_scenario(
+        self, 
+        scenario: str
+    ) -> List[dict]:
+        """
+        특정 시나리오의 모든 지역 평균 변화량 데이터 조회 (지도 색칠용)
+        
+        2030, 2040, 2050년의 평균 변화량을 계산하여 반환
+        
+        Args:
+            scenario: 기후변화 시나리오 (예: "SSP2-4.5")
+            
+        Returns:
+            지역별 평균 변화량 데이터 리스트
+            [
+                {
+                    "region": "서울특별시",
+                    "avg_change_amount": 15.2
+                },
+                ...
+            ]
+        """
+        try:
+            query = text("""
+                SELECT 
+                    region_name,
+                    AVG(change_amount) as avg_change_amount
+                FROM heatwave_summary 
+                WHERE scenario = :scenario 
+                AND year_period IN ('2030', '2040', '2050')
+                AND change_amount IS NOT NULL
+                GROUP BY region_name
+                ORDER BY region_name
+            """)
+            
+            result = self.db.execute(
+                query, 
+                {"scenario": scenario}
+            ).fetchall()
+            
+            # 결과를 딕셔너리 리스트로 변환
+            data = []
+            for row in result:
+                data.append({
+                    "region": row[0],
+                    "avg_change_amount": float(row[1]) if row[1] is not None else 0.0
+                })
+            
+            logger.info(f"✅ 평균 변화량 데이터 조회 성공: {scenario} - {len(data)}건")
+            return data
+            
+        except Exception as e:
+            logger.error(f"❌ 평균 변화량 데이터 조회 실패: {scenario} - {str(e)}")
+            raise
+
     async def get_risk_levels_by_scenario_and_year(
         self, 
         scenario: str, 

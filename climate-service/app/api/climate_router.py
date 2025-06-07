@@ -61,20 +61,33 @@ async def get_heatwave_data(region_name: str, scenario: str):
     return await climate_controller.get_heatwave_data(region_name, scenario)
 
 
-@router.get("/heatwave/map/scenario/{scenario}/year/{year}")
-async def get_risk_levels_for_map(scenario: str, year: str):
+@router.get("/heatwave/map/scenario/{scenario}")
+async def get_risk_levels_for_map(scenario: str):
     """
     지도 색칠을 위한 모든 지역의 위험도 데이터 조회
     
-    - 특정 시나리오와 연도의 모든 지역 위험도 데이터를 한 번에 조회
+    - 특정 시나리오의 모든 지역에 대해 2030, 2040, 2050년의 평균 폭염일수 변화량을 조회
     - 지도에서 지역별 색상 표시를 위한 데이터 제공
     
     Args:
         scenario: 기후변화 시나리오 (SSP1-2.6, SSP2-4.5, SSP3-7.0, SSP5-8.5)
-        year: 연도 (2030, 2040, 2050)
+        
+    Returns:
+        dict: 지역별 평균 변화량 데이터
+        {
+            "status": "success",
+            "data": [
+                {
+                    "region": "서울특별시",
+                    "avg_change_amount": 15.2
+                },
+                ...
+            ],
+            "total_count": 17
+        }
     """
-    print(f"🗺️ 지도 위험도 데이터 조회 요청: {scenario}, {year}")
-    return await climate_controller.get_risk_levels_for_map(scenario, year)
+    print(f"🗺️ 지도 위험도 데이터 조회 요청: {scenario}")
+    return await climate_controller.get_risk_levels_for_map(scenario)
 
 
  
