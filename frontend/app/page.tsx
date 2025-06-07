@@ -6,10 +6,10 @@ import { useRef } from 'react';
 import Link from 'next/link';
 import ChatbotLauncher from './components/common/ChatbotLauncher';
 
-const SLIDES = [
-  { label: '재무 DSD', href: '/features/financial-dsd' },
-  { label: 'ESG DSD', href: '/features/esg-dsd' },
-  { label: '지역별 기후리스크 평가', href: '/features/climate-risk' },
+const features = [
+  { label: '재무 DSD', href: '/financial-dsd' },
+  { label: 'ESG DSD', href: '/esg-dsd' },
+  { label: '지역별 기후리스크 평가', href: '/climate-risk' },
 ];
 
 export default function Home() {
@@ -47,7 +47,7 @@ export default function Home() {
           className="flex gap-6 overflow-x-auto no-scrollbar py-2 px-2 scroll-smooth"
           style={{ scrollSnapType: 'x mandatory' }}
         >
-          {SLIDES.map((slide) => (
+          {features.map((slide) => (
             <Link
               key={slide.href}
               href={slide.href}

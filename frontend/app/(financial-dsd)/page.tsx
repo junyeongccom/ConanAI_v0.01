@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import FinancialDsdUploader from "../../components/financial-dsd/FinancialDsdUploader";
-import FinancialTable from "../../components/financial-dsd/FinancialTable";
+import FinancialDsdUploader from "../components/financial-dsd/FinancialDsdUploader";
+import FinancialTable from "../components/financial-dsd/FinancialTable";
 
 // 엑셀 테이블 데이터 타입
 interface TableData {

@@ -113,8 +113,8 @@ export default function EsgSection() {
       <section className="max-w-5xl mx-auto text-center mb-20">
         <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6">
           <button
-            onClick={() => window.location.href = '/features/esg-dsd'}
-            className="px-10 py-5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl text-xl font-semibold transform transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 focus:outline-none mx-auto sm:mx-0"
+            onClick={() => window.location.href = '/esg-dsd'}
+            className="px-10 py-5 bg-gradient-to-r from-green-600 to-green-700 rounded-xl text-xl font-semibold transform transition-all duration-300 hover:shadow-lg hover:shadow-green-500/30 hover:scale-105 focus:outline-none mx-auto sm:mx-0"
           >
             시연 해보기
           </button>
