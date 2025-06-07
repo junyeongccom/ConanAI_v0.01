@@ -1,4 +1,4 @@
-import FinancialSection from '../../../components/solutions/FinancialSection';
+import FinancialSection from '@features/solutions/components/FinancialSection';
 
 export default function FinancePage() {
   return (

@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import Link from 'next/link';
-import ChatbotLauncher from './components/common/ChatbotLauncher';
+import ChatbotLauncher from '@features/chatbot/components/ChatbotLauncher';
 
 const features = [
   { label: '재무 DSD', href: '/financial-dsd' },

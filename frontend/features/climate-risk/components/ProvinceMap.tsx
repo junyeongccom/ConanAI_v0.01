@@ -1,24 +1,23 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import L from 'leaflet';
 
-// Leaflet CSS import
+// Leaflet 컴포넌트들을 동적 import
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
+const GeoJSON = dynamic(() => import('react-leaflet').then(mod => mod.GeoJSON), { ssr: false });
+
+// Leaflet CSS 및 아이콘 설정
 import 'leaflet/dist/leaflet.css';
 
-// SSR 환경에서 window 객체 체크
-const isClient = typeof window !== 'undefined';
-
-// Fix for default markers in react-leaflet (클라이언트에서만 실행)
-if (isClient) {
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  });
-}
+// 기본 아이콘 설정
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+  iconUrl: '/leaflet/marker-icon.png',
+  shadowUrl: '/leaflet/marker-shadow.png',
+});
 
 interface ProvinceInfo {
   name: string;
@@ -27,65 +26,125 @@ interface ProvinceInfo {
 }
 
 interface ProvinceMapProps {
+  selectedScenario: string;
   onProvinceSelect: (provinceInfo: ProvinceInfo) => void;
 }
 
-// Dynamic import for react-leaflet components
-const MapContainer = dynamic(() => import('react-leaflet').then(mod => ({ default: mod.MapContainer })), { ssr: false });
-
-export default function ProvinceMap({ onProvinceSelect }: ProvinceMapProps) {
+export default function ProvinceMap({ selectedScenario, onProvinceSelect }: ProvinceMapProps) {
   const [provincesData, setProvincesData] = useState<any>(null);
   const [riskData, setRiskData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedScenario, setSelectedScenario] = useState<string>('ssp245');
-  const mapRef = useRef<L.Map | null>(null);
-  const layerRef = useRef<L.GeoJSON | null>(null);
 
   // 위험도에 따른 색상 반환
   const getRiskColor = (changeAmount: number): string => {
-    if (changeAmount <= 10) return '#fbbf24'; // 낮음 - 연노란색
-    if (changeAmount <= 15) return '#fed7aa'; // 보통 - 연한 주황색  
-    if (changeAmount <= 20) return '#ea580c'; // 높음 - 진한 주황색
-    return '#dc2626'; // 매우 높음 - 빨간색
+    if (changeAmount >= 21) return '#dc2626'; // 매우 높음 (21일+) - 빨간색
+    if (changeAmount >= 16) return '#a16207'; // 높음 (16-20일) - 갈색
+    if (changeAmount >= 11) return '#ea580c'; // 보통 (11-15일) - 주황색
+    return '#eab308'; // 낮음 (0-10일) - 노란색
   };
 
-  // 위험도 레벨 반환
+  // 위험도 레벨 텍스트 반환
   const getRiskLevel = (changeAmount: number): string => {
-    if (changeAmount <= 10) return '낮음';
-    if (changeAmount <= 15) return '보통';
-    if (changeAmount <= 20) return '높음';
-    return '매우 높음';
+    if (changeAmount >= 21) return '매우 높음';
+    if (changeAmount >= 16) return '높음';
+    if (changeAmount >= 11) return '보통';
+    return '낮음';
   };
 
-  // 지도 데이터 로드
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
-        setLoading(true);
-        
-        // 지도 데이터와 위험도 데이터를 병렬로 로드
-        const [mapResponse, riskResponse] = await Promise.all([
-          fetch('/maps/skorea-provinces-2018-geo.json'),
-          fetch(`http://localhost:3002/api/heatwave/map/scenario/${selectedScenario}`)
-        ]);
+                 // 시나리오를 API 형식으로 변환
+         const getApiScenario = (scenario: string) => {
+           const scenarioMap: { [key: string]: string } = {
+             'SSP1-2.6': 'ssp1-2.6',
+             'SSP2-4.5': 'ssp2-4.5', 
+             'SSP3-7.0': 'ssp3-7.0',
+             'SSP5-8.5': 'ssp5-8.5'
+           };
+           return scenarioMap[scenario] || 'ssp2-4.5';
+         };
 
-        if (!mapResponse.ok) {
-          throw new Error(`지도 데이터 로드 실패: ${mapResponse.status}`);
+                 // 지도 데이터 로드
+         const geoResponse = await fetch('/maps/skorea-provinces-2018-geo.json');
+        if (!geoResponse.ok) {
+          throw new Error('지도 데이터를 불러올 수 없습니다.');
         }
-        if (!riskResponse.ok) {
-          throw new Error(`위험도 데이터 로드 실패: ${riskResponse.status}`);
+        const geoData = await geoResponse.json();
+        setProvincesData(geoData);
+
+                 // 위험도 데이터 로드 시도
+         const apiScenario = getApiScenario(selectedScenario);
+         console.log('=== 시나리오 변환 ===');
+         console.log('선택된 시나리오:', selectedScenario);
+         console.log('API 시나리오:', apiScenario);
+         console.log('API 호출:', `http://localhost:8000/api/climate-risk/heatwave-days?scenario=${apiScenario}`);
+        
+        try {
+          const riskResponse = await fetch(`http://localhost:8000/api/climate-risk/heatwave-days?scenario=${apiScenario}`);
+          
+          if (riskResponse.ok) {
+            const apiData = await riskResponse.json();
+            console.log('API 응답 성공:', apiData);
+            
+                         if (apiData.status === 'success' && apiData.data) {
+               console.log('✅ 실제 API 데이터 사용:', apiData.data.length, '개 지역');
+               setRiskData(apiData.data);
+             } else {
+               throw new Error('API 응답 형식이 올바르지 않습니다.');
+             }
+          } else {
+            throw new Error(`API 호출 실패: ${riskResponse.status}`);
+          }
+        } catch (apiError) {
+          console.warn('API 호출 실패, 목 데이터 사용:', apiError);
+          
+          // API 실패 시 목 데이터 사용
+          const getMockRiskData = (scenario: string) => {
+            const baseData = [
+              { region: '경기도', avg_change_amount: 15.7 },
+              { region: '경상남도', avg_change_amount: 13.3 },
+              { region: '경상북도', avg_change_amount: 12.6 },
+              { region: '전라남도', avg_change_amount: 12.6 },
+              { region: '충청남도', avg_change_amount: 15.6 },
+              { region: '충청북도', avg_change_amount: 17.1 },
+              { region: '광주광역시', avg_change_amount: 17.2 },
+              { region: '대구광역시', avg_change_amount: 17.5 },
+              { region: '대전광역시', avg_change_amount: 19.7 },
+              { region: '부산광역시', avg_change_amount: 10.6 },
+              { region: '서울특별시', avg_change_amount: 17.5 },
+              { region: '울산광역시', avg_change_amount: 9.9 },
+              { region: '인천광역시', avg_change_amount: 11.0 },
+              { region: '강원특별자치도', avg_change_amount: 8.5 },
+              { region: '세종특별자치시', avg_change_amount: 17.2 },
+              { region: '전북특별자치도', avg_change_amount: 15.9 },
+              { region: '제주특별자치도', avg_change_amount: 7.8 }
+            ];
+
+                         // 시나리오별 변화량 조정 (명확한 차이)
+             const multiplier = scenario === 'SSP1-2.6' ? 0.6 : 
+                              scenario === 'SSP2-4.5' ? 1.0 : 
+                              scenario === 'SSP3-7.0' ? 1.4 : 1.8; // SSP5-8.5
+
+            return baseData.map(item => ({
+              ...item,
+              avg_change_amount: Math.round(item.avg_change_amount * multiplier * 10) / 10
+            }));
+          };
+
+                     const mockData = getMockRiskData(selectedScenario);
+           console.log('⚠️ 목 데이터 사용:', selectedScenario, '시나리오');
+           console.log('목 데이터 샘플:', mockData.slice(0, 2));
+           setRiskData(mockData);
         }
 
-        const mapData = await mapResponse.json();
-        const riskData = await riskResponse.json();
-        
-        setProvincesData(mapData);
-        setRiskData(riskData);
-        setError(null);
       } catch (err) {
-        console.error('데이터 로드 오류:', err);
-        setError('데이터를 불러올 수 없습니다.');
+        console.error('데이터 로드 에러:', err);
+        setError(err instanceof Error ? err.message : '데이터를 불러오는 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
       }
@@ -94,92 +153,143 @@ export default function ProvinceMap({ onProvinceSelect }: ProvinceMapProps) {
     loadData();
   }, [selectedScenario]);
 
-  // 지도 레이어 업데이트
-  useEffect(() => {
-    if (!provincesData || !riskData || !mapRef.current) return;
-
-    const map = mapRef.current;
-
-    // 기존 레이어 제거
-    if (layerRef.current) {
-      map.removeLayer(layerRef.current);
+  const geoJsonStyle = (feature: any) => {
+    if (!feature || !riskData) {
+      console.log('No feature or riskData:', { feature: !!feature, riskData: !!riskData });
+      return { fillColor: '#gray', weight: 1, opacity: 1, color: '#666', fillOpacity: 0.5 };
     }
-
-    // 새 레이어 생성
-    const newLayer = L.geoJSON(provincesData, {
-      style: (feature) => {
-        if (!feature) return { fillColor: '#gray', weight: 1, opacity: 1, color: '#666', fillOpacity: 0.5 };
-        
-        const provinceName = feature.properties.prov_name || feature.properties.name;
-        const riskInfo = riskData.find((item: any) => item.province === provinceName);
-        const changeAmount = riskInfo ? riskInfo.change_amount : 0;
-        
-        return {
-          fillColor: getRiskColor(changeAmount),
-          weight: 2,
-          opacity: 1,
-          color: '#666',
-          fillOpacity: 0.7
-        };
-      },
-      onEachFeature: (feature, layer) => {
-        const provinceName = feature.properties.prov_name || feature.properties.name;
-        const riskInfo = riskData.find((item: any) => item.province === provinceName);
-        const changeAmount = riskInfo ? riskInfo.change_amount : 0;
-        const riskLevel = getRiskLevel(changeAmount);
-        
-        layer.on({
-          mouseover: (e) => {
-            const targetLayer = e.target;
-            targetLayer.setStyle({
-              weight: 3,
-              fillOpacity: 0.8
-            });
-            targetLayer.bringToFront();
-          },
-          mouseout: (e) => {
-            if (newLayer) {
-              newLayer.resetStyle(e.target);
-            }
-          },
-          click: (e) => {
-            const bounds = e.target.getBounds();
-            const provinceCode = feature.properties.code;
-            
-            onProvinceSelect({
-              name: provinceName,
-              bounds: bounds,
-              code: provinceCode
-            });
-          }
-        });
-
-        // Tooltip 바인딩
-        layer.bindTooltip(
-          `<div style="font-family: 'Pretendard', sans-serif;">
-            <strong>${provinceName}</strong><br/>
-            폭염일수 증가: <strong>${changeAmount.toFixed(1)}일</strong><br/>
-            위험도: <strong style="color: ${getRiskColor(changeAmount)}">${riskLevel}</strong>
-          </div>`,
-          {
-            permanent: false,
-            direction: 'top',
-            className: 'map-tooltip'
-          }
-        );
+    
+    // 다양한 속성명으로 지역명 찾기
+    const provinceName = feature.properties.prov_name || 
+                        feature.properties.name || 
+                        feature.properties.CTP_KOR_NM || 
+                        feature.properties.CTPRVN_CD ||
+                        feature.properties.sido ||
+                        'Unknown';
+    
+    // riskData가 배열인지 확인
+    const riskArray = Array.isArray(riskData) ? riskData : (riskData.data || []);
+    
+    // 지역명으로 데이터 찾기 (백엔드 응답의 region 필드 사용)
+    let riskInfo = riskArray.find((item: any) => item.region === provinceName);
+    
+    // 매칭 실패 시 부분 매칭 시도
+    if (!riskInfo) {
+      riskInfo = riskArray.find((item: any) => {
+        const itemRegion = item.region || '';
+        return itemRegion.includes(provinceName) || provinceName.includes(itemRegion);
+      });
+    }
+    
+    // 특별한 경우 매핑
+    if (!riskInfo) {
+      const regionMapping: { [key: string]: string } = {
+        '강원도': '강원특별자치도',
+        '강원특별자치도': '강원도',
+        '전라북도': '전북특별자치도',
+        '전북특별자치도': '전라북도'
+      };
+      
+      const mappedName = regionMapping[provinceName];
+      if (mappedName) {
+        riskInfo = riskArray.find((item: any) => item.region === mappedName);
       }
-    }).addTo(map);
+    }
+    
+    const changeAmount = riskInfo ? riskInfo.avg_change_amount : 0;
+    const color = getRiskColor(changeAmount);
+    
+    console.log(`Province: ${provinceName}, Found: ${!!riskInfo}, Change: ${changeAmount}, Color: ${color}`);
+    
+    return {
+      fillColor: color,
+      weight: 2,
+      opacity: 1,
+      color: '#666',
+      fillOpacity: 0.7
+    };
+  };
 
-    layerRef.current = newLayer;
+  const onEachFeature = (feature: any, layer: L.Layer) => {
+    if (!riskData) return;
+    
+    // 다양한 속성명으로 지역명 찾기
+    const provinceName = feature.properties.prov_name || 
+                        feature.properties.name || 
+                        feature.properties.CTP_KOR_NM || 
+                        feature.properties.CTPRVN_CD ||
+                        feature.properties.sido ||
+                        'Unknown';
+    
+    // riskData가 배열인지 확인
+    const riskArray = Array.isArray(riskData) ? riskData : (riskData.data || []);
+    
+    // 지역명으로 데이터 찾기 (백엔드 응답의 region 필드 사용)
+    let riskInfo = riskArray.find((item: any) => item.region === provinceName);
+    
+    // 매칭 실패 시 부분 매칭 시도
+    if (!riskInfo) {
+      riskInfo = riskArray.find((item: any) => {
+        const itemRegion = item.region || '';
+        return itemRegion.includes(provinceName) || provinceName.includes(itemRegion);
+      });
+    }
+    
+    // 특별한 경우 매핑
+    if (!riskInfo) {
+      const regionMapping: { [key: string]: string } = {
+        '강원도': '강원특별자치도',
+        '강원특별자치도': '강원도',
+        '전라북도': '전북특별자치도',
+        '전북특별자치도': '전라북도'
+      };
+      
+      const mappedName = regionMapping[provinceName];
+      if (mappedName) {
+        riskInfo = riskArray.find((item: any) => item.region === mappedName);
+      }
+    }
+    
+    const changeAmount = riskInfo ? riskInfo.avg_change_amount : 0;
+    const riskLevel = getRiskLevel(changeAmount);
+    
+    layer.on({
+      mouseover: (e) => {
+        const targetLayer = e.target;
+        targetLayer.setStyle({
+          weight: 3,
+          fillOpacity: 0.8
+        });
+        targetLayer.bringToFront();
+      },
+      mouseout: (e) => {
+        e.target.setStyle(geoJsonStyle(feature));
+      },
+      click: (e) => {
+        const bounds = e.target.getBounds();
+        const provinceCode = feature.properties.code;
+        
+        onProvinceSelect({
+          name: provinceName,
+          bounds: bounds,
+          code: provinceCode
+        });
+      }
+    });
 
-    // 한국 전체 영역으로 뷰 설정
-    map.fitBounds(newLayer.getBounds(), { padding: [20, 20] });
-
-  }, [provincesData, riskData, onProvinceSelect]);
-
-  const handleMapCreated = (map: L.Map) => {
-    mapRef.current = map;
-    console.log('Province map created');
+    // Tooltip 바인딩
+    layer.bindTooltip(
+      `<div style="font-family: 'Pretendard', sans-serif;">
+        <strong>${provinceName}</strong><br/>
+        폭염일수 증가: <strong>${changeAmount.toFixed(1)}일</strong><br/>
+        위험도: <strong style="color: ${getRiskColor(changeAmount)}">${riskLevel}</strong>
+      </div>`,
+      {
+        permanent: false,
+        direction: 'top',
+        className: 'map-tooltip'
+      }
+    );
   };
 
   if (loading) {
@@ -209,46 +319,15 @@ export default function ProvinceMap({ onProvinceSelect }: ProvinceMapProps) {
     );
   }
 
+  console.log('=== RENDER CHECK ===');
+  console.log('provincesData exists:', !!provincesData);
+  console.log('riskData exists:', !!riskData);
+  console.log('riskData length:', riskData?.length || 0);
+
   return (
     <div className="relative w-full h-full">
-      {/* 시나리오 선택 */}
-      <div className="absolute top-2 left-2 z-10 bg-white/90 rounded-lg p-2 shadow-md">
-        <select
-          value={selectedScenario}
-          onChange={(e) => setSelectedScenario(e.target.value)}
-          className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="ssp245">SSP2-4.5 (중간 시나리오)</option>
-          <option value="ssp585">SSP5-8.5 (고배출 시나리오)</option>
-        </select>
-      </div>
-
-      {/* 범례 */}
-      <div className="absolute bottom-2 left-2 z-10 bg-white/90 rounded-lg p-3 shadow-md">
-        <div className="text-xs font-semibold mb-2">폭염일수 증가 (일)</div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#fbbf24' }}></div>
-            <span className="text-xs">낮음 (0-10일)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#fed7aa' }}></div>
-            <span className="text-xs">보통 (11-15일)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ea580c' }}></div>
-            <span className="text-xs">높음 (16-20일)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#dc2626' }}></div>
-            <span className="text-xs">매우 높음 (21일+)</span>
-          </div>
-        </div>
-      </div>
-
       <MapContainer
         key={`province-map-${selectedScenario}`}
-        ref={handleMapCreated}
         center={[36.5, 127.5]}
         zoom={7}
         minZoom={6}
@@ -261,13 +340,30 @@ export default function ProvinceMap({ onProvinceSelect }: ProvinceMapProps) {
         zoomControl={true}
         attributionControl={false}
       >
-        {/* 레이어는 수동으로 관리하므로 여기에 GeoJSON 컴포넌트 없음 */}
+        {provincesData && riskData && (
+          <GeoJSON
+            key={`geojson-${selectedScenario}-${JSON.stringify(riskData).slice(0, 50)}`}
+            data={provincesData}
+            style={geoJsonStyle}
+            onEachFeature={onEachFeature}
+          />
+        )}
       </MapContainer>
       
       {/* 제목 표시 */}
       <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded text-xs font-medium text-gray-700 z-10">
         시·도별 기후위험도
       </div>
+      
+      {/* 디버깅 정보 */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs p-2 rounded z-10">
+          <div>Provinces: {!!provincesData ? '✓' : '✗'}</div>
+          <div>Risk Data: {!!riskData ? '✓' : '✗'}</div>
+          <div>Risk Count: {riskData?.length || 0}</div>
+          <div>Scenario: {selectedScenario}</div>
+        </div>
+      )}
     </div>
   );
 } 

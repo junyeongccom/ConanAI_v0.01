@@ -1,4 +1,4 @@
-import EsgSection from '../../../components/esg-dsd/EsgSection';
+import EsgSection from '@features/solutions/components/EsgSection';
 
 export default function EsgPage() {
   return (
