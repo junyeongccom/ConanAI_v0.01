@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { slideIn } from "../../app/styles/animations";
+import { slideIn } from "@shared/styles/animations";
 import { discount, robot } from "../../public";
 import GetStarted from "./GetStarted";
 

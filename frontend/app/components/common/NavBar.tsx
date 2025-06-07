@@ -3,20 +3,15 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { MAIN_NAV } from '@shared/constants/nav';
 import Logo from './Logo';
 
 const NavBar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
 
-  const navItems = [
-    { href: '/', label: '홈' },
-    { href: '/financial-dsd', label: '재무공시' },
-    { href: '/esg-dsd', label: 'ESG공시' },
-    { href: '/climate-risk', label: '기후리스크' },
-  ];
-
   const isActive = (href: string) => {
+    if (!pathname) return false;
     if (href === '/') {
       return pathname === '/';
     }
@@ -32,17 +27,17 @@ const NavBar: React.FC = () => {
 
           {/* 데스크톱 네비게이션 */}
           <div className="hidden md:flex space-x-8">
-            {navItems.map((item) => (
+            {MAIN_NAV.map(({ href, label }) => (
               <Link
-                key={item.href}
-                href={item.href}
+                key={href}
+                href={href}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive(item.href)
+                  isActive(href)
                     ? 'text-blue-600 bg-blue-50'
                     : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
                 }`}
               >
-                {item.label}
+                {label}
               </Link>
             ))}
           </div>
@@ -68,18 +63,18 @@ const NavBar: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
-              {navItems.map((item) => (
+              {MAIN_NAV.map(({ href, label }) => (
                 <Link
-                  key={item.href}
-                  href={item.href}
+                  key={href}
+                  href={href}
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                    isActive(item.href)
+                    isActive(href)
                       ? 'text-blue-600 bg-blue-50'
                       : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
                   }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {item.label}
+                  {label}
                 </Link>
               ))}
             </div>

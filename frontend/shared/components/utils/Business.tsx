@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { fadeIn, slideIn } from "../../app/styles/animations";
+import { fadeIn, slideIn } from "@shared/styles/animations";
 import { features } from "../../app/constants";
 import Button from "./Button";
 

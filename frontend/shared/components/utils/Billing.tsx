@@ -1,6 +1,6 @@
 "use client";
 import { apple, bill, google } from "../../public";
-import { slideIn } from "../../app/styles/animations";
+import { slideIn } from "@shared/styles/animations";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
