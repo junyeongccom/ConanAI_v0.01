@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import ProvinceMap from '../components/climate-risk/ProvinceMap';
-import MunicipalityMap from '../components/climate-risk/MunicipalityMap';
+import ProvinceMap from '../../features/climate-risk/components/ProvinceMap';
+import MunicipalityMap from '../../features/climate-risk/components/MunicipalityMap';
 
 interface HeatwaveData {
   scenario: string;
