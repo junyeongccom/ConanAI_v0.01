@@ -210,7 +210,7 @@ export default function FinancialSection() {
       <section className="max-w-5xl mx-auto text-center mb-20">
         <div className="flex flex-col sm:flex-row justify-center gap-6 mt-6">
           <button
-            onClick={() => window.location.href = '/dashboard'}
+            onClick={() => window.location.href = '/features/financial-dsd'}
             className="px-10 py-5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl text-xl font-semibold transform transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 focus:outline-none mx-auto sm:mx-0"
           >
             시연 해보기
