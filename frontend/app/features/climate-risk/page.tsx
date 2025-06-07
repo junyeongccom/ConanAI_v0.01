@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import ProvinceMap from '../../components/climate-risk/ProvinceMap';
-import MunicipalityMap from '../../components/MunicipalityMap';
+import MunicipalityMap from '../../components/climate-risk/MunicipalityMap';
 
 interface HeatwaveData {
   scenario: string;
