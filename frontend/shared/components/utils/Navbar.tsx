@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { navVariants } from "@shared/styles/animations";
 import Image from "next/image";
 import { close, logo, menu } from "../../public";
-import { navLinks } from "../../app/constants";
+import { navLinks } from "@shared/constants";
 
 const Navbar = () => {
   const [active, setActive] = useState("Home");

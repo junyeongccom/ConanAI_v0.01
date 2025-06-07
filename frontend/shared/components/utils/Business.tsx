@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { fadeIn, slideIn } from "@shared/styles/animations";
-import { features } from "../../app/constants";
+import { features } from "@shared/constants";
 import Button from "./Button";
 
 interface featureCardProps {

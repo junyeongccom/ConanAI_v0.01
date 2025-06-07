@@ -1,4 +1,4 @@
-import { clients } from "../../app/constants";
+import { clients } from "@shared/constants";
 import Image from "next/image";
 
 const Clients = () => {

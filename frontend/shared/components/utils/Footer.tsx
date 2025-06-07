@@ -1,5 +1,5 @@
 import { logo } from "../../public";
-import { footerLinks, socialMedia } from "../../app/constants";
+import { footerLinks, socialMedia } from "@shared/constants";
 import Image from "next/image";
 
 const Footer = () => (

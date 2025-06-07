@@ -1,4 +1,4 @@
-import { feedback } from "../../app/constants";
+import { feedback } from "@shared/constants";
 import FeedbackCard from "./FeedbackCard";
 
 const Testimonials = () => (
