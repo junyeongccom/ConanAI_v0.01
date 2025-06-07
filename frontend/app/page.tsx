@@ -7,7 +7,7 @@ import Link from 'next/link';
 import ChatbotLauncher from './components/ChatbotLauncher';
 
 const SLIDES = [
-  { label: '재무 DSD', href: '/dashboard/table/separate-balancesheet' },
+  { label: '재무 DSD', href: '/features/financial-dsd' },
   { label: 'ESG DSD', href: '/features/esg-dsd' },
   { label: '지역별 기후리스크 평가', href: '/features/climate-risk' },
 ];
