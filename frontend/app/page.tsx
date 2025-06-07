@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
 import Link from 'next/link';
-import ChatbotLauncher from './components/ChatbotLauncher';
+import ChatbotLauncher from './components/common/ChatbotLauncher';
 
 const SLIDES = [
   { label: '재무 DSD', href: '/features/financial-dsd' },

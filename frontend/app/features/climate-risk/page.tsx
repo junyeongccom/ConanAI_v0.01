@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import ProvinceMap from '../../components/ProvinceMap';
+import React, { useState, useEffect } from 'react';
+import ProvinceMap from '../../components/climate-risk/ProvinceMap';
 import MunicipalityMap from '../../components/MunicipalityMap';
 
 interface HeatwaveData {
@@ -251,17 +251,8 @@ export default function ClimateRiskPage() {
   };
 
   // 지도에서 시도 선택 시 호출되는 함수 (통합된 단일 setState)
-  const handleProvinceSelect = (name: string, bounds: any, code?: string) => {
-    console.log('Province selected:', name, 'with code:', code);
-    
-    // 지도에서 클릭한 지역명을 DB 지역명으로 매핑
-    const dbRegionName = mapRegionNameForDB(name);
-    console.log('Mapped region name for DB:', dbRegionName);
-    
-    // 단일 setState로 React 배치 처리 최적화
-    setProvinceInfo({ name, bounds, code });
-    // 선택된 시도를 기후 데이터 지역으로도 설정 (DB 매핑된 이름 사용)
-    setSelectedRegion(dbRegionName);
+  const handleProvinceSelect = (provinceInfo: ProvinceInfo) => {
+    setProvinceInfo(provinceInfo);
   };
 
   return (
@@ -352,10 +343,6 @@ export default function ClimateRiskPage() {
             <div className="flex-1 min-h-0">
               <ProvinceMap
                 onProvinceSelect={handleProvinceSelect}
-                selectedProvince={provinceInfo.name}
-                riskData={mapRiskData}
-                scenario={selectedScenario}
-                year="2030"
               />
             </div>
             
