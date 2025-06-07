@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
-import "./styles/globals.css";
-import NavBar from "./components/NavBar";
-import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import "@shared/styles/globals.css";
+import NavBar from "@shared/components/common/NavBar";
+import PWAInstallPrompt from "@shared/components/common/PWAInstallPrompt";
 
 const poppins = Poppins({
   subsets: ["latin"],
