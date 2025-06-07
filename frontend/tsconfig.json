@@ -22,10 +22,11 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["app/*"],
+      "@features/*": ["features/*"],
+      "@shared/*": ["shared/*"]
     },
     "strictNullChecks": true
   },
