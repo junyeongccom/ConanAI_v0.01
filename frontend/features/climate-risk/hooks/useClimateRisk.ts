@@ -51,7 +51,7 @@ export const useClimateRisk = () => {
     try {
       console.log(`🗺️ 지도 위험도 데이터 조회: ${selectedScenario}`);
       
-      const riskData = await climateRiskApi.fetchMapRiskData(selectedScenario);
+      const riskData = await climateRiskApi.fetchMapRisk(selectedScenario);
       setMapRiskData(riskData);
       console.log('✅ 실제 지도 변화량 데이터 적용:', riskData);
     } catch (error) {
