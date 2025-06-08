@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import L from 'leaflet';
+import { MapRiskResponse, MapRiskData } from '../types';
+import { climateRiskApi } from '../services/api';
 
 // Leaflet 컴포넌트들을 동적 import
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
@@ -32,16 +34,16 @@ interface ProvinceMapProps {
 
 export default function ProvinceMap({ selectedScenario, onProvinceSelect }: ProvinceMapProps) {
   const [provincesData, setProvincesData] = useState<any>(null);
-  const [riskData, setRiskData] = useState<any>(null);
+  const [riskData, setRiskData] = useState<MapRiskData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 위험도에 따른 색상 반환
+  // 위험도에 따른 색상 반환 (사용자 요청에 따라 조정)
   const getRiskColor = (changeAmount: number): string => {
-    if (changeAmount >= 21) return '#dc2626'; // 매우 높음 (21일+) - 빨간색
-    if (changeAmount >= 16) return '#a16207'; // 높음 (16-20일) - 갈색
-    if (changeAmount >= 11) return '#ea580c'; // 보통 (11-15일) - 주황색
-    return '#eab308'; // 낮음 (0-10일) - 노란색
+    if (changeAmount >= 21) return '#dc2626'; // 매우 높음 (21일+)
+    if (changeAmount >= 16) return '#ea580c'; // 높음 (16-20일)
+    if (changeAmount >= 11) return '#fbbf24'; // 보통 (11-15일) - 기존 낮음 색상 사용
+    return '#fef3c7'; // 낮음 (0-10일) - 더 옅은 노란색
   };
 
   // 위험도 레벨 텍스트 반환
@@ -58,17 +60,6 @@ export default function ProvinceMap({ selectedScenario, onProvinceSelect }: Prov
       setError(null);
       
       try {
-                 // 시나리오를 API 형식으로 변환
-         const getApiScenario = (scenario: string) => {
-           const scenarioMap: { [key: string]: string } = {
-             'SSP1-2.6': 'ssp1-2.6',
-             'SSP2-4.5': 'ssp2-4.5', 
-             'SSP3-7.0': 'ssp3-7.0',
-             'SSP5-8.5': 'ssp5-8.5'
-           };
-           return scenarioMap[scenario] || 'ssp2-4.5';
-         };
-
                  // 지도 데이터 로드
          const geoResponse = await fetch('/maps/skorea-provinces-2018-geo.json');
         if (!geoResponse.ok) {
@@ -77,70 +68,17 @@ export default function ProvinceMap({ selectedScenario, onProvinceSelect }: Prov
         const geoData = await geoResponse.json();
         setProvincesData(geoData);
 
-                 // 위험도 데이터 로드 시도
-         const apiScenario = getApiScenario(selectedScenario);
-         console.log('=== 시나리오 변환 ===');
+                 // 위험도 데이터 로드 시도 (수정된 버전)
+         console.log('=== API 호출 ===');
          console.log('선택된 시나리오:', selectedScenario);
-         console.log('API 시나리오:', apiScenario);
-         console.log('API 호출:', `http://localhost:8000/api/climate-risk/heatwave-days?scenario=${apiScenario}`);
         
-        try {
-          const riskResponse = await fetch(`http://localhost:8000/api/climate-risk/heatwave-days?scenario=${apiScenario}`);
-          
-          if (riskResponse.ok) {
-            const apiData = await riskResponse.json();
-            console.log('API 응답 성공:', apiData);
-            
-                         if (apiData.status === 'success' && apiData.data) {
-               console.log('✅ 실제 API 데이터 사용:', apiData.data.length, '개 지역');
-               setRiskData(apiData.data);
-             } else {
-               throw new Error('API 응답 형식이 올바르지 않습니다.');
-             }
-          } else {
-            throw new Error(`API 호출 실패: ${riskResponse.status}`);
-          }
-        } catch (apiError) {
-          console.warn('API 호출 실패, 목 데이터 사용:', apiError);
-          
-          // API 실패 시 목 데이터 사용
-          const getMockRiskData = (scenario: string) => {
-            const baseData = [
-              { region: '경기도', avg_change_amount: 15.7 },
-              { region: '경상남도', avg_change_amount: 13.3 },
-              { region: '경상북도', avg_change_amount: 12.6 },
-              { region: '전라남도', avg_change_amount: 12.6 },
-              { region: '충청남도', avg_change_amount: 15.6 },
-              { region: '충청북도', avg_change_amount: 17.1 },
-              { region: '광주광역시', avg_change_amount: 17.2 },
-              { region: '대구광역시', avg_change_amount: 17.5 },
-              { region: '대전광역시', avg_change_amount: 19.7 },
-              { region: '부산광역시', avg_change_amount: 10.6 },
-              { region: '서울특별시', avg_change_amount: 17.5 },
-              { region: '울산광역시', avg_change_amount: 9.9 },
-              { region: '인천광역시', avg_change_amount: 11.0 },
-              { region: '강원특별자치도', avg_change_amount: 8.5 },
-              { region: '세종특별자치시', avg_change_amount: 17.2 },
-              { region: '전북특별자치도', avg_change_amount: 15.9 },
-              { region: '제주특별자치도', avg_change_amount: 7.8 }
-            ];
-
-                         // 시나리오별 변화량 조정 (명확한 차이)
-             const multiplier = scenario === 'SSP1-2.6' ? 0.6 : 
-                              scenario === 'SSP2-4.5' ? 1.0 : 
-                              scenario === 'SSP3-7.0' ? 1.4 : 1.8; // SSP5-8.5
-
-            return baseData.map(item => ({
-              ...item,
-              avg_change_amount: Math.round(item.avg_change_amount * multiplier * 10) / 10
-            }));
-          };
-
-                     const mockData = getMockRiskData(selectedScenario);
-           console.log('⚠️ 목 데이터 사용:', selectedScenario, '시나리오');
-           console.log('목 데이터 샘플:', mockData.slice(0, 2));
-           setRiskData(mockData);
-        }
+        // API 헬퍼 함수 사용
+        const riskDataArray = await climateRiskApi.fetchMapRisk(selectedScenario);
+        console.log('✅ API 응답 성공:', riskDataArray.length, '개 지역');
+        
+        // res.data.data 배열을 riskData 상태에 저장
+        setRiskData(riskDataArray);
+        console.log('📊 데이터 설정 완료:', riskDataArray.length, '개 지역');
 
       } catch (err) {
         console.error('데이터 로드 에러:', err);
@@ -153,53 +91,62 @@ export default function ProvinceMap({ selectedScenario, onProvinceSelect }: Prov
     loadData();
   }, [selectedScenario]);
 
+  // 지역명 매핑 테이블 - GeoJSON 이름 → 백엔드 API 이름
+  const REGION_NAME_MAP: { [key: string]: string } = {
+    '서울특별시': '서울특별시',
+    '부산광역시': '부산광역시', 
+    '대구광역시': '대구광역시',
+    '인천광역시': '인천광역시',
+    '광주광역시': '광주광역시',
+    '대전광역시': '대전광역시',
+    '울산광역시': '울산광역시',
+    '세종특별자치시': '세종특별자치시',
+    '경기도': '경기도',
+    '강원도': '강원특별자치도',
+    '충청북도': '충청북도',
+    '충청남도': '충청남도',
+    '전라북도': '전북특별자치도',
+    '전라남도': '전라남도',
+    '경상북도': '경상북도',
+    '경상남도': '경상남도',
+    '제주특별자치도': '제주특별자치도'
+  };
+
+  // 지역명 매핑 함수
+  const getBackendRegionName = (geoJsonName: string): string => {
+    return REGION_NAME_MAP[geoJsonName] || geoJsonName;
+  };
+
   const geoJsonStyle = (feature: any) => {
     if (!feature || !riskData) {
-      console.log('No feature or riskData:', { feature: !!feature, riskData: !!riskData });
       return { fillColor: '#gray', weight: 1, opacity: 1, color: '#666', fillOpacity: 0.5 };
     }
     
+    // riskData는 이미 MapRiskData[] 타입
+    const riskArray = riskData || [];
+    
     // 다양한 속성명으로 지역명 찾기
-    const provinceName = feature.properties.prov_name || 
+    const provinceName = feature.properties.CTP_KOR_NM || 
+                        feature.properties.prov_name || 
                         feature.properties.name || 
-                        feature.properties.CTP_KOR_NM || 
-                        feature.properties.CTPRVN_CD ||
                         feature.properties.sido ||
+                        feature.properties.CTPRVN_CD ||
                         'Unknown';
     
-    // riskData가 배열인지 확인
-    const riskArray = Array.isArray(riskData) ? riskData : (riskData.data || []);
+    // 지역명 매핑
+    const backendRegionName = getBackendRegionName(provinceName);
     
-    // 지역명으로 데이터 찾기 (백엔드 응답의 region 필드 사용)
-    let riskInfo = riskArray.find((item: any) => item.region === provinceName);
+    // 매핑된 이름으로 데이터 찾기
+    const riskInfo = riskArray.find((item: MapRiskData) => item.region === backendRegionName);
     
-    // 매칭 실패 시 부분 매칭 시도
-    if (!riskInfo) {
-      riskInfo = riskArray.find((item: any) => {
-        const itemRegion = item.region || '';
-        return itemRegion.includes(provinceName) || provinceName.includes(itemRegion);
-      });
-    }
-    
-    // 특별한 경우 매핑
-    if (!riskInfo) {
-      const regionMapping: { [key: string]: string } = {
-        '강원도': '강원특별자치도',
-        '강원특별자치도': '강원도',
-        '전라북도': '전북특별자치도',
-        '전북특별자치도': '전라북도'
-      };
-      
-      const mappedName = regionMapping[provinceName];
-      if (mappedName) {
-        riskInfo = riskArray.find((item: any) => item.region === mappedName);
-      }
+    // 매칭 실패 시 디버깅 로그 (개발 환경에서만)
+    if (!riskInfo && process.env.NODE_ENV === 'development') {
+      console.log(`❌ 매칭 실패: "${provinceName}" → "${backendRegionName}"`);
+      console.log('백엔드 지역들:', riskArray.map(item => item.region));
     }
     
     const changeAmount = riskInfo ? riskInfo.avg_change_amount : 0;
     const color = getRiskColor(changeAmount);
-    
-    console.log(`Province: ${provinceName}, Found: ${!!riskInfo}, Change: ${changeAmount}, Color: ${color}`);
     
     return {
       fillColor: color,
@@ -214,41 +161,21 @@ export default function ProvinceMap({ selectedScenario, onProvinceSelect }: Prov
     if (!riskData) return;
     
     // 다양한 속성명으로 지역명 찾기
-    const provinceName = feature.properties.prov_name || 
+    const provinceName = feature.properties.CTP_KOR_NM || 
+                        feature.properties.prov_name || 
                         feature.properties.name || 
-                        feature.properties.CTP_KOR_NM || 
-                        feature.properties.CTPRVN_CD ||
                         feature.properties.sido ||
+                        feature.properties.CTPRVN_CD ||
                         'Unknown';
     
-    // riskData가 배열인지 확인
-    const riskArray = Array.isArray(riskData) ? riskData : (riskData.data || []);
+    // riskData는 이미 MapRiskData[] 타입
+    const riskArray = riskData || [];
     
-    // 지역명으로 데이터 찾기 (백엔드 응답의 region 필드 사용)
-    let riskInfo = riskArray.find((item: any) => item.region === provinceName);
+    // 지역명 매핑
+    const backendRegionName = getBackendRegionName(provinceName);
     
-    // 매칭 실패 시 부분 매칭 시도
-    if (!riskInfo) {
-      riskInfo = riskArray.find((item: any) => {
-        const itemRegion = item.region || '';
-        return itemRegion.includes(provinceName) || provinceName.includes(itemRegion);
-      });
-    }
-    
-    // 특별한 경우 매핑
-    if (!riskInfo) {
-      const regionMapping: { [key: string]: string } = {
-        '강원도': '강원특별자치도',
-        '강원특별자치도': '강원도',
-        '전라북도': '전북특별자치도',
-        '전북특별자치도': '전라북도'
-      };
-      
-      const mappedName = regionMapping[provinceName];
-      if (mappedName) {
-        riskInfo = riskArray.find((item: any) => item.region === mappedName);
-      }
-    }
+    // 매핑된 이름으로 데이터 찾기
+    const riskInfo = riskArray.find((item: MapRiskData) => item.region === backendRegionName);
     
     const changeAmount = riskInfo ? riskInfo.avg_change_amount : 0;
     const riskLevel = getRiskLevel(changeAmount);
@@ -319,10 +246,15 @@ export default function ProvinceMap({ selectedScenario, onProvinceSelect }: Prov
     );
   }
 
-  console.log('=== RENDER CHECK ===');
-  console.log('provincesData exists:', !!provincesData);
-  console.log('riskData exists:', !!riskData);
-  console.log('riskData length:', riskData?.length || 0);
+  // 개발 환경에서만 렌더링 상태 확인
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🗺️ 렌더링 상태:', {
+      provincesData: !!provincesData,
+      riskData: !!riskData,
+      riskDataLength: riskData?.length || 0,
+      scenario: selectedScenario
+    });
+  }
 
   return (
     <div className="relative w-full h-full">

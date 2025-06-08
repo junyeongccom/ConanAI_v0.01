@@ -4,8 +4,8 @@ import React from 'react';
 
 export default function ClimateRiskLegend() {
   const legendItems = [
-    { color: '#fbbf24', label: '낮음 (0-10일)' },
-    { color: '#f97316', label: '보통 (11-15일)' },
+    { color: '#fef3c7', label: '낮음 (0-10일)' },
+    { color: '#fbbf24', label: '보통 (11-15일)' },
     { color: '#ea580c', label: '높음 (16-20일)' },
     { color: '#dc2626', label: '매우 높음 (21일+)' }
   ];

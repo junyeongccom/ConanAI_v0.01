@@ -72,7 +72,7 @@ export default function ClimateRiskTable({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {heatwaveData.map((item, index) => {
-            const risk = getRiskLevel(item.change_rate);
+            const risk = getRiskLevel(item.change_days);
             const isCurrentClimate = item.year === '현재기후';
             
             return (
