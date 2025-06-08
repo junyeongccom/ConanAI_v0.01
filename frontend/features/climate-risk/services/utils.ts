@@ -9,10 +9,10 @@ export const mapRegionNameForDB = (geoJsonRegionName: string): string => {
   return regionMapping[geoJsonRegionName] || geoJsonRegionName;
 };
 
-// 위험도 레벨 계산 함수
-export const getRiskLevel = (changeRate: number) => {
-  if (changeRate >= 100) return { level: '매우 높음', color: 'text-red-600 bg-red-100' };
-  if (changeRate >= 50) return { level: '높음', color: 'text-orange-600 bg-orange-100' };
-  if (changeRate >= 20) return { level: '보통', color: 'text-yellow-600 bg-yellow-100' };
+// 위험도 레벨 계산 함수 (폭염일수 변화량 기준)
+export const getRiskLevel = (changeAmount: number) => {
+  if (changeAmount >= 21) return { level: '매우 높음', color: 'text-red-600 bg-red-100' };
+  if (changeAmount >= 16) return { level: '높음', color: 'text-orange-600 bg-orange-100' };
+  if (changeAmount >= 11) return { level: '보통', color: 'text-yellow-600 bg-yellow-100' };
   return { level: '낮음', color: 'text-green-600 bg-green-100' };
 }; 
