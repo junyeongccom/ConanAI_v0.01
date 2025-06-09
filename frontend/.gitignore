@@ -1,18 +1,77 @@
-# dependencies
+# Dependencies
 node_modules/
+/.pnp
+.pnp.js
 
-# build
-.next/
-dist/
+# Testing
+/coverage
 
-# env
+# Next.js
+/.next/
+/out/
+
+# Production build
+/build
+/dist
+
+# Environment variables
 .env
-.env.local
+.env*.local
 
-# system
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
 *.log
 
-# yarn
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+
+# Package manager files
 .yarn/
 .yarnrc.yml
+.pnpm-debug.log*
+
+# PWA files (keep generated ones)
+public/sw.js.map
+public/workbox-*.js.map
+
+# Keep all source files in src/ directory
+!src/**/*
+
+# Keep important config files
+!*.config.js
+!*.config.ts
+!*.json
+!*.md
