@@ -1,4 +1,9 @@
-# Python
+# =============================================================================
+# AWS DevOps 프로젝트 - Sky-C 기후리스크 평가 시스템
+# =============================================================================
+
+# Python 관련
+# -----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -19,59 +24,195 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.pyc
+*.pyo
+*.pyd
 
-# Virtual Environment
+# Python Virtual Environment
+# -----------------------------------------------------------------------------
 venv/
 env/
 ENV/
-.env
-**/.env
+.venv/
+pyvenv.cfg
 
-# Environment and config files
+# Node.js 관련 (Frontend)
+# -----------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn/
+.yarnrc.yml
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Next.js (Frontend)
+# -----------------------------------------------------------------------------
+.next/
+out/
+build/
+.swc/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment Variables
+# -----------------------------------------------------------------------------
 .env
+.env.*
+!.env.example
 **/.env
+**/.env.*
+!**/.env.example
+
+# MCP Configuration
+# -----------------------------------------------------------------------------
 .cursor/mcp.json
+**/cursor/mcp.json
 stocktrend_service/.cursor/mcp.json
 
-# IDE
+# IDE 및 Editor
+# -----------------------------------------------------------------------------
 .idea/
 .vscode/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
+.vim/
+.nvim/
 
-# Docker
+# Docker 관련
+# -----------------------------------------------------------------------------
 .docker/
 docker-compose.override.yml
+.dockerignore
+*.dockerfile.local
+
+# Kubernetes 관련
+# -----------------------------------------------------------------------------
+*.kubeconfig
+.kube/
+helm-charts/*/charts/
+helm-charts/*/Chart.lock
+
+# AWS 관련
+# -----------------------------------------------------------------------------
+.aws/
+*.pem
+*.key
+aws-credentials
 
 # Logs
+# -----------------------------------------------------------------------------
 *.log
 logs/
+log/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # Database
+# -----------------------------------------------------------------------------
 *.db
+*.sqlite
 *.sqlite3
+*.db-journal
 
-# OS
+# OS 관련
+# -----------------------------------------------------------------------------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Project specific
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-*.dll
-*.dylib
+# 압축 파일
+# -----------------------------------------------------------------------------
 *.zip
 *.tar.gz
+*.tar.bz2
 *.rar
 *.7z
+*.gz
+*.bz2
 
-# DART documents
+# 임시 파일
+# -----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.*.tmp
+.tmp/
+temp/
+
+# 바이너리 파일
+# -----------------------------------------------------------------------------
+*.dll
+*.dylib
+*.exe
+*.o
+*.obj
+
+# 프로젝트별 제외
+# -----------------------------------------------------------------------------
+# DART 문서 관련
 dart_documents/
 dart_documents/extracted/
 
-# Taskmaster service (전체 디렉토리 제외)
+# Taskmaster 서비스 (전체 디렉토리 제외)
 taskmaster/
+
+# 테스트 및 커버리지
+# -----------------------------------------------------------------------------
+coverage/
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+.nyc_output
+
+# 캐시 디렉토리
+# -----------------------------------------------------------------------------
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# 런타임 데이터
+# -----------------------------------------------------------------------------
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# 선택적 npm 캐시 디렉토리
+# -----------------------------------------------------------------------------
+.npm
+
+# 모니터링 및 프로파일링
+# -----------------------------------------------------------------------------
+.vscode-test
+
+# 백업 파일
+# -----------------------------------------------------------------------------
+*.bak
+*.backup
+*.old
+
+# 로컬 개발용 오버라이드 파일
+# -----------------------------------------------------------------------------
+docker-compose.local.yml
+*.local.js
+*.local.ts
+*.local.json
 
