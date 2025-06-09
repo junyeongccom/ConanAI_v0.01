@@ -22,22 +22,21 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
+    "baseUrl": "src",
     "paths": {
       "@/*": ["app/*"],
-      "@features/*": ["features/*"],
-      "@shared/*": ["shared/*"]
+      "@/domain/*": ["domain/*"],
+      "@/shared/*": ["shared/*"]
     },
     "strictNullChecks": true
   },
   "include": [
+    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    ".next"
+    "node_modules"
   ]
 }

@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path')
+
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -26,6 +28,31 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   // output: 'standalone' 제거 - Windows symlink 권한 문제 해결
+  
+  // src 디렉토리 명시적 지원
+  experimental: {
+    typedRoutes: true,
+  },
+  
+  // 절대 경로 alias 설정
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, 'src'),
+      '@domain': path.resolve(__dirname, 'src/domain'),
+      '@shared': path.resolve(__dirname, 'src/shared'),
+    }
+    return config
+  },
+  
+  // 이미지 최적화 설정
+  images: {
+    domains: ['localhost'],
+    unoptimized: process.env.NODE_ENV === 'development',
+  },
+  
+  // 명시적으로 src 디렉토리 사용 설정
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
 }
 
 module.exports = withPWA(nextConfig)
