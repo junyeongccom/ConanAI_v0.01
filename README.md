@@ -62,6 +62,18 @@ sky-c/
 │       ├── domain/                # 도메인 로직
 │       └── main.py                # FastAPI 애플리케이션
 │
+├── 💰 finimpact-service/          # 재무영향 분석 서비스 (포트: 8082)
+│   └── app/
+│       ├── api/                   # API 엔드포인트
+│       ├── domain/                # 도메인 로직
+│       │   ├── controller/        # 컨트롤러 레이어
+│       │   ├── service/           # 비즈니스 로직
+│       │   ├── repository/        # 데이터 액세스
+│       │   └── model/             # 도메인 모델
+│       ├── foundation/            # 기반 설정
+│       ├── platform/              # 플랫폼 레이어
+│       └── main.py                # FastAPI 애플리케이션
+│
 ├── 🌡️ climate-service/            # 기후리스크 분석 서비스 (포트: 8087)
 │   └── app/
 │       ├── api/                   # API 엔드포인트
@@ -187,6 +199,27 @@ gateway-service/app/
 - 컨텍스트 기반 대화 관리
 - 기후리스크 관련 질의응답
 
+### 💰 Finance Impact Service (포트: 8082)
+**역할**: 폭염으로 인한 잠재적 재무영향 산출 서비스
+
+**주요 기능**:
+- 산업 유형별(제조업, 건설업, 반도체 등) 폭염 재무영향 계산
+- climate-service와의 데이터 연동을 통한 지역별 폭염일수 활용
+- TCFD 관련 데이터 기반 재무영향 모델링
+- 기업별 맞춤형 리스크 평가 및 보고서 생성
+
+**DDD 구조**:
+```python
+finimpact-service/app/
+├── domain/
+│   ├── controller/              # 요청 처리 및 응답 관리
+│   ├── service/                 # 비즈니스 로직 구현
+│   ├── repository/              # 데이터 액세스 레이어
+│   └── model/                   # 도메인 엔티티 및 스키마
+├── foundation/                  # 기반 설정 (DB, 로깅 등)
+└── platform/                   # 플랫폼 레이어 (외부 연동)
+```
+
 ### 🌡️ Climate Service (포트: 8087)
 **역할**: 기후리스크 분석 및 평가 핵심 서비스
 
@@ -250,6 +283,7 @@ make up
 
 # 특정 서비스만 실행
 make up-chatbot
+make up-finimpact
 make up-climate
 
 # 로그 확인
@@ -317,7 +351,8 @@ make up-chatbot
 각 서비스의 OpenAPI 문서는 다음 URL에서 확인할 수 있습니다:
 
 - **Gateway**: http://localhost:8080/docs
-- **Chatbot**: http://localhost:8081/docs  
+- **Chatbot**: http://localhost:8081/docs
+- **Finance Impact**: http://localhost:8082/docs
 - **Climate**: http://localhost:8087/docs
 - **Frontend**: http://localhost:3000
 

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finimpact
+  labels:
+    app: finimpact
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: finimpact
+  template:
+    metadata:
+      labels:
+        app: finimpact
+    spec:
+      containers:
+      - name: finimpact
+        image: aws-develope-finimpact:local
+        ports:
+        - containerPort: 8082
+        env:
+        - name: PORT
+          value: "8082"
+        - name: DATABASE_URL
+          value: "postgresql://hc_user:hc_password@postgres:5432/hc_db"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finimpact
+  labels:
+    app: finimpact
+spec:
+  selector:
+    app: finimpact
+  ports:
+  - protocol: TCP
+    port: 8082
+    targetPort: 8082
+  type: ClusterIP 

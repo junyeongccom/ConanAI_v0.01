@@ -15,12 +15,17 @@ echo "📦 Chatbot 서비스 빌드 중..."
 docker build -t aws-develope-chatbot:local ./chatbot-service
 k3d image import aws-develope-chatbot:local -c $CLUSTER_NAME
 
-# 3. n8n 서비스 빌드
+# 3. Finance Impact 서비스 빌드
+echo "📦 Finance Impact 서비스 빌드 중..."
+docker build -t aws-develope-finimpact:local ./finimpact-service
+k3d image import aws-develope-finimpact:local -c $CLUSTER_NAME
+
+# 4. n8n 서비스 빌드
 echo "📦 n8n 서비스 빌드 중..."
 docker build -t n8n-custom:latest ./n8n-service
 k3d image import n8n-custom:latest -c $CLUSTER_NAME
 
-# 4. Frontend 빌드
+# 5. Frontend 빌드
 echo "📦 Frontend 빌드 중..."
 docker build -t aws-develope-frontend:local ./frontend
 k3d image import aws-develope-frontend:local -c $CLUSTER_NAME
@@ -30,5 +35,6 @@ echo ""
 echo "📋 빌드된 이미지들:"
 echo "  - aws-develope-gateway:local"
 echo "  - aws-develope-chatbot:local"
+echo "  - aws-develope-finimpact:local"
 echo "  - n8n-custom:latest"
 echo "  - aws-develope-frontend:local" 

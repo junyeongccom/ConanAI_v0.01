@@ -22,11 +22,13 @@ kubectl apply -f n8n-secrets.yaml
 echo "📦 백엔드 서비스들 배포 중..."
 kubectl apply -f gateway.yaml
 kubectl apply -f chatbot.yaml
+kubectl apply -f finimpact.yaml
 
 # 백엔드 서비스들이 준비될 때까지 대기
 echo "⏳ 백엔드 서비스들 준비 대기 중..."
 kubectl wait --for=condition=ready pod -l app=gateway --timeout=60s
 kubectl wait --for=condition=ready pod -l app=chatbot --timeout=60s
+kubectl wait --for=condition=ready pod -l app=finimpact --timeout=60s
 
 # 4. n8n 서비스 배포
 echo "📦 n8n 서비스 배포 중..."
