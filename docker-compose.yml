@@ -43,36 +43,20 @@ services:
     networks:
       - app-network
 
-  dsdgen:
+  chatbot:
     build:
-      context: ./dsdgen-service
+      context: ./chatbot-service
       dockerfile: Dockerfile
     ports:
-      - "8085:8085"
+      - "8081:8081"
     env_file:
-      - ./dsdgen-service/.env
-    environment:
-      - N8N_WEBHOOK_URL=http://n8n:5678/webhook/slack-notification
+      - ./chatbot-service/.env
     depends_on:
       - postgres
-      - n8n
     networks:
       - app-network
 
-  dsdcheck:
-    build:
-      context: ./dsdcheck-service
-      dockerfile: Dockerfile
-    ports:
-      - "8086:8086"
-    volumes:
-      - ./dsdcheck-service/app/resources:/app/app/resources
-    env_file:
-      - ./dsdcheck-service/.env
-    depends_on:
-      - postgres
-    networks:
-      - app-network
+
 
   climate-service:
     build:

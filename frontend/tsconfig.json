@@ -24,9 +24,9 @@
     ],
     "baseUrl": "src",
     "paths": {
-      "@/*": ["app/*"],
-      "@/domain/*": ["domain/*"],
-      "@/shared/*": ["shared/*"]
+      "@/*": ["./*"],
+      "@domain/*": ["domain/*"],
+      "@shared/*": ["shared/*"]
     },
     "strictNullChecks": true
   },

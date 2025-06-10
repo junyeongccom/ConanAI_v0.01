@@ -51,8 +51,8 @@ app.add_middleware(
 # ✅ 메인 라우터 생성
 gateway_router = APIRouter(prefix="/api", tags=["gateway"])
 
-# ✅ 파일이 필요한 서비스 목록
-FILE_REQUIRED_SERVICES = {ServiceType.DSDGEN, ServiceType.DSDCHECK, ServiceType.ESGDSD, ServiceType.IRSUMMARY}
+# ✅ 파일이 필요한 서비스 목록 (현재는 없음)
+FILE_REQUIRED_SERVICES = set()
 
 # ✅ 유틸리티 함수: 요청 처리 결과 반환
 def create_response(response):
@@ -128,7 +128,7 @@ async def proxy_post(
         
         # 파일이 필요한 서비스 처리
         if service in FILE_REQUIRED_SERVICES:
-            # dsdgen, dsdcheck, esgdsd, irsummary와 같이 파일이 필요한 서비스인 경우
+            # 파일이 필요한 서비스인 경우
             
             # 서비스 URI가 upload인 경우만 파일 체크
             if "upload" in path and not file:

@@ -3,18 +3,12 @@ import os
 from enum import Enum
 
 class ServiceType(str, Enum):
-    STOCKTREND = "stocktrend"
-    IRSUMMARY = "irsummary"
     CHATBOT = "chatbot"
-    ESGDSD = "esgdsd"
-    DSDGEN = "dsdgen"
-    DSDCHECK = "dsdcheck"
+    CLIMATE = "climate-service"
+    N8N = "n8n"
 
 SERVICE_URLS = {
-    ServiceType.STOCKTREND: os.getenv("STOCKTREND_SERVICE_URL", "http://stocktrend:8081"),
-    ServiceType.IRSUMMARY: os.getenv("IRSUMMARY_SERVICE_URL", "http://irsummary:8083"),
-    ServiceType.CHATBOT: os.getenv("CHATBOT_SERVICE_URL", "http://chatbot:8082"),
-    ServiceType.ESGDSD: os.getenv("ESGDSD_SERVICE_URL", "http://esgdsd:8084"),
-    ServiceType.DSDGEN: os.getenv("DSDGEN_SERVICE_URL", "http://dsdgen:8085"),
-    ServiceType.DSDCHECK: os.getenv("DSDCHECK_SERVICE_URL", "http://dsdcheck:8086"),
+    ServiceType.CHATBOT: os.getenv("CHATBOT_SERVICE_URL", "http://chatbot:8081"),
+    ServiceType.CLIMATE: os.getenv("CLIMATE_SERVICE_URL", "http://climate-service:8087"),
+    ServiceType.N8N: os.getenv("N8N_SERVICE_URL", "http://n8n:5678"),
 }
