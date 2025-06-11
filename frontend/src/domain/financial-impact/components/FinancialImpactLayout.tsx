@@ -24,28 +24,28 @@ const mockCalculateFinancialImpact = (input: FinancialImpactInput): FinancialImp
 
     const salesLoss = (employeeCount || 0) * (hourlyProductionValuePerPerson || 0) * (workHourReductionPerDay || 0) * heatwaveDays;
     details.push({ 
-      category: 'Production Loss Due to Reduced Productivity', 
+      category: '생산성 저하로 인한 생산 손실', 
       amount: salesLoss, 
-      formula: 'Employees × Hourly Production Value × Work Hour Reduction × Heatwave Days',
-      explanation: 'Heatwaves reduce worker productivity leading to decreased production and revenue loss.' 
+      formula: '직원 수 × 시간당 생산 가치 × 작업 시간 감소 × 폭염 일수',
+      explanation: '폭염으로 인한 근로자 생산성 저하로 생산량 감소 및 매출 손실이 발생합니다.' 
     }); 
     totalImpact += salesLoss;
 
     const additionalPowerCost = ((normalDailyPowerConsumptionKWh || 0) * ((powerConsumptionIncreaseRate || 0) / 100)) * (electricityUnitPrice || 0) * heatwaveDays;
     details.push({ 
-      category: 'Increased Power Costs (Cooling Energy)', 
+      category: '전력비용 증가 (냉방 에너지)', 
       amount: additionalPowerCost, 
-      formula: '(Normal Power Usage × Increase Rate) × Electricity Price × Heatwave Days',
-      explanation: 'Additional energy consumption for cooling and equipment during heatwaves increases electricity costs.' 
+      formula: '(평상시 전력 사용량 × 증가율) × 전기 요금 × 폭염 일수',
+      explanation: '폭염 시 냉방 및 장비 운영을 위한 추가 전력 소비로 전기료가 증가합니다.' 
     }); 
     totalImpact += additionalPowerCost;
 
     const supplyCost = (employeeCount || 0) * (dailySupplyCostPerPerson || 0) * heatwaveDays;
     details.push({ 
-      category: 'Increased Supply Costs', 
+      category: '물품 지급비용 증가', 
       amount: supplyCost, 
-      formula: 'Employees × Daily Supply Cost per Person × Heatwave Days',
-      explanation: 'Companies must provide additional protective equipment and cooling supplies for worker safety.' 
+      formula: '직원 수 × 1인당 일일 물품비용 × 폭염 일수',
+      explanation: '근로자 안전을 위해 추가 보호장비 및 냉방용품을 지급해야 합니다.' 
     }); 
     totalImpact += supplyCost;
   }
@@ -84,7 +84,7 @@ const FinancialImpactLayout: React.FC = () => {
 
   const handleCalculate = async () => {
     if (!industryType || !region) {
-      alert('Please select industry type and region.');
+      alert('산업 유형과 지역을 선택해주세요.');
       return;
     }
 
@@ -113,13 +113,13 @@ const FinancialImpactLayout: React.FC = () => {
     const labelClasses = "block text-sm font-medium text-gray-700 mb-1";
 
     const manufacturingFields = [
-        { key: 'employeeCount', label: 'Employee Count' },
-        { key: 'hourlyProductionValuePerPerson', label: 'Hourly Production Value per Person (KRW)' },
-        { key: 'workHourReductionPerDay', label: 'Work Hour Reduction per Day (hours)' },
-        { key: 'normalDailyPowerConsumptionKWh', label: 'Normal Daily Power Consumption (kWh)' },
-        { key: 'powerConsumptionIncreaseRate', label: 'Power Consumption Increase Rate (%)' },
-        { key: 'electricityUnitPrice', label: 'Electricity Unit Price (KRW/kWh)' },
-        { key: 'dailySupplyCostPerPerson', label: 'Daily Supply Cost per Person (KRW)' },
+        { key: 'employeeCount', label: '직원 수' },
+        { key: 'hourlyProductionValuePerPerson', label: '1인당 시간당 생산 가치 (원)' },
+        { key: 'workHourReductionPerDay', label: '일일 작업시간 감소량 (시간)' },
+        { key: 'normalDailyPowerConsumptionKWh', label: '평상시 일일 전력 소비량 (kWh)' },
+        { key: 'powerConsumptionIncreaseRate', label: '전력 소비 증가율 (%)' },
+        { key: 'electricityUnitPrice', label: '전기 단가 (원/kWh)' },
+        { key: 'dailySupplyCostPerPerson', label: '1인당 일일 물품 지급비용 (원)' },
     ];
 
     let fieldsToRender: { key: string; label: string; }[] = [];
@@ -154,11 +154,11 @@ const FinancialImpactLayout: React.FC = () => {
     <div className="flex h-full w-full bg-gray-50">
       {/* Left Panel: Input Form */}
       <aside className="w-1/3 p-6 border-r border-gray-200 bg-white shadow-sm overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-6">Financial Impact Simulation Input</h2>
+        <h2 className="text-2xl font-bold mb-6">재무영향 시뮬레이션 입력</h2>
 
         <div className="mb-6">
           <label htmlFor="industry-select" className="block text-sm font-medium text-gray-700 mb-1">
-            Select Industry Type
+            산업 유형 선택
           </label>
           <select
             id="industry-select"
@@ -166,7 +166,7 @@ const FinancialImpactLayout: React.FC = () => {
             onChange={handleIndustryChange}
             value={industryType || ''}
           >
-            <option value="">-- Select Industry --</option>
+            <option value="">-- 산업 선택 --</option>
             {INDUSTRY_TYPES.map(type => (
               <option key={type.value} value={type.value}>{type.label}</option>
             ))}
@@ -176,7 +176,7 @@ const FinancialImpactLayout: React.FC = () => {
         {industryType && (
           <div className="mb-6">
             <label htmlFor="region-select" className="block text-sm font-medium text-gray-700 mb-1">
-              Select Business Location
+              사업장 위치 선택
             </label>
             <select
               id="region-select"
@@ -184,7 +184,7 @@ const FinancialImpactLayout: React.FC = () => {
               onChange={handleRegionChange}
               value={region || ''}
             >
-              <option value="">-- Select Region --</option>
+              <option value="">-- 지역 선택 --</option>
               {MOCK_REGIONS.map(r => (
                 <option key={r.name} value={r.name}>{r.name}</option>
               ))}
@@ -195,7 +195,7 @@ const FinancialImpactLayout: React.FC = () => {
         {region && (
           <div className="mb-6">
             <label htmlFor="scenario-select" className="block text-sm font-medium text-gray-700 mb-1">
-              Select Climate Scenario
+              기후 시나리오 선택
             </label>
             <select
               id="scenario-select"
@@ -208,14 +208,14 @@ const FinancialImpactLayout: React.FC = () => {
               ))}
             </select>
             <p className="text-sm text-gray-500 mt-2">
-              Heatwave days increase for selected region ({scenario}): {getHeatwaveDaysForSelectedRegion()} days
+              선택한 지역의 폭염일수 증가 ({scenario}): {getHeatwaveDaysForSelectedRegion()}일
             </p>
           </div>
         )}
 
         {industryType && region && (
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4">Detailed Data Input</h3>
+            <h3 className="text-lg font-semibold mb-4">세부 데이터 입력</h3>
             {renderIndustrySpecificInputs()}
           </div>
         )}
@@ -225,7 +225,7 @@ const FinancialImpactLayout: React.FC = () => {
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors text-lg font-semibold"
           disabled={isLoading || !industryType || !region}
         >
-          {isLoading ? 'Calculating...' : 'Calculate Financial Impact'}
+          {isLoading ? '계산 중...' : '재무영향 계산하기'}
         </button>
       </aside>
 
@@ -235,36 +235,36 @@ const FinancialImpactLayout: React.FC = () => {
             <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-20">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-lg text-blue-600">Calculating financial impact...</p>
+                    <p className="text-lg text-blue-600">재무영향을 계산하고 있습니다...</p>
                 </div>
             </div>
         )}
 
         {result ? (
           <>
-            <h2 className="text-2xl font-bold mb-4">Financial Impact Simulation Results</h2>
+            <h2 className="text-2xl font-bold mb-4">재무영향 시뮬레이션 결과</h2>
             <div className="bg-blue-50 p-4 rounded-md mb-6">
               <p className="text-xl font-semibold text-blue-800">
-                Total Potential Financial Impact: {result.totalImpact.toLocaleString()} KRW
+                총 잠재 재무영향: {result.totalImpact.toLocaleString()}원
               </p>
             </div>
 
-            <h3 className="text-xl font-semibold mb-3">Detailed Breakdown by Category</h3>
+            <h3 className="text-xl font-semibold mb-3">카테고리별 세부 내역</h3>
             <div className="overflow-x-auto mb-6">
               <table className="min-w-full bg-white border border-gray-200 rounded-md">
                 <thead>
                   <tr className="bg-gray-100 border-b">
-                    <th className="py-2 px-4 text-left text-sm font-semibold text-gray-600">Category</th>
-                    <th className="py-2 px-4 text-left text-sm font-semibold text-gray-600">Amount</th>
-                    <th className="py-2 px-4 text-left text-sm font-semibold text-gray-600">Formula</th>
-                    <th className="py-2 px-4 text-left text-sm font-semibold text-gray-600">Explanation</th>
+                    <th className="py-2 px-4 text-left text-sm font-semibold text-gray-600">카테고리</th>
+                    <th className="py-2 px-4 text-left text-sm font-semibold text-gray-600">금액</th>
+                    <th className="py-2 px-4 text-left text-sm font-semibold text-gray-600">계산 공식</th>
+                    <th className="py-2 px-4 text-left text-sm font-semibold text-gray-600">설명</th>
                   </tr>
                 </thead>
                 <tbody>
                   {result.details.map((item, index) => (
                     <tr key={index} className="border-b hover:bg-gray-50">
                       <td className="py-2 px-4 text-sm text-gray-800">{item.category}</td>
-                      <td className="py-2 px-4 text-sm text-gray-800">{item.amount.toLocaleString()} KRW</td>
+                      <td className="py-2 px-4 text-sm text-gray-800">{item.amount.toLocaleString()}원</td>
                       <td className="py-2 px-4 text-sm text-gray-600 italic">{item.formula || 'N/A'}</td>
                       <td className="py-2 px-4 text-sm text-gray-600">{item.explanation || 'N/A'}</td>
                     </tr>
@@ -273,24 +273,24 @@ const FinancialImpactLayout: React.FC = () => {
               </table>
             </div>
 
-            <h3 className="text-xl font-semibold mb-3">Scenario Comparison & Visualization</h3>
+            <h3 className="text-xl font-semibold mb-3">시나리오 비교 및 시각화</h3>
             <div className="mb-6 p-4 border border-gray-200 rounded-md">
-                <p className="text-md font-medium text-gray-700 mb-2">Total Financial Impact Composition</p>
+                <p className="text-md font-medium text-gray-700 mb-2">총 재무영향 구성</p>
                 <div className="h-64 flex items-center justify-center bg-gray-100 rounded-md text-gray-500">
-                    Pie Chart Area (Recharts library required)
+                    파이 차트 영역 (Recharts 라이브러리 필요)
                 </div>
             </div>
 
             <button
               className="mt-6 w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 transition-colors text-lg font-semibold"
-              onClick={() => alert('Export to TCFD report feature will be implemented later.')}
+              onClick={() => alert('TCFD 보고서 내보내기 기능은 추후 구현됩니다.')}
             >
-              Export to TCFD Report
+              TCFD 보고서로 내보내기
             </button>
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">
-            <p>Please select industry type and region from the left panel and input data to calculate financial impact.</p>
+            <p>왼쪽 패널에서 산업 유형과 지역을 선택하고 데이터를 입력하여 재무영향을 계산해주세요.</p>
           </div>
         )}
       </main>
