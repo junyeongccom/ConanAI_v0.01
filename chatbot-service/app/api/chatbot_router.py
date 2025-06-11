@@ -26,7 +26,7 @@ async def chat(request: ChatRequest):
     - **status**: 요청 처리 상태
     """
     try:
-        response = generate_response(request.message)
+        response = await generate_response(request.message)
         return ChatResponse(response=response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")

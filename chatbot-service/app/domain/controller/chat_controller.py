@@ -2,5 +2,6 @@ from app.domain.service.chat_service import ChatService
 
 chat_service = ChatService()
 
-def generate_response(message: str) -> str:
-    return chat_service.get_response(message) 
+async def generate_response(message: str) -> str:
+    chat_request = {"message": message}
+    return await chat_service.generate_response(chat_request) 

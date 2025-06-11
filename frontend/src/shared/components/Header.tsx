@@ -36,7 +36,7 @@ export default function Header() {
           </div>
 
           {/* 중앙 네비게이션 메뉴 */}
-          <nav className="absolute left-1/2 transform -translate-x-1/2 hidden md:flex items-center">
+          <nav className="absolute left-1/2 transform -translate-x-1/2 hidden md:flex items-center space-x-2">
             <Link 
               href="/climate-risk" 
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
@@ -46,6 +46,16 @@ export default function Header() {
               }`}
             >
               기후리스크 평가
+            </Link>
+            <Link 
+              href="/tcfd-report" 
+              className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
+                pathname.startsWith('/tcfd-report') 
+                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+              }`}
+            >
+              TCFD보고서 생성
             </Link>
           </nav>
 

@@ -4,3 +4,8 @@ torch
 transformers
 pydantic
 python-dotenv
+peft
+bitsandbytes
+accelerate
+scipy
+sentencepiece
