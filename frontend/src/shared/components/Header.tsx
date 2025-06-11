@@ -48,6 +48,16 @@ export default function Header() {
               기후리스크 평가
             </Link>
             <Link 
+              href="/financial-impact" 
+              className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
+                pathname.startsWith('/financial-impact') 
+                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+              }`}
+            >
+              재무영향 시뮬레이션
+            </Link>
+            <Link 
               href="/tcfd-report" 
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/tcfd-report') 
