@@ -118,3 +118,32 @@ logs-climate:
 restart-climate:
 	docker-compose down climate-service && docker-compose up -d --build climate-service
 
+## training-service
+build-training:
+	docker-compose build training-service
+
+up-training:
+	docker-compose up -d training-service
+
+down-training:
+	docker-compose stop training-service
+
+logs-training:
+	docker-compose logs -f training-service
+
+restart-training:
+	docker-compose down training-service && docker-compose up -d --build training-service
+
+# 훈련 스크립트 실행 (컨테이너 내부에서)
+run-training: build-training
+	docker-compose run --rm training-service python app/train_model.py
+	# --rm: 컨테이너 실행 종료 후 자동으로 컨테이너 삭제
+	# -it: 인터랙티브 모드 (로그 확인 등)
+
+# 초기 어댑터 생성 (컨테이너 내부에서)
+generate-adapter: up-training
+	docker exec -it aws-develope-training-service-1 python app/generate_initial_adapter.py
+
+# 챗봇 테스트 (로컬 모델과 대화)
+test-chatbot: up-training
+	docker exec -it aws-develope-training-service-1 python app/test_chatbot_model.py

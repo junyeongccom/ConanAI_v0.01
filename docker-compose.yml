@@ -106,7 +106,25 @@ services:
       - ./n8n-service/workflows:/data/workflows/init
     networks:
       - app-network
-
+  training-service:
+    build: ./training-service
+    env_file:
+      - ./training-service/.env
+    volumes:
+      - ./training-service/data:/app/data 
+      - ./training-service/models:/app/models
+      - ./training-service/outputs:/app/outputs  # 훈련 결과물 저장
+      - ./training-service/logs:/app/logs        # 훈련 로그 저장
+      - ./training-service/checkpoints:/app/checkpoints  # 체크포인트 저장
+    networks:
+      - app-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1 # GPU 1개 사용
+              capabilities: [gpu] # GPU 사용 권한
 volumes:
   pgdata:
   n8n_data:

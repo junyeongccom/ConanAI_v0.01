@@ -1,9 +1,15 @@
-from fastapi import APIRouter, HTTPException
-from app.domain.controller.chat_controller import generate_response
-from app.domain.model.chat_model import ChatRequest, ChatResponse
+from fastapi import APIRouter, HTTPException, Depends, status
+from app.domain.controller.chat_controller import ChatController
+from app.domain.service.chat_service import ChatService
+from app.domain.model.chat_schema import ChatRequest, ChatResponse
 
 # 라우터 설정
 router = APIRouter()
+
+# Dependency injection을 위한 함수
+def get_chat_controller() -> ChatController:
+    """ChatController 인스턴스를 반환합니다."""
+    return ChatController()
 
 # 엔드포인트 정의
 @router.get("/hello")
@@ -13,20 +19,19 @@ async def hello_world():
     """
     return {"message": "Hello World from Chatbot Service!", "status": "success"}
 
-@router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+@router.post("/", response_model=ChatResponse, status_code=status.HTTP_200_OK)
+async def chat_with_bot(
+    request: ChatRequest,
+    controller: ChatController = Depends(get_chat_controller)
+) -> ChatResponse:
     """
-    사용자 메시지에 대한 응답을 생성합니다.
-    
-    - **message**: 사용자가 보낸 메시지
-    - **user_id**: 사용자 식별자 (선택 사항)
-    
-    **Returns**:
-    - **response**: 챗봇의 응답 메시지
-    - **status**: 요청 처리 상태
+    챗봇과 대화합니다.
     """
     try:
-        response = await generate_response(request.message)
-        return ChatResponse(response=response)
+        response = await controller.get_chatbot_response(request)
+        return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred: {e}"
+        )

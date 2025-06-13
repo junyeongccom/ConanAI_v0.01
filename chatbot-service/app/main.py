@@ -3,8 +3,6 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-
-# 라우터 임포트
 from app.api.chatbot_router import router as chatbot_router
 
 # 환경 변수 로드
