@@ -4,4 +4,8 @@ pydantic==2.5.3
 python-dotenv==1.0.0
 python-jose[jwt]==3.3.0
 httpx==0.25.2
-cryptography==41.0.4 
+cryptography==41.0.4
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+email-validator==2.1.0
+python-multipart==0.0.6 

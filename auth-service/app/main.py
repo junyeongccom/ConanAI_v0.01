@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.auth_router import auth_router
+from app.api.auth_router import router
 import uvicorn
 from dotenv import load_dotenv
 import logging
@@ -17,24 +17,30 @@ logger = logging.getLogger("auth_service")
 
 # FastAPI 애플리케이션 인스턴스 생성
 app = FastAPI(
-    title="Auth Service API",
-    description="사용자 인증 및 계정 관리 마이크로서비스",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    title="Auth Service",
+    description="Sky-C 프로젝트의 사용자 인증 및 계정 관리 서비스",
+    version="1.0.0"
 )
 
 # CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실제 배포 환경에서는 특정 도메인으로 제한하는 것이 좋습니다
+    allow_origins=["*"],  # 실제 운영에서는 특정 도메인만 허용
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# auth_router를 애플리케이션에 포함
-app.include_router(auth_router)
+# 라우터 등록
+app.include_router(router)
+
+@app.get("/")
+async def root():
+    return {"message": "Auth Service is running", "version": "1.0.0"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "auth-service"}
 
 if __name__ == "__main__":
     uvicorn.run(
