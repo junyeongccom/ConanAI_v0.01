@@ -7,7 +7,6 @@ python-multipart==0.0.6
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 asyncpg==0.29.0
-alembic==1.12.1
 
 # 데이터 검증 및 스키마
 pydantic==2.5.0
@@ -16,50 +15,8 @@ pydantic-settings==2.0.3
 # 환경변수 관리
 python-dotenv==1.0.0
 
-# 날짜/시간 처리
+# 날짜/시간 처리 (pandas 의존성)
 python-dateutil==2.8.2
 
-# HTTP 클라이언트
-httpx==0.25.2
-requests==2.31.0
-
-# 데이터 처리
+# 데이터 처리 (핵심 - CSV 파일 처리용)
 pandas==2.1.4
-numpy==1.25.2
-
-# 기후 데이터 처리 (NetCDF)
-netcdf4==1.6.5
-xarray==2023.11.0
-
-# 지리 정보 처리
-geopandas==0.14.1
-shapely==2.0.2
-
-# 엑셀 파일 처리
-openpyxl==3.1.2
-xlsxwriter==3.1.9
-
-# 로깅 및 모니터링
-structlog==23.2.0
-
-# 테스트
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-# httpx는 위에서 이미 정의됨 - 중복 제거
-
-# 코드 품질
-black==23.11.0
-flake8==6.1.0
-isort==5.12.0
-
-# 타입 체킹
-mypy==1.7.1
-
-# 보안
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-
-# 기타 유틸리티
-click==8.1.7
-rich==13.7.0 

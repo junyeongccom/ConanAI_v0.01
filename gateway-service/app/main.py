@@ -9,8 +9,11 @@ from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 from typing import List, Optional, Dict, Any
+
 from app.domain.model.service_type import ServiceType
 from app.domain.model.service_factory import ServiceProxyFactory
+from app.api.auth_proxy_router import auth_proxy_router
+from app.foundation.jwt_auth_middleware import AuthMiddleware
 
 # ✅ 로깅 설정
 logging.basicConfig(
@@ -22,6 +25,11 @@ logger = logging.getLogger("gateway-api")
 
 # ✅ .env 파일 로드
 load_dotenv()
+
+# ✅ JWT 관련 환경 변수 로드 (미들웨어와 프록시 라우터에서 사용)
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8084")
 
 # ✅ 애플리케이션 시작 시 실행
 @asynccontextmanager
@@ -47,6 +55,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ✅ JWT 인증 미들웨어 추가
+app.add_middleware(AuthMiddleware)
+
+# ✅ Google OAuth 프록시 라우터 포함 (동적 라우팅보다 먼저)
+app.include_router(auth_proxy_router, prefix="/auth", tags=["Auth Proxy"])
 
 # ✅ 메인 라우터 생성
 gateway_router = APIRouter(prefix="/api", tags=["gateway"])
@@ -80,7 +94,7 @@ def create_response(response):
             status_code=500
         )
 
-# GET - 일반 동적 라우팅
+# GET - 일반 동적 라우팅 (JWT 적용)
 @gateway_router.get("/{service}/{path:path}", summary="GET 프록시")
 async def proxy_get(
     service: ServiceType, 
@@ -89,10 +103,16 @@ async def proxy_get(
 ):
     try:
         factory = ServiceProxyFactory(service_type=service)
+        
+        # 헤더 전달 (JWT 및 사용자 ID)
+        headers = dict(request.headers)
+        if hasattr(request.state, 'user_id') and request.state.user_id:
+            headers["X-User-Id"] = str(request.state.user_id)
+        
         response = await factory.request(
             method="GET",
             path=path,
-            headers=request.headers.raw
+            headers=headers
         )
         return create_response(response)
     except Exception as e:
@@ -102,7 +122,7 @@ async def proxy_get(
             status_code=500
         )
 
-# POST - 통합 동적 라우팅 (파일 업로드 및 일반 JSON 요청 모두 처리)
+# POST - 통합 동적 라우팅 (파일 업로드 및 일반 JSON 요청 모두 처리, JWT 적용)
 @gateway_router.post("/{service}/{path:path}", summary="POST 프록시")
 async def proxy_post(
     service: ServiceType, 
@@ -125,6 +145,11 @@ async def proxy_post(
         params = None
         body = None
         data = None
+        
+        # 헤더 전달 (JWT 및 사용자 ID)
+        headers = dict(request.headers)
+        if hasattr(request.state, 'user_id') and request.state.user_id:
+            headers["X-User-Id"] = str(request.state.user_id)
         
         # 파일이 필요한 서비스 처리
         if service in FILE_REQUIRED_SERVICES:
@@ -159,7 +184,7 @@ async def proxy_post(
         response = await factory.request(
             method="POST",
             path=path,
-            headers=request.headers.raw,
+            headers=headers,
             body=body,
             files=files,
             params=params,
@@ -183,15 +208,21 @@ async def proxy_post(
             status_code=500
         )
 
-# PUT - 일반 동적 라우팅
+# PUT - 일반 동적 라우팅 (JWT 적용)
 @gateway_router.put("/{service}/{path:path}", summary="PUT 프록시")
 async def proxy_put(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceProxyFactory(service_type=service)
+        
+        # 헤더 전달 (JWT 및 사용자 ID)
+        headers = dict(request.headers)
+        if hasattr(request.state, 'user_id') and request.state.user_id:
+            headers["X-User-Id"] = str(request.state.user_id)
+        
         response = await factory.request(
             method="PUT",
             path=path,
-            headers=request.headers.raw,
+            headers=headers,
             body=await request.body()
         )
         return create_response(response)
@@ -202,15 +233,21 @@ async def proxy_put(service: ServiceType, path: str, request: Request):
             status_code=500
         )
 
-# DELETE - 일반 동적 라우팅
+# DELETE - 일반 동적 라우팅 (JWT 적용)
 @gateway_router.delete("/{service}/{path:path}", summary="DELETE 프록시")
 async def proxy_delete(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceProxyFactory(service_type=service)
+        
+        # 헤더 전달 (JWT 및 사용자 ID)
+        headers = dict(request.headers)
+        if hasattr(request.state, 'user_id') and request.state.user_id:
+            headers["X-User-Id"] = str(request.state.user_id)
+        
         response = await factory.request(
             method="DELETE",
             path=path,
-            headers=request.headers.raw,
+            headers=headers,
             body=await request.body()
         )
         return create_response(response)
@@ -221,15 +258,21 @@ async def proxy_delete(service: ServiceType, path: str, request: Request):
             status_code=500
         )
 
-# PATCH - 일반 동적 라우팅
+# PATCH - 일반 동적 라우팅 (JWT 적용)
 @gateway_router.patch("/{service}/{path:path}", summary="PATCH 프록시")
 async def proxy_patch(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceProxyFactory(service_type=service)
+        
+        # 헤더 전달 (JWT 및 사용자 ID)
+        headers = dict(request.headers)
+        if hasattr(request.state, 'user_id') and request.state.user_id:
+            headers["X-User-Id"] = str(request.state.user_id)
+        
         response = await factory.request(
             method="PATCH",
             path=path,
-            headers=request.headers.raw,
+            headers=headers,
             body=await request.body()
         )
         return create_response(response)
@@ -240,7 +283,7 @@ async def proxy_patch(service: ServiceType, path: str, request: Request):
             status_code=500
         )
 
-# ✅ 메인 라우터 등록
+# ✅ 메인 라우터 등록 (동적 라우팅)
 app.include_router(gateway_router)
 
 # 404 에러 핸들러

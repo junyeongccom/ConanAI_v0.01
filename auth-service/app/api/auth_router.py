@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.domain.service.auth_service import AuthService
 from app.domain.model.user_schema import Token
-from app.platform.database import get_db
+from app.foundation.database import get_db
 
 load_dotenv()
 
@@ -35,6 +35,35 @@ async def health_check():
     """
     return {"message": "Hello World from auth-service", "status": "healthy"}
 
+@router.get("/google/login")
+async def google_login():
+    """
+    Google OAuth 로그인을 시작합니다.
+    Google OAuth 인증 서버로 사용자를 리다이렉트합니다.
+    """
+    # Google OAuth 설정
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8080/auth/google/callback")
+    
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google Client ID가 설정되지 않았습니다."
+        )
+    
+    # Google OAuth 인증 URL 생성
+    google_auth_url = (
+        f"https://accounts.google.com/o/oauth2/auth"
+        f"?client_id={GOOGLE_CLIENT_ID}"
+        f"&redirect_uri={GOOGLE_REDIRECT_URI}"
+        f"&scope=openid email profile"
+        f"&response_type=code"
+        f"&access_type=offline"
+        f"&prompt=consent"
+    )
+    
+    return RedirectResponse(url=google_auth_url, status_code=302)
+
 @router.post("/google/callback", response_model=Token)
 async def google_callback(
     id_token: str = Form(...),
@@ -58,30 +87,50 @@ async def google_callback(
 
 @router.get("/google/callback")
 async def google_callback_get(
-    id_token: Optional[str] = Query(None),
+    code: Optional[str] = Query(None),
+    state: Optional[str] = Query(None),
+    error: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """
     Google OAuth 콜백 처리 (GET 방식)
-    프론트엔드로 토큰 전달을 위한 리다이렉트
+    Google에서 authorization code를 받아 처리하고 프론트엔드로 리다이렉트
     """
-    if not id_token:
-        # 프론트엔드 에러 페이지로 리다이렉트
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-        return RedirectResponse(url=f"{frontend_url}/auth/error?message=missing_token")
-    
-    token = await auth_service.handle_google_callback(db, id_token)
-    
-    if not token:
-        # 프론트엔드 에러 페이지로 리다이렉트
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-        return RedirectResponse(url=f"{frontend_url}/auth/error?message=auth_failed")
-    
-    # 프론트엔드 성공 페이지로 토큰과 함께 리다이렉트
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    return RedirectResponse(
-        url=f"{frontend_url}/auth/success?token={token.access_token}"
-    )
+    
+    # 에러가 있는 경우
+    if error:
+        return RedirectResponse(url=f"{frontend_url}/auth/error?message={error}")
+    
+    # authorization code가 없는 경우
+    if not code:
+        return RedirectResponse(url=f"{frontend_url}/auth/error?message=missing_code")
+    
+    try:
+        # authorization code를 사용해서 토큰 발급
+        token = await auth_service.handle_google_oauth_callback(db, code)
+        
+        if not token:
+            return RedirectResponse(url=f"{frontend_url}/auth/error?message=auth_failed")
+        
+        # 프론트엔드 성공 페이지로 토큰과 함께 리다이렉트
+        redirect_url = f"{frontend_url}/auth/success?token={token.access_token}"
+        print(f"🔄 리다이렉트 URL 생성: {redirect_url}")
+        
+        redirect_response = RedirectResponse(
+            url=redirect_url,
+            status_code=302
+        )
+        
+        # 디버깅: 응답 헤더 확인
+        print(f"🔍 RedirectResponse 헤더: {redirect_response.headers}")
+        print(f"🔍 RedirectResponse 상태 코드: {redirect_response.status_code}")
+        
+        return redirect_response
+        
+    except Exception as e:
+        print(f"Google OAuth 콜백 처리 오류: {e}")
+        return RedirectResponse(url=f"{frontend_url}/auth/error?message=server_error")
 
 @router.post("/verify")
 async def verify_token(token: str = Form(...)):

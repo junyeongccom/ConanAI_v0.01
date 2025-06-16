@@ -1,0 +1,32 @@
+import { useAuthStore, UserData } from '@/shared/store/authStore';
+import { AuthService } from '@/domain/auth/services/authService';
+
+// 인증 관련 커스텀 훅
+export function useAuth() {
+  const { isAuthenticated, user, token } = useAuthStore();
+
+  return {
+    // 상태
+    isAuthenticated,
+    user,
+    token,
+    
+    // 편의 메서드
+    login: (token: string) => useAuthStore.getState().login(token),
+    logout: () => AuthService.logout(),
+    checkAuthStatus: () => AuthService.initializeAuth(),
+    
+    // 사용자 정보 관련
+    isLoggedIn: isAuthenticated && !!user,
+    userEmail: user?.email,
+    userName: user?.name || user?.username,
+    userCompany: user?.company_name,
+    userIndustry: user?.industry_type,
+    
+    // 권한 체크 (확장 가능)
+    hasProfile: !!user,
+    hasCompanyInfo: !!(user?.company_name && user?.industry_type),
+  };
+}
+
+export default useAuth; 

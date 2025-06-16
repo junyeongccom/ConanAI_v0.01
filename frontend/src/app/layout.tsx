@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "@/shared/styles/globals.css";
-import Header from "@/shared/components/Header";
+import Header from "@/shared/components/layout/Header/Header";
+import AuthInitializer from "@/shared/components/AuthInitializer";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -82,6 +83,7 @@ export default function RootLayout({
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
       <body className={`${poppins.variable} font-pretendard bg-white text-[#23272F] min-h-screen`}>
+        <AuthInitializer />
         <Header />
         <main className="min-h-screen bg-white pt-16">
           {children}

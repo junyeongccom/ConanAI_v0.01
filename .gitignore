@@ -219,3 +219,66 @@ docker-compose.local.yml
 *.local.ts
 *.local.json
 
+# Auth Service 관련
+# -----------------------------------------------------------------------------
+auth-service/.env
+auth-service/.env.*
+auth-service/logs/
+auth-service/temp/
+auth-service/**/*.pyc
+
+# Gateway Service 관련
+# -----------------------------------------------------------------------------
+gateway-service/.env
+gateway-service/.env.*
+gateway-service/logs/
+gateway-service/temp/
+gateway-service/**/*.pyc
+
+# Frontend Service 관련
+# -----------------------------------------------------------------------------
+frontend/.env
+frontend/.env.*
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+frontend/node_modules/
+frontend/.vercel
+frontend/.turbo
+
+# 서비스별 로그 및 디버그 파일
+# -----------------------------------------------------------------------------
+**/logs/
+**/temp/
+**/debug.log
+**/error.log
+**/*.log.*
+**/crash.log
+
+# JWT 및 인증 관련 보안 파일
+# -----------------------------------------------------------------------------
+*.pem
+*.crt
+*.key
+**/secrets/
+**/credentials/
+jwt_secret*
+oauth_config*
+
+# 데이터베이스 관련
+# -----------------------------------------------------------------------------
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/migrations/versions/*.py
+!**/migrations/versions/__init__.py
+
+# AI/ML 모델 및 캐시 (향후 확장 대비)
+# -----------------------------------------------------------------------------
+**/models/
+**/checkpoints/
+**/model_cache/
+**/.transformers_cache/
+**/.huggingface/
+
