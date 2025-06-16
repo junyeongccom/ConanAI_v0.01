@@ -134,16 +134,36 @@ logs-training:
 restart-training:
 	docker-compose down training-service && docker-compose up -d --build training-service
 
-# 훈련 스크립트 실행 (컨테이너 내부에서)
-run-training: build-training
-	docker-compose run --rm training-service python app/train_model.py
-	# --rm: 컨테이너 실행 종료 후 자동으로 컨테이너 삭제
-	# -it: 인터랙티브 모드 (로그 확인 등)
+# 🤖 AI 모델 관련 명령어
 
-# 초기 어댑터 생성 (컨테이너 내부에서)
-generate-adapter: up-training
-	docker exec -it aws-develope-training-service-1 python app/generate_initial_adapter.py
+# 초기 모델 생성 (베이스 모델 다운로드 + LoRA 어댑터 생성)
+setup-model: up-training
+	docker-compose exec training-service python /app/app/generate_initial_model.py
 
-# 챗봇 테스트 (로컬 모델과 대화)
-test-chatbot: up-training
-	docker exec -it aws-develope-training-service-1 python app/test_chatbot_model.py
+# 로컬 모델 채팅 테스트 (대화형)
+test-chat: up-training
+	docker-compose exec training-service python /app/app/test_model.py
+
+# 모델 훈련 실행
+train-model: up-training
+	docker-compose exec training-service python /app/app/train_model.py
+
+# 토크나이저 수정 (필요시)
+fix-tokenizer: up-training
+	docker-compose exec training-service python /app/app/fix_tokenizer.py
+
+# 컨테이너 접속 (디버깅용)
+shell-training: up-training
+	docker-compose exec training-service bash
+
+# 모델 파일 확인
+check-models: up-training
+	@echo "=== 베이스 모델 파일 ==="
+	docker-compose exec training-service ls -la /app/models/base_model/llama3-korean-bllossom-8b/
+	@echo ""
+	@echo "=== LoRA 어댑터 파일 ==="
+	docker-compose exec training-service ls -la /app/models/initial_adapters/llama3-init/
+
+# 모델 용량 확인
+check-size: up-training
+	docker-compose exec training-service bash -c "du -sh /app/models/*"

@@ -174,9 +174,6 @@ taskmaster/
 # SLM 모델 (platform 폴더)
 platform/
 
-# Training 서비스 (전체 디렉토리 제외)
-training-service/
-
 # 테스트 및 커버리지
 # -----------------------------------------------------------------------------
 coverage/

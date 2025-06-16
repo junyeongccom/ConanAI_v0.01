@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# Data
+data/raw/ # 원본 데이터는 Git에 올리지 않을 경우
+*.jsonl.tmp
+
+# Models - 전체 models 디렉토리 무시
+models/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
