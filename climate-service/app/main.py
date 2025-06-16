@@ -54,23 +54,6 @@ app.add_middleware(
 app.include_router(climate_router)
 
 
-@app.get("/")
-async def root():
-    """서비스 상태 확인"""
-    return {
-        "service": "기후 데이터 서비스",
-        "status": "running",
-        "version": "1.0.0",
-        "description": "SSP 시나리오 기반 기후변화 데이터 처리"
-    }
-
-
-@app.get("/health")
-async def health_check():
-    """헬스 체크 엔드포인트"""
-    return {"status": "healthy", "service": "climate-service"}
-
-
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8087))
     uvicorn.run(

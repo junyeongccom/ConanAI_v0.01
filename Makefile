@@ -102,6 +102,22 @@ logs-finimpact:
 restart-finimpact:
 	docker-compose down finimpact && docker-compose up -d --build finimpact
 
+## disclosure
+build-disclosure:
+	docker-compose build disclosure
+
+up-disclosure:
+	docker-compose up -d disclosure
+
+down-disclosure:
+	docker-compose stop disclosure
+
+logs-disclosure:
+	docker-compose logs -f disclosure
+
+restart-disclosure:
+	docker-compose down disclosure && docker-compose up -d --build disclosure
+
 ## climate-service
 build-climate:
 	docker-compose build climate-service
@@ -117,6 +133,22 @@ logs-climate:
 
 restart-climate:
 	docker-compose down climate-service && docker-compose up -d --build climate-service
+
+## auth
+build-auth:
+	docker-compose build auth
+
+up-auth:
+	docker-compose up -d auth
+
+down-auth:
+	docker-compose stop auth
+
+logs-auth:
+	docker-compose logs -f auth
+
+restart-auth:
+	docker-compose down auth && docker-compose up -d --build auth
 
 ## training-service
 build-training:

@@ -81,6 +81,36 @@ sky-c/
 │       ├── infrastructure/        # 외부 서비스 연동
 │       └── main.py                # FastAPI 애플리케이션
 │
+├── 📋 disclosure-service/         # 지속가능성 공시 데이터 관리 (포트: 8083)
+│   └── app/
+│       ├── api/                   # 공시 API 엔드포인트
+│       │   └── disclosure_router.py # 공시 라우터 (/health 포함)
+│       ├── domain/                # 공시 도메인 로직
+│       │   ├── controller/        # 컨트롤러 레이어
+│       │   │   └── disclosure_controller.py
+│       │   ├── service/           # 비즈니스 로직
+│       │   │   └── disclosure_service.py
+│       │   ├── repository/        # 데이터 액세스
+│       │   │   └── disclosure_repository.py
+│       │   └── model/             # 도메인 모델
+│       │       ├── disclosure_entity.py
+│       │       └── disclosure_schema.py
+│       ├── foundation/            # 기반 설정
+│       ├── platform/              # 플랫폼 레이어
+│       └── main.py                # FastAPI 애플리케이션
+│
+├── 🚪 auth-service/               # 사용자 인증 및 계정 관리 (포트: 8084)
+│   └── app/
+│       ├── api/                   # 인증 API 엔드포인트
+│       ├── domain/                # 인증 도메인 로직
+│       │   ├── controller/        # 컨트롤러 레이어
+│       │   ├── service/           # 비즈니스 로직
+│       │   ├── repository/        # 데이터 액세스
+│       │   └── model/             # 도메인 모델
+│       ├── foundation/            # 기반 설정
+│       ├── platform/              # 플랫폼 레이어
+│       └── main.py                # FastAPI 애플리케이션
+│
 ├── 🔄 n8n-service/                # 워크플로우 자동화 (포트: 5678)
 │   ├── workflows/                 # n8n 워크플로우 정의
 │   └── Dockerfile                 # 커스텀 n8n 이미지
@@ -89,6 +119,10 @@ sky-c/
 │   ├── *.yaml                     # 서비스별 K8s 매니페스트
 │   ├── deploy.sh                  # 배포 스크립트
 │   └── build-images.sh            # 이미지 빌드 스크립트
+│
+├── 🗄️ sql/                       # 데이터베이스 스키마 관리
+│   └── schema/                    # 데이터베이스 스키마 파일들
+│       └── create_all_tables.sql  # 전체 테이블 생성 스크립트
 │
 ├── 🐳 docker-compose.yml          # Docker Compose 설정
 ├── 📋 Makefile                    # 빌드 및 배포 명령어
@@ -229,6 +263,48 @@ finimpact-service/app/
 - 지역별 기후리스크 평가
 - 시각화 데이터 제공
 
+### 📋 Disclosure Service (포트: 8083)
+**역할**: IFRS S2 지표 및 지속가능성 공시 마스터 데이터 관리 서비스
+
+**주요 기능**:
+- IFRS S2 지표 및 요구사항 등 지속가능성 공시 마스터 데이터 제공
+- 관련 개념 및 국가별 도입 현황 정보 관리
+- 지속가능성 공시 관련 용어 정의 및 검색
+- IFRS S2 지표 선택 화면 구현의 백엔드 역할
+
+**DDD 구조**:
+```python
+disclosure-service/app/
+├── domain/
+│   ├── controller/              # 공시 요청 처리 및 응답 관리
+│   ├── service/                 # 공시 비즈니스 로직 구현
+│   ├── repository/              # 공시 데이터 액세스 레이어
+│   └── model/                   # 공시 엔티티 및 스키마
+├── foundation/                  # 기반 설정 (DB, 로깅 등)
+└── platform/                   # 플랫폼 레이어 (외부 연동)
+```
+
+### 🚪 Auth Service (포트: 8084)
+**역할**: 사용자 인증 및 계정 관리 서비스
+
+**주요 기능**:
+- 사용자 인증 (Google OAuth 연동)
+- 회원가입 및 로그인 처리
+- JWT 토큰 발급 및 관리
+- 사용자 세션 관리
+
+**DDD 구조**:
+```python
+auth-service/app/
+├── domain/
+│   ├── controller/              # 인증 요청 처리 및 응답 관리
+│   ├── service/                 # 인증 비즈니스 로직 구현
+│   ├── repository/              # 사용자 데이터 액세스 레이어
+│   └── model/                   # 사용자 엔티티 및 스키마
+├── foundation/                  # 기반 설정 (DB, JWT 등)
+└── platform/                   # 플랫폼 레이어 (OAuth 연동)
+```
+
 ### 🔄 N8N Service (포트: 5678)
 **역할**: 워크플로우 자동화 및 데이터 파이프라인
 
@@ -284,7 +360,9 @@ make up
 # 특정 서비스만 실행
 make up-chatbot
 make up-finimpact
+make up-disclosure
 make up-climate
+make up-auth
 
 # 로그 확인
 make logs
@@ -346,6 +424,40 @@ make up-gateway
 make up-chatbot
 ```
 
+## 🗄️ 데이터베이스 스키마 관리
+
+### 자동 스키마 초기화
+프로젝트는 PostgreSQL 컨테이너 시작 시 자동으로 데이터베이스 스키마를 생성합니다.
+
+```bash
+# PostgreSQL 컨테이너 시작 (스키마 자동 생성)
+make up
+
+# 또는 PostgreSQL만 시작
+docker-compose up -d postgres
+```
+
+### 스키마 구조
+`sql/schema/create_all_tables.sql`에 정의된 8개 테이블:
+
+1. **user** - 사용자 정보 (Google OAuth 연동)
+2. **issb_s2_disclosure** - ISSB S2 지표 정보
+3. **issb_s2_requirement** - S2 지표별 요구사항
+4. **answer** - 사용자별 요구사항 응답 데이터
+5. **issb_s2_term** - S2 용어 정의
+6. **climate_disclosure_concept** - 기후공시 개념
+7. **issb_adoption_status** - 국가별 ISSB 도입 현황
+8. **heatwave_summary** - 폭염일수 요약 데이터
+
+### 스키마 수정 방법
+1. `sql/schema/create_all_tables.sql` 파일 수정
+2. PostgreSQL 컨테이너 재시작으로 변경사항 적용:
+```bash
+docker-compose down postgres
+docker volume rm aws-develope_pgdata  # 기존 데이터 삭제
+docker-compose up -d postgres          # 새 스키마로 재생성
+```
+
 ## 📊 API 문서
 
 각 서비스의 OpenAPI 문서는 다음 URL에서 확인할 수 있습니다:
@@ -353,6 +465,8 @@ make up-chatbot
 - **Gateway**: http://localhost:8080/docs
 - **Chatbot**: http://localhost:8081/docs
 - **Finance Impact**: http://localhost:8082/docs
+- **Disclosure**: http://localhost:8083/docs
+- **Auth**: http://localhost:8084/docs
 - **Climate**: http://localhost:8087/docs
 - **Frontend**: http://localhost:3000
 

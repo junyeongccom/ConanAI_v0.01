@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: hc_db
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./sql/schema/create_all_tables.sql:/docker-entrypoint-initdb.d/create_all_tables.sql
     ports:
       - "5432:5432"
     networks:
@@ -76,7 +77,18 @@ services:
     networks:
       - app-network
 
-
+  disclosure:
+    build:
+      context: ./disclosure-service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./disclosure-service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
 
   climate-service:
     build:
@@ -86,6 +98,19 @@ services:
       - "8087:8087"
     env_file:
       - ./climate-service/.env
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  auth:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    env_file:
+      - ./auth-service/.env
     depends_on:
       - postgres
     networks:
