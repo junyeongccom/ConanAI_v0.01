@@ -82,10 +82,10 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#0070f3" />
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
-      <body className={`${poppins.variable} font-pretendard bg-white text-[#23272F] min-h-screen`}>
+      <body className={`${poppins.variable} font-pretendard bg-white text-[#23272F] min-h-screen overflow-x-hidden`}>
         <AuthInitializer />
         <Header />
-        <main className="min-h-screen bg-white pt-16">
+        <main className="min-h-screen bg-white">
           {children}
         </main>
       </body>

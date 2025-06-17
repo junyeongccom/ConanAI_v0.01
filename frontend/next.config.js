@@ -42,6 +42,17 @@ const nextConfig = {
       '@domain': path.resolve(__dirname, 'src/domain'),
       '@shared': path.resolve(__dirname, 'src/shared'),
     }
+    
+    // Leaflet 관련 설정 (SSR 이슈 해결)
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      }
+    }
+    
     return config
   },
   

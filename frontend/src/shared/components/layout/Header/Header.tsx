@@ -11,7 +11,21 @@ export default function Header() {
   const router = useRouter();
   const { isLoggedIn, userName, userEmail, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 스크롤 이벤트 감지
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 50); // 50px 이상 스크롤 시 배경 변경
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // 드롭다운 외부 클릭 감지
   useEffect(() => {
@@ -55,14 +69,20 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
+      isScrolled 
+        ? 'bg-white shadow-md border-b border-gray-200' 
+        : 'bg-transparent shadow-none border-b border-transparent'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* 로고 및 홈 링크 */}
           <div className="flex items-center">
             <Link 
               href="/" 
-              className="flex items-center space-x-2 text-gray-900 hover:text-blue-600 transition-colors duration-200"
+              className={`flex items-center space-x-2 hover:text-blue-600 transition-colors duration-200 ${
+                isScrolled ? 'text-gray-900' : 'text-white'
+              }`}
             >
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <svg 
@@ -90,7 +110,7 @@ export default function Header() {
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/dashboard') 
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                  : `${isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
               }`}
             >
               대시보드
@@ -100,7 +120,7 @@ export default function Header() {
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/climate-risk') 
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                  : `${isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
               }`}
             >
               기후리스크 평가
@@ -110,7 +130,7 @@ export default function Header() {
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/financial-impact') 
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                  : `${isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
               }`}
             >
               재무영향 시뮬레이션
@@ -120,7 +140,7 @@ export default function Header() {
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/tcfd-report') 
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                  : `${isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
               }`}
             >
               TCFD보고서 생성
@@ -134,7 +154,9 @@ export default function Header() {
                 {/* 사용자 드롭다운 버튼 */}
                 <button
                   onClick={handleDropdownToggle}
-                  className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200 px-3 py-2 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className={`flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors duration-200 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'
+                  }`}
                 >
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold">
                     {(userName || userEmail || 'U').charAt(0).toUpperCase()}
@@ -197,7 +219,9 @@ export default function Header() {
           <div className="md:hidden ml-2">
             <button 
               type="button" 
-              className="text-gray-700 hover:text-blue-600 focus:outline-none focus:text-blue-600 transition-colors duration-200"
+              className={`hover:text-blue-600 focus:outline-none focus:text-blue-600 transition-colors duration-200 ${
+                isScrolled ? 'text-gray-700' : 'text-white'
+              }`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
