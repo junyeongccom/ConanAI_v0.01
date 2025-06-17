@@ -143,10 +143,11 @@ export interface ApiError {
 export const handleApiError = (error: AxiosError): ApiError => {
   if (error.response) {
     // 서버가 응답했지만 오류 상태 코드
+    const responseData = error.response.data as any;
     return {
-      message: error.response.data?.message || error.message,
+      message: responseData?.message || error.message,
       status: error.response.status,
-      code: error.response.data?.code,
+      code: responseData?.code,
       details: error.response.data,
     };
   } else if (error.request) {
