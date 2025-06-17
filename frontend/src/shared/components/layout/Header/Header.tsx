@@ -14,6 +14,9 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // 대시보드 페이지인지 확인
+  const isDashboardPage = pathname.startsWith('/dashboard');
+
   // 스크롤 이벤트 감지
   useEffect(() => {
     const handleScroll = () => {
@@ -70,7 +73,7 @@ export default function Header() {
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-      isScrolled 
+      isScrolled || isDashboardPage
         ? 'bg-white shadow-md border-b border-gray-200' 
         : 'bg-transparent shadow-none border-b border-transparent'
     }`}>
@@ -81,7 +84,7 @@ export default function Header() {
             <Link 
               href="/" 
               className={`flex items-center space-x-2 hover:text-blue-600 transition-colors duration-200 ${
-                isScrolled ? 'text-gray-900' : 'text-white'
+                isScrolled || isDashboardPage ? 'text-gray-900' : 'text-white'
               }`}
             >
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -110,7 +113,7 @@ export default function Header() {
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/dashboard') 
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : `${isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
+                  : `${isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
               }`}
             >
               대시보드
@@ -120,7 +123,7 @@ export default function Header() {
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/climate-risk') 
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : `${isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
+                  : `${isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
               }`}
             >
               기후리스크 평가
@@ -130,7 +133,7 @@ export default function Header() {
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/financial-impact') 
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : `${isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
+                  : `${isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
               }`}
             >
               재무영향 시뮬레이션
@@ -140,7 +143,7 @@ export default function Header() {
               className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
                 pathname.startsWith('/tcfd-report') 
                   ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : `${isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
+                  : `${isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
               }`}
             >
               TCFD보고서 생성
@@ -155,7 +158,7 @@ export default function Header() {
                 <button
                   onClick={handleDropdownToggle}
                   className={`flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors duration-200 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    isScrolled ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'
+                    isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'
                   }`}
                 >
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold">
@@ -220,7 +223,7 @@ export default function Header() {
             <button 
               type="button" 
               className={`hover:text-blue-600 focus:outline-none focus:text-blue-600 transition-colors duration-200 ${
-                isScrolled ? 'text-gray-700' : 'text-white'
+                isScrolled || isDashboardPage ? 'text-gray-700' : 'text-white'
               }`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

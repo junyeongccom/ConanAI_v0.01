@@ -152,6 +152,59 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* Glassmorphism 유틸리티 클래스 */
+  .glass-card {
+    @apply backdrop-blur-lg bg-white/20 border border-white/30 shadow-xl;
+  }
+
+  .glass-card-dark {
+    @apply backdrop-blur-lg bg-gray-900/20 border border-white/10 shadow-xl;
+  }
+
+  .glass-button {
+    @apply backdrop-blur-sm bg-white/20 border border-white/30 hover:bg-white/30 transition-all duration-300;
+  }
+
+  /* 향상된 호버 효과 */
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25;
+  }
+
+  /* 그라디언트 텍스트 */
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+  }
+
+  .gradient-text-hero {
+    @apply bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-transparent;
+  }
+
+  /* 커스텀 스크롤바 */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-blue-400 rounded-full hover:bg-blue-500;
+  }
+
+  /* 부드러운 페이드 인 애니메이션 */
+  .fade-in {
+    @apply opacity-0 animate-fade-in;
+  }
+
+  .slide-up {
+    @apply translate-y-8 opacity-0 animate-fade-in-up;
+  }
 }
 
 @layer base {

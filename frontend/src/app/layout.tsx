@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "@/shared/styles/globals.css";
+import 'aos/dist/aos.css';
 import Header from "@/shared/components/layout/Header/Header";
 import AuthInitializer from "@/shared/components/AuthInitializer";
+import AOSInitializer from "@/shared/components/AOSInitializer";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -84,6 +86,7 @@ export default function RootLayout({
       </head>
       <body className={`${poppins.variable} font-pretendard bg-white text-[#23272F] min-h-screen overflow-x-hidden`}>
         <AuthInitializer />
+        <AOSInitializer />
         <Header />
         <main className="min-h-screen bg-white">
           {children}
