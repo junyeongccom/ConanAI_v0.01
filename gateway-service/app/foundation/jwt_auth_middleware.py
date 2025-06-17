@@ -37,18 +37,52 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self.exempt_paths = {
             "/docs", "/redoc", "/openapi.json", 
             "/auth/google/login", "/auth/google/callback",
-            "/", "/api/health"
+            "/", "/api/health",
+            # disclosure-data 관련 공개 API들
+            "/api/disclosure/disclosure-data/concepts",
+            "/api/disclosure/disclosure-data/adoption-status",
+            "/api/disclosure/disclosure-data/disclosures",
+            "/api/disclosure/disclosure-data/requirements", 
+            "/api/disclosure/disclosure-data/terms",
+            "/api/disclosure/health"
         }
+        
+        # 경로 패턴 매칭을 위한 접두사들 (선택사항)
+        self.exempt_prefixes = [
+            "/api/disclosure/disclosure-data/"
+        ]
+    
+    def _is_exempt_path(self, path: str) -> bool:
+        """경로가 인증 면제 대상인지 확인"""
+        # 정확한 경로 매칭
+        if path in self.exempt_paths:
+            return True
+        
+        # 접두사 매칭
+        for prefix in self.exempt_prefixes:
+            if path.startswith(prefix):
+                return True
+                
+        return False
     
     async def dispatch(self, request: Request, call_next):
+        # 디버깅을 위한 출력 (print로 변경)
+        print(f"🔍 Request path: {request.url.path}")
+        print(f"📋 Exempt paths: {self.exempt_paths}")
+        print(f"📂 Exempt prefixes: {self.exempt_prefixes}")
+        
         # 미인증 경로 제외
-        if request.url.path in self.exempt_paths:
+        if self._is_exempt_path(request.url.path):
+            print(f"✅ Exempt path: {request.url.path}")
             return await call_next(request)
+        else:
+            print(f"🔒 Authentication required for: {request.url.path}")
         
         # Authorization 헤더 추출
         authorization: str = request.headers.get("Authorization")
         
         if not authorization:
+            print(f"❌ No authorization header for: {request.url.path}")
             return StarletteJSONResponse(
                 status_code=401,
                 content={"detail": "인증 정보가 없습니다."}

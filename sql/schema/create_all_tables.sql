@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS issb_s2_disclosure (
     section VARCHAR(255) NOT NULL,
     category VARCHAR(255) NOT NULL,
     topic VARCHAR(255), -- Nullable
+    paragraph VARCHAR(50), -- Nullable, 단락 번호 (예: 14(a), 15(b) 등)
     disclosure_ko TEXT NOT NULL,
     disclosure_en TEXT, -- Nullable
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,

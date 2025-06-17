@@ -14,12 +14,12 @@ class ServiceProxyFactory:
         """지정된 서비스에 요청을 전달합니다."""
         url = f"{self.base_url}/{path}"
         
-        # 헤더 처리
+        # 헤더 처리 - 딕셔너리 형태로 수정
         clean_headers = {}
         if headers:
-            for name, value in headers:
-                if name.decode().lower() not in ['host', 'content-length']:
-                    clean_headers[name.decode()] = value.decode()
+            for name, value in headers.items():
+                if name.lower() not in ['host', 'content-length']:
+                    clean_headers[name] = value
         
         async with httpx.AsyncClient(timeout=timeout) as client:
             try:

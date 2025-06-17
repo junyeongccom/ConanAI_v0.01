@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y git libglib2.0-0 && rm -rf /var/lib/apt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY data ./data
 
 # 포트 설정
 EXPOSE 8083

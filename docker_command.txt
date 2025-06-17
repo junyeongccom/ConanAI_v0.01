@@ -22,3 +22,224 @@ SELECT COUNT(*) FROM heatwave_summary;
 #처음 10개 행만 보기
 SELECT * FROM heatwave_summary LIMIT 10;
 
+# ============================================================
+# 테이블별 데이터 조회 명령어
+# ============================================================
+
+# 1. 사용자 테이블 (user) - 인증 서비스
+# ------------------------------------------------------------
+# 모든 사용자 조회
+SELECT * FROM "user";
+
+# 사용자 수 확인
+SELECT COUNT(*) FROM "user";
+
+# 최근 가입한 사용자 10명
+SELECT user_id, email, username, company_name, created_at 
+FROM "user" 
+ORDER BY created_at DESC 
+LIMIT 10;
+
+# 마지막 로그인 기준 활성 사용자
+SELECT email, username, last_login_at 
+FROM "user" 
+WHERE last_login_at IS NOT NULL 
+ORDER BY last_login_at DESC 
+LIMIT 10;
+
+# 2. 폭염일수 데이터 (heatwave_summary) - 기후 서비스
+# ------------------------------------------------------------
+# 모든 폭염일수 데이터 조회
+SELECT * FROM heatwave_summary;
+
+# 폭염일수 데이터 요약 (시나리오별 개수)
+SELECT scenario, COUNT(*) as count 
+FROM heatwave_summary 
+GROUP BY scenario 
+ORDER BY scenario;
+
+# 특정 지역의 모든 시나리오 조회 (예: 경기도)
+SELECT scenario, year_period, heatwave_days, change_amount, change_rate
+FROM heatwave_summary 
+WHERE region_name = '경기도' 
+ORDER BY scenario, year_period;
+
+# 특정 시나리오의 모든 지역 조회 (예: SSP5-8.5)
+SELECT region_name, year_period, heatwave_days, change_rate
+FROM heatwave_summary 
+WHERE scenario = 'SSP5-8.5' 
+ORDER BY region_name, year_period;
+
+# 2050년 변화율이 높은 상위 10개 지역
+SELECT scenario, region_name, change_rate
+FROM heatwave_summary 
+WHERE year_period = '2050' AND change_rate IS NOT NULL
+ORDER BY change_rate DESC 
+LIMIT 10;
+
+# 지역별 평균 폭염일수 (모든 시나리오 평균)
+SELECT region_name, 
+       ROUND(AVG(heatwave_days), 2) as avg_heatwave_days,
+       ROUND(AVG(change_rate), 2) as avg_change_rate
+FROM heatwave_summary 
+WHERE year_period = '2050'
+GROUP BY region_name 
+ORDER BY avg_change_rate DESC;
+
+# 3. ISSB S2 공시 정보 (issb_s2_disclosure) - 공시 서비스
+# ------------------------------------------------------------
+# 모든 공시 항목 조회
+SELECT * FROM issb_s2_disclosure;
+
+# 공시 항목 수 확인
+SELECT COUNT(*) FROM issb_s2_disclosure;
+
+# 섹션별 공시 항목 개수
+SELECT section, COUNT(*) as count 
+FROM issb_s2_disclosure 
+GROUP BY section 
+ORDER BY section;
+
+# 특정 섹션의 공시 항목 (예: Governance)
+SELECT disclosure_id, category, topic, disclosure_ko
+FROM issb_s2_disclosure 
+WHERE section = 'Governance' 
+ORDER BY disclosure_id;
+
+# 4. S2 요구사항 (issb_s2_requirement) - 공시 서비스
+# ------------------------------------------------------------
+# 모든 요구사항 조회
+SELECT * FROM issb_s2_requirement;
+
+# 요구사항 수 확인
+SELECT COUNT(*) FROM issb_s2_requirement;
+
+# 공시 항목별 요구사항 개수
+SELECT disclosure_id, COUNT(*) as requirement_count
+FROM issb_s2_requirement 
+GROUP BY disclosure_id 
+ORDER BY disclosure_id;
+
+# 특정 공시 항목의 요구사항 (disclosure_id = 1 예시)
+SELECT requirement_id, requirement_order, requirement_text_ko, data_required_type
+FROM issb_s2_requirement 
+WHERE disclosure_id = 1 
+ORDER BY requirement_order;
+
+# 5. 사용자 응답 (answer) - 공시 서비스
+# ------------------------------------------------------------
+# 모든 응답 조회
+SELECT * FROM answer;
+
+# 응답 수 확인
+SELECT COUNT(*) FROM answer;
+
+# 사용자별 응답 개수
+SELECT user_id, COUNT(*) as answer_count
+FROM answer 
+GROUP BY user_id 
+ORDER BY answer_count DESC;
+
+# 요구사항별 응답 현황
+SELECT requirement_id, COUNT(*) as response_count
+FROM answer 
+GROUP BY requirement_id 
+ORDER BY requirement_id;
+
+# 상태별 응답 분포
+SELECT status, COUNT(*) as count
+FROM answer 
+GROUP BY status;
+
+# 6. S2 용어 정의 (issb_s2_term) - 공시 서비스
+# ------------------------------------------------------------
+# 모든 용어 조회
+SELECT * FROM issb_s2_term;
+
+# 용어 수 확인
+SELECT COUNT(*) FROM issb_s2_term;
+
+# 한글 용어만 조회
+SELECT term_ko, definition_ko 
+FROM issb_s2_term 
+ORDER BY term_ko;
+
+# 7. 기후공시 개념 (climate_disclosure_concept) - 공시 서비스
+# ------------------------------------------------------------
+# 모든 개념 조회
+SELECT * FROM climate_disclosure_concept;
+
+# 개념 수 확인
+SELECT COUNT(*) FROM climate_disclosure_concept;
+
+# 카테고리별 개념 개수
+SELECT category, COUNT(*) as count 
+FROM climate_disclosure_concept 
+WHERE category IS NOT NULL
+GROUP BY category 
+ORDER BY category;
+
+# 8. ISSB 도입 현황 (issb_adoption_status) - 공시 서비스
+# ------------------------------------------------------------
+# 모든 도입 현황 조회
+SELECT * FROM issb_adoption_status;
+
+# 도입 현황 수 확인
+SELECT COUNT(*) FROM issb_adoption_status;
+
+# 국가별 도입 현황
+SELECT country, regulatory_authority, applicable_entity
+FROM issb_adoption_status 
+ORDER BY country;
+
+# ============================================================
+# 유용한 관리 명령어
+# ============================================================
+
+# 특정 테이블의 스키마 정보 보기
+\d heatwave_summary
+\d "user"
+\d issb_s2_disclosure
+
+# 테이블 크기 확인
+SELECT 
+    schemaname,
+    tablename,
+    attname,
+    n_distinct,
+    correlation 
+FROM pg_stats 
+WHERE tablename = 'heatwave_summary';
+
+# 데이터베이스 전체 크기
+SELECT pg_size_pretty(pg_database_size('hc_db'));
+
+# 테이블별 크기 확인
+SELECT 
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+FROM pg_tables 
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+
+# ============================================================
+# 테이블 스키마 수정 명령어 (ALTER TABLE)
+# ============================================================
+
+# issb_s2_disclosure 테이블에 paragraph 컬럼 추가
+ALTER TABLE issb_s2_disclosure 
+ADD COLUMN IF NOT EXISTS paragraph VARCHAR(50);
+
+# paragraph 컬럼에 코멘트 추가
+COMMENT ON COLUMN issb_s2_disclosure.paragraph IS '단락 번호 (예: 14(a), 15(b) 등)';
+
+# 컬럼 추가 확인
+\d issb_s2_disclosure
+
+# paragraph 컬럼이 포함된 데이터 조회
+SELECT disclosure_id, section, category, topic, paragraph, 
+       LEFT(disclosure_ko, 100) as disclosure_preview
+FROM issb_s2_disclosure 
+ORDER BY disclosure_id 
+LIMIT 10;
+
