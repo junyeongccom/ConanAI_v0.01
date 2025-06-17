@@ -8,7 +8,7 @@ import { INDUSTRY_TYPES, SCENARIO_TYPES, MOCK_REGIONS } from '../constants';
 const mockCalculateFinancialImpact = (input: FinancialImpactInput): FinancialImpactResult => {
   const heatwaveDays = MOCK_REGIONS.find(r => r.name === input.region)?.heatwaveDaysIncrease[input.scenario] || 0;
   let totalImpact = 0;
-  const details = [];
+  const details: FinancialImpactResult['details'] = [];
 
   // Manufacturing calculation
   if (input.industryType === 'manufacturing' && input.manufacturing) {
