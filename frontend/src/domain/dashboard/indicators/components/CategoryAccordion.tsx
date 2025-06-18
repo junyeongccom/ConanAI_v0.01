@@ -18,33 +18,24 @@ export function CategoryAccordion({ categories }: CategoryAccordionProps) {
   }
 
   return (
-    <Accordion.Root type="multiple" className="space-y-3">
+    <Accordion.Root type="multiple" className="space-y-2">
       {categoryNames.map((name) => (
-        <Accordion.Item key={name} value={name} className="border border-gray-200 rounded-md">
+        <Accordion.Item key={name} value={name} className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <Accordion.Header>
-            <Accordion.Trigger className="flex justify-between items-center w-full p-4 text-left font-medium text-gray-700 hover:bg-gray-50 group transition-colors">
-              <span className="text-sm font-semibold">{name}</span>
+            <Accordion.Trigger className="flex justify-between items-center w-full p-4 text-left font-semibold text-gray-800 hover:bg-gray-50 group transition-colors duration-150">
+              <span>{name}</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full font-medium">
                   {categories[name].length}개 항목
                 </span>
                 <ChevronDown className="w-5 h-5 transition-transform duration-300 group-data-[state=open]:rotate-180 text-gray-400" />
               </div>
             </Accordion.Trigger>
           </Accordion.Header>
-          <Accordion.Content className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-            >
-              <div className="border-t border-gray-200 bg-gray-50/30">
-                {categories[name].map((item) => (
-                  <IndicatorItem key={item.disclosure_id} item={item} />
-                ))}
-              </div>
-            </motion.div>
+          <Accordion.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+            {categories[name].map((item) => (
+              <IndicatorItem key={item.disclosure_id} item={item} />
+            ))}
           </Accordion.Content>
         </Accordion.Item>
       ))}

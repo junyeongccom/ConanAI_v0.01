@@ -46,12 +46,14 @@ export function IndicatorItem({ item }: IndicatorItemProps) {
 
   // --- 렌더링 ---
   return (
-    <div className="border-b border-gray-200 last:border-b-0 bg-white">
+    <div className="border-t border-gray-200 first:border-t-0">
       {/* 항상 보이는 상단 영역 */}
-      <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={handleToggle}>
-        <div className="flex items-center gap-3">
-          <div className="w-2 h-2 mt-1 bg-gray-400 rounded-full flex-shrink-0" title="미작성"></div>
-          <p className="text-sm font-medium text-gray-800">{item.disclosure_ko}</p>
+      <div className="flex items-start justify-between p-4 pl-8 hover:bg-blue-50/50 transition-colors cursor-pointer" onClick={handleToggle}>
+        <div className="flex items-start gap-3">
+          <div className="w-2 h-2 mt-1.5 bg-gray-400 rounded-full flex-shrink-0" title="미작성"></div>
+          <div>
+            <p className="text-sm font-medium text-gray-800">{item.disclosure_ko}</p>
+          </div>
         </div>
         <button className="ml-4 text-sm font-semibold text-blue-600 hover:text-blue-800 flex-shrink-0 flex items-center gap-1">
           {isOpen ? '닫기' : '입력'}
@@ -73,7 +75,7 @@ export function IndicatorItem({ item }: IndicatorItemProps) {
             transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
             className="overflow-hidden"
           >
-            <div className="p-5 border-t border-gray-200 bg-gray-50">
+            <div className="py-4 px-8 border-t border-gray-200 bg-gray-50">
               {/* 조건부 렌더링: 로딩, 에러, 성공 상태에 따라 다른 UI를 표시 */}
               {isLoading && (
                 <div className="flex items-center justify-center py-5 gap-2 text-gray-500">
