@@ -158,7 +158,7 @@ export default function Header() {
               <div key={item.name} className="relative">
                 {item.subItems.length === 0 ? (
                   <button
-                    onClick={item.name === 'Dashboard' ? handleDashboardClick : () => router.push(item.href)}
+                    onClick={item.name === 'Dashboard' ? handleDashboardClick : () => router.push(item.href as any)}
                     className={`text-sm font-medium transition-all duration-200 px-4 py-2 rounded-md ${
                       isActiveMenu(item)
                         ? 'text-blue-600 bg-blue-50 border border-blue-200' 
@@ -169,7 +169,7 @@ export default function Header() {
                   </button>
                 ) : (
                   <Link
-                    href={item.href}
+                    href={item.href as any}
                     className={`inline-flex items-center text-sm font-medium transition-all duration-200 px-4 py-2 rounded-md ${
                       isActiveMenu(item)
                         ? 'text-blue-600 bg-blue-50 border border-blue-200' 
@@ -208,7 +208,7 @@ export default function Header() {
                           item.subItems.map((subItem) => (
                             <li key={subItem.href}>
                               <Link
-                                href={subItem.href}
+                                href={subItem.href as any}
                                 className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
                                   pathname.startsWith(subItem.href)
                                     ? 'text-blue-600 bg-blue-50 font-medium'
@@ -222,7 +222,7 @@ export default function Header() {
                         ) : (
                           <li>
                             <Link
-                              href={item.href}
+                              href={item.href as any}
                               onClick={item.name === 'Dashboard' ? handleDashboardClick : undefined}
                               className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
                                 pathname.startsWith(item.href)

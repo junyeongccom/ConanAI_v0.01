@@ -134,7 +134,7 @@ export const MyPageLayout: React.FC = () => {
                 </Link>
 
                 <Link
-                  href="/climate-risk"
+                  href="/service/climate-risk"
                   className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-center"
                 >
                   <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mb-2">
@@ -144,7 +144,7 @@ export const MyPageLayout: React.FC = () => {
                 </Link>
 
                 <Link
-                  href="/financial-impact"
+                  href="/service/financial-impact"
                   className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-center"
                 >
                   <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mb-2">
@@ -154,7 +154,7 @@ export const MyPageLayout: React.FC = () => {
                 </Link>
 
                 <Link
-                  href="/tcfd-report"
+                  href="/service/tcfd-report"
                   className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-center"
                 >
                   <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mb-2">

@@ -8,7 +8,7 @@ export const DashboardHomeLayout: React.FC = () => {
 
   // 빠른 실행 버튼 핸들러들
   const handleNewReport = () => {
-    router.push('/tcfd-report');
+    router.push('/service/tcfd-report');
   };
 
   const handleContinueDataEntry = () => {
@@ -16,11 +16,11 @@ export const DashboardHomeLayout: React.FC = () => {
   };
 
   const handleClimateRisk = () => {
-    router.push('/climate-risk');
+    router.push('/service/climate-risk');
   };
 
   const handleFinancialImpact = () => {
-    router.push('/financial-impact');
+    router.push('/service/financial-impact');
   };
 
   return (
