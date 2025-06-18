@@ -6,22 +6,56 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import GoogleLoginButton from '../../../../domain/auth/components/GoogleLoginButton';
 
+// 메뉴 데이터 구조 정의
+const mainNavItems = [
+  {
+    name: "About",
+    href: "/about/project",
+    subItems: [
+      { name: "SKY-C에 관하여", href: "/about/project" },
+      { name: "개발자에 관하여", href: "/about/developer" },
+    ],
+  },
+  {
+    name: "Basic",
+    href: "/basic/adoption-status",
+    subItems: [
+      { name: "ISSB 도입 현황", href: "/basic/adoption-status" },
+      { name: "기후공시 개념 정의", href: "/basic/concepts" },
+    ],
+  },
+  {
+    name: "Service",
+    href: "/service/climate-risk",
+    subItems: [
+      { name: "기후리스크 평가", href: "/service/climate-risk" },
+      { name: "재무영향 시뮬레이션", href: "/service/financial-impact" },
+      { name: "TCFD 보고서 생성", href: "/service/tcfd-report" },
+    ],
+  },
+  { name: "Dashboard", href: "/dashboard", subItems: [] },
+  { name: "Report", href: "/report", subItems: [] },
+];
+
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { isLoggedIn, userName, userEmail, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [showMegaMenu, setShowMegaMenu] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 대시보드 페이지인지 확인
+  // 메인페이지가 아닌 다른 페이지인지 확인
+  const isMainPage = pathname === '/';
   const isDashboardPage = pathname.startsWith('/dashboard');
 
   // 스크롤 이벤트 감지
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      setIsScrolled(scrollY > 50); // 50px 이상 스크롤 시 배경 변경
+      setIsScrolled(scrollY > 50);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -71,9 +105,17 @@ export default function Header() {
     }
   };
 
+  // 현재 경로가 메뉴 항목과 일치하는지 확인
+  const isActiveMenu = (item: typeof mainNavItems[0]) => {
+    if (item.subItems.length === 0) {
+      return pathname.startsWith(item.href);
+    }
+    return item.subItems.some(subItem => pathname.startsWith(subItem.href));
+  };
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-      isScrolled || isDashboardPage
+      !isMainPage || isScrolled || isDashboardPage
         ? 'bg-white shadow-md border-b border-gray-200' 
         : 'bg-transparent shadow-none border-b border-transparent'
     }`}>
@@ -84,7 +126,7 @@ export default function Header() {
             <Link 
               href="/" 
               className={`flex items-center space-x-2 hover:text-blue-600 transition-colors duration-200 ${
-                isScrolled || isDashboardPage ? 'text-gray-900' : 'text-white'
+                !isMainPage || isScrolled || isDashboardPage ? 'text-gray-900' : 'text-white'
               }`}
             >
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -107,47 +149,97 @@ export default function Header() {
           </div>
 
           {/* 중앙 네비게이션 메뉴 */}
-          <nav className="absolute left-1/2 transform -translate-x-1/2 hidden md:flex items-center space-x-2">
-            <button
-              onClick={handleDashboardClick}
-              className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
-                pathname.startsWith('/dashboard') 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : `${isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
-              }`}
-            >
-              대시보드
-            </button>
-            <Link 
-              href="/climate-risk" 
-              className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
-                pathname.startsWith('/climate-risk') 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : `${isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
-              }`}
-            >
-              기후리스크 평가
-            </Link>
-            <Link 
-              href="/financial-impact" 
-              className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
-                pathname.startsWith('/financial-impact') 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : `${isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
-              }`}
-            >
-              재무영향 시뮬레이션
-            </Link>
-            <Link 
-              href="/tcfd-report" 
-              className={`text-sm font-medium transition-colors duration-200 px-4 py-2 rounded-md ${
-                pathname.startsWith('/tcfd-report') 
-                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                  : `${isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
-              }`}
-            >
-              TCFD보고서 생성
-            </Link>
+          <nav 
+            className="absolute left-1/2 transform -translate-x-1/2 hidden md:flex items-center space-x-1"
+            onMouseEnter={() => setShowMegaMenu(true)}
+            onMouseLeave={() => setShowMegaMenu(false)}
+          >
+            {mainNavItems.map((item) => (
+              <div key={item.name} className="relative">
+                {item.subItems.length === 0 ? (
+                  <button
+                    onClick={item.name === 'Dashboard' ? handleDashboardClick : () => router.push(item.href)}
+                    className={`text-sm font-medium transition-all duration-200 px-4 py-2 rounded-md ${
+                      isActiveMenu(item)
+                        ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                        : `${!isMainPage || isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
+                    }`}
+                  >
+                    {item.name}
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`inline-flex items-center text-sm font-medium transition-all duration-200 px-4 py-2 rounded-md ${
+                      isActiveMenu(item)
+                        ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                        : `${!isMainPage || isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'} hover:text-blue-600`
+                    }`}
+                  >
+                    {item.name}
+                    <svg 
+                      className="w-4 h-4 ml-1 transition-transform duration-200" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </Link>
+                )}
+              </div>
+            ))}
+            
+            {/* 통합 메가 메뉴 */}
+            <div className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-[900px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 transition-all duration-300 z-50 ${
+              showMegaMenu 
+                ? 'opacity-100 pointer-events-auto transform translate-y-0' 
+                : 'opacity-0 pointer-events-none transform -translate-y-2'
+            }`}>
+              <div className="p-8">
+                <div className="grid grid-cols-5 gap-6">
+                  {mainNavItems.map((item) => (
+                    <div key={item.name}>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                        {item.name}
+                      </h3>
+                      <ul className="space-y-3">
+                        {item.subItems.length > 0 ? (
+                          item.subItems.map((subItem) => (
+                            <li key={subItem.href}>
+                              <Link
+                                href={subItem.href}
+                                className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+                                  pathname.startsWith(subItem.href)
+                                    ? 'text-blue-600 bg-blue-50 font-medium'
+                                    : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                                }`}
+                              >
+                                {subItem.name}
+                              </Link>
+                            </li>
+                          ))
+                        ) : (
+                          <li>
+                            <Link
+                              href={item.href}
+                              onClick={item.name === 'Dashboard' ? handleDashboardClick : undefined}
+                              className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+                                pathname.startsWith(item.href)
+                                  ? 'text-blue-600 bg-blue-50 font-medium'
+                                  : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                              }`}
+                            >
+                              {item.name === 'Dashboard' ? '대시보드' : item.name === 'Report' ? '간행물' : item.name}
+                            </Link>
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </nav>
 
           {/* 우상단 인증 관련 UI */}
@@ -158,7 +250,7 @@ export default function Header() {
                 <button
                   onClick={handleDropdownToggle}
                   className={`flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors duration-200 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'
+                    !isMainPage || isScrolled || isDashboardPage ? 'text-gray-700 hover:bg-gray-50' : 'text-white hover:bg-white/10'
                   }`}
                 >
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold">
@@ -223,7 +315,7 @@ export default function Header() {
             <button 
               type="button" 
               className={`hover:text-blue-600 focus:outline-none focus:text-blue-600 transition-colors duration-200 ${
-                isScrolled || isDashboardPage ? 'text-gray-700' : 'text-white'
+                !isMainPage || isScrolled || isDashboardPage ? 'text-gray-700' : 'text-white'
               }`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

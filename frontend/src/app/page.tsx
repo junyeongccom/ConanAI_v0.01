@@ -69,9 +69,9 @@ export default function Home() {
               data-aos="fade-up"
               data-aos-delay="200"
             >
-              AI 기반 자동화로 정확하고 효율적인 IFRS S2 보고서를 지금 바로 생성하세요.
+              AI 기반 자동화로 빠르게 IFRS S2 보고서 초안을 지금 바로 생성하세요.
               <br />
-              복잡한 기후공시 요구사항을 간단하게 해결하는 차세대 솔루션입니다.
+              사용자는 데이터 입력만, 보고서 문단 생성은 AI가 수행하는 차세대 솔루션입니다.
             </p>
             <div 
               className="flex flex-col sm:flex-row gap-6 justify-center items-center"
@@ -173,14 +173,14 @@ export default function Home() {
           <div className="text-center mt-16" data-aos="fade-up" data-aos-delay="500">
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Link 
-                href="/disclosure-info/adoption-status"
+                                  href="/basic/adoption-status"
                 className="group bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 px-8 rounded-full hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 flex items-center gap-3"
               >
                 ISSB 도입 현황 자세히 보기
                 <FaArrowRight className="text-sm group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
               <Link 
-                href="/disclosure-info/concepts"
+                                  href="/basic/concepts"
                 className="group bg-white/80 backdrop-blur-sm text-gray-800 py-4 px-8 rounded-full hover:bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 flex items-center gap-3"
               >
                 기후공시 개념 알아보기
@@ -208,7 +208,7 @@ export default function Home() {
               {
                 icon: FaRobot,
                 title: "AI 자동화 보고서",
-                description: "복잡한 IFRS S2 요구사항을 AI가 자동으로 분석하고 보고서를 생성합니다.",
+                description: "사용자가 입력한 데이터를 기반으로 AI가 자동으로 보고서 초안을 생성합니다.",
                 gradient: "from-blue-500 to-purple-500",
                 delay: "100"
               },
@@ -222,7 +222,7 @@ export default function Home() {
               {
                 icon: FaDatabase,
                 title: "실시간 분석 대시보드",
-                description: "기후 리스크와 기회를 실시간으로 모니터링하고 분석할 수 있습니다.",
+                description: "기후 관련 물리적 리스크를 지역별로 모니터링하고 분석할 수 있습니다.",
                 gradient: "from-purple-500 to-pink-500",
                 delay: "300"
               },
@@ -313,7 +313,7 @@ export default function Home() {
           >
             더 이상 복잡한 준비 과정으로 고민하지 마세요. 
             <br />
-            Sky-C의 AI 기반 솔루션으로 IFRS S2 대응을 시작하세요.
+            Sky-C의 솔루션으로 IFRS S2 대응을 시작하세요.
           </p>
           <div 
             className="flex flex-col sm:flex-row gap-6 justify-center items-center"

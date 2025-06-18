@@ -119,9 +119,9 @@ export const DashboardIndicatorsLayout: React.FC = () => {
 
   const handleGuideClick = (type: string) => {
     if (type === 'concepts') {
-      router.push('/disclosure-info/concepts');
+      router.push('/basic/concepts');
     } else if (type === 'adoption') {
-      router.push('/disclosure-info/adoption-status');
+      router.push('/basic/adoption-status');
     }
   };
 
