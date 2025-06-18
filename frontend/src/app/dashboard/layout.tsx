@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Header />
       
       {/* 사이드바 - fixed 포지셔닝으로 Header 바로 아래에 붙이기 */}
-      <aside className="fixed top-16 left-0 w-64 h-[calc(100vh-64px)] bg-white shadow-lg border-r border-gray-200 flex flex-col z-40">
+      <aside className="fixed top-16 left-0 w-64 h-[calc(100vh-64px)] bg-white shadow-lg border-r border-gray-200 flex flex-col z-40 overflow-y-auto">
         {/* 사이드바 헤더 */}
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">대시보드</h2>
@@ -98,7 +98,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* 메인 콘텐츠 영역 - 사이드바 너비만큼 왼쪽 마진 추가 */}
-      <main className="ml-64 pt-16 min-h-screen">
+      <main className="ml-64 pt-16">
         <div className="p-6">
           {children}
         </div>
