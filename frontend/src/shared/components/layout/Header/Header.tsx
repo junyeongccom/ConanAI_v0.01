@@ -1,67 +1,72 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import GoogleLoginButton from '../../../../domain/auth/components/GoogleLoginButton';
 
-// 메뉴 데이터 구조 정의
+// 메인 네비게이션 아이템 정의
 const mainNavItems = [
   {
     name: "About",
-    href: "/about/project",
+    href: "#",
     subItems: [
       { name: "SKY-C에 관하여", href: "/about/project" },
       { name: "개발자에 관하여", href: "/about/developer" },
-    ],
+    ]
   },
   {
     name: "Basic",
-    href: "/basic/adoption-status",
+    href: "#",
     subItems: [
       { name: "ISSB 도입 현황", href: "/basic/adoption-status" },
       { name: "기후공시 개념 정의", href: "/basic/concepts" },
-    ],
+    ]
   },
   {
     name: "Service",
-    href: "/service/climate-risk",
+    href: "#",
     subItems: [
       { name: "기후리스크 평가", href: "/service/climate-risk" },
       { name: "재무영향 시뮬레이션", href: "/service/financial-impact" },
       { name: "TCFD 보고서 생성", href: "/service/tcfd-report" },
-    ],
+    ]
   },
-  { name: "Dashboard", href: "/dashboard", subItems: [] },
-  { name: "Report", href: "/report", subItems: [] },
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+    subItems: []
+  },
+  {
+    name: "Report",
+    href: "/report",
+    subItems: []
+  }
 ];
 
 export default function Header() {
-  const pathname = usePathname();
   const router = useRouter();
-  const { isLoggedIn, userName, userEmail, logout } = useAuth();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const pathname = usePathname();
+  const { user, logout } = useAuth();
+  
   const [isScrolled, setIsScrolled] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [showMegaMenu, setShowMegaMenu] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 메인페이지가 아닌 다른 페이지인지 확인
-  const isMainPage = pathname === '/';
-  const isDashboardPage = pathname.startsWith('/dashboard');
+  const isLoggedIn = !!user;
+  const userName = user?.name;
+  const userEmail = user?.email;
 
-  // 스크롤 이벤트 감지
+  // 스크롤 감지
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setIsScrolled(scrollY > 50);
+      setIsScrolled(window.scrollY > 10);
     };
 
     window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // 드롭다운 외부 클릭 감지
@@ -73,9 +78,7 @@ export default function Header() {
     }
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleDropdownToggle = () => {
@@ -86,9 +89,9 @@ export default function Header() {
     try {
       await logout();
       setIsDropdownOpen(false);
-      router.push('/login');
+      router.push('/');
     } catch (error) {
-      console.error('로그아웃 오류:', error);
+      console.error('로그아웃 실패:', error);
     }
   };
 
@@ -98,12 +101,12 @@ export default function Header() {
   };
 
   const handleDashboardClick = () => {
-    if (isLoggedIn) {
-      router.push('/dashboard');
-    } else {
-      router.push('/login');
-    }
+    router.push('/dashboard');
   };
+
+  // 메인페이지가 아닌 다른 페이지인지 확인
+  const isMainPage = pathname === '/';
+  const isDashboardPage = pathname.startsWith('/dashboard');
 
   // 현재 경로가 메뉴 항목과 일치하는지 확인
   const isActiveMenu = (item: typeof mainNavItems[0]) => {
@@ -189,57 +192,6 @@ export default function Header() {
                 )}
               </div>
             ))}
-            
-            {/* 통합 메가 메뉴 */}
-            <div className={`absolute top-full left-1/2 transform -translate-x-1/2 mt-1 w-[900px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 transition-all duration-300 z-50 ${
-              showMegaMenu 
-                ? 'opacity-100 pointer-events-auto transform translate-y-0' 
-                : 'opacity-0 pointer-events-none transform -translate-y-2'
-            }`}>
-              <div className="p-8">
-                <div className="grid grid-cols-5 gap-6">
-                  {mainNavItems.map((item) => (
-                    <div key={item.name}>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                        {item.name}
-                      </h3>
-                      <ul className="space-y-3">
-                        {item.subItems.length > 0 ? (
-                          item.subItems.map((subItem) => (
-                            <li key={subItem.href}>
-                              <Link
-                                href={subItem.href as any}
-                                className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
-                                  pathname.startsWith(subItem.href)
-                                    ? 'text-blue-600 bg-blue-50 font-medium'
-                                    : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
-                                }`}
-                              >
-                                {subItem.name}
-                              </Link>
-                            </li>
-                          ))
-                        ) : (
-                          <li>
-                            <Link
-                              href={item.href as any}
-                              onClick={item.name === 'Dashboard' ? handleDashboardClick : undefined}
-                              className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
-                                pathname.startsWith(item.href)
-                                  ? 'text-blue-600 bg-blue-50 font-medium'
-                                  : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
-                              }`}
-                            >
-                              {item.name === 'Dashboard' ? '대시보드' : item.name === 'Report' ? '간행물' : item.name}
-                            </Link>
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </nav>
 
           {/* 우상단 인증 관련 UI */}
@@ -322,6 +274,65 @@ export default function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 통합 메가 메뉴 - header 바깥에 위치 */}
+      <div 
+        className="absolute top-full left-0 right-0"
+        onMouseEnter={() => setShowMegaMenu(true)}
+        onMouseLeave={() => setShowMegaMenu(false)}
+      >
+        <div className={`flex justify-center transition-all duration-300 ${
+          showMegaMenu 
+            ? 'opacity-100 pointer-events-auto transform translate-y-0' 
+            : 'opacity-0 pointer-events-none transform -translate-y-2'
+        }`}>
+          <div className="w-[900px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 mt-1">
+            <div className="p-8">
+              <div className="grid grid-cols-5 gap-6">
+                {mainNavItems.map((item) => (
+                  <div key={item.name}>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                      {item.name}
+                    </h3>
+                    <ul className="space-y-3">
+                      {item.subItems.length > 0 ? (
+                        item.subItems.map((subItem) => (
+                          <li key={subItem.href}>
+                            <Link
+                              href={subItem.href as any}
+                              className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+                                pathname.startsWith(subItem.href)
+                                  ? 'text-blue-600 bg-blue-50 font-medium'
+                                  : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                              }`}
+                            >
+                              {subItem.name}
+                            </Link>
+                          </li>
+                        ))
+                      ) : (
+                        <li>
+                          <Link
+                            href={item.href as any}
+                            onClick={item.name === 'Dashboard' ? handleDashboardClick : undefined}
+                            className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+                              pathname.startsWith(item.href)
+                                ? 'text-blue-600 bg-blue-50 font-medium'
+                                : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                            }`}
+                          >
+                            {item.name === 'Dashboard' ? '대시보드' : item.name === 'Report' ? '간행물' : item.name}
+                          </Link>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
