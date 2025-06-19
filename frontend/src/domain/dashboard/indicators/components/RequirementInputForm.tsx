@@ -64,7 +64,6 @@ export function RequirementInputForm({ requirements }: RequirementInputFormProps
             {...commonProps} 
             minRows={4} 
             maxRows={15}
-            cacheMeasurements 
           />
         );
       case 'number':
