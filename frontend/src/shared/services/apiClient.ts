@@ -22,18 +22,23 @@ apiClient.interceptors.request.use(
   (config: AxiosRequestConfig): any => {
     console.log(`🚀 API 요청: ${config.method?.toUpperCase()} ${config.url}`);
     
-    // localStorage에서 JWT 토큰 가져오기
-    const token = localStorage.getItem('access_token');
-    
-    if (token) {
-      // Authorization 헤더에 Bearer 토큰 추가
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
-      console.log('🔐 JWT 토큰이 요청에 포함되었습니다.');
+    // 클라이언트 사이드에서만 localStorage 접근
+    if (typeof window !== 'undefined') {
+      // localStorage에서 JWT 토큰 가져오기
+      const token = localStorage.getItem('access_token');
+      
+      if (token) {
+        // Authorization 헤더에 Bearer 토큰 추가
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        };
+        console.log('🔐 JWT 토큰이 요청에 포함되었습니다.');
+      } else {
+        console.log('📭 JWT 토큰이 없습니다.');
+      }
     } else {
-      console.log('📭 JWT 토큰이 없습니다.');
+      console.log('🖥️ 서버 사이드 렌더링 중 - 토큰 스킵');
     }
     
     return config;

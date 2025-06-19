@@ -246,6 +246,10 @@ frontend/dist/
 frontend/node_modules/
 frontend/.vercel
 frontend/.turbo
+# PWA 관련 자동 생성 파일들
+frontend/public/sw.js
+frontend/public/workbox-*.js
+frontend/public/fallback-*.js
 
 # 서비스별 로그 및 디버그 파일
 # -----------------------------------------------------------------------------

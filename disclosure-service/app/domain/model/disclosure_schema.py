@@ -1,6 +1,6 @@
 # IFRS S2 지표 및 지속가능성 공시 스키마 
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 from uuid import UUID
 from decimal import Decimal
@@ -18,6 +18,21 @@ class DisclosureResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DisclosureItem(BaseModel):
+    """계층적 구조를 위한 공시 정보 아이템 스키마"""
+    disclosure_id: int
+    topic: Optional[str] = None
+    disclosure_ko: str
+
+    class Config:
+        from_attributes = True
+
+
+# 계층적 구조 응답 타입 정의
+# Dict[section, Dict[category, List[DisclosureItem]]]
+StructuredDisclosureResponse = Dict[str, Dict[str, List[DisclosureItem]]]
 
 
 class RequirementResponse(BaseModel):

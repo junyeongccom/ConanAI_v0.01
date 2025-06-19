@@ -278,64 +278,66 @@ export default function Header() {
         </div>
       </div>
 
-      {/* 통합 메가 메뉴 - header 바깥에 위치 */}
-      <div 
-        className="absolute top-full left-0 right-0"
-        onMouseEnter={() => setShowMegaMenu(true)}
-        onMouseLeave={() => setShowMegaMenu(false)}
-      >
-        <div className={`flex justify-center transition-all duration-300 ${
-          showMegaMenu 
-            ? 'opacity-100 pointer-events-auto transform translate-y-0' 
-            : 'opacity-0 pointer-events-none transform -translate-y-2'
-        }`}>
-          <div className="w-[900px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 mt-1">
-            <div className="p-8">
-              <div className="grid grid-cols-5 gap-6">
-                {mainNavItems.map((item) => (
-                  <div key={item.name}>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                      {item.name}
-                    </h3>
-                    <ul className="space-y-3">
-                      {item.subItems.length > 0 ? (
-                        item.subItems.map((subItem) => (
-                          <li key={subItem.href}>
+      {/* 통합 메가 메뉴 - header 바깥에 위치, 대시보드 페이지에서는 렌더링하지 않음 */}
+      {!isDashboardPage && (
+        <div className="absolute top-full left-0 right-0 z-40">
+          <div className={`flex justify-center transition-all duration-300 ${
+            showMegaMenu 
+              ? 'opacity-100 pointer-events-auto transform translate-y-0' 
+              : 'opacity-0 pointer-events-none transform -translate-y-2'
+          }`}>
+            <div 
+              className="w-[900px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 mt-1"
+              onMouseEnter={() => setShowMegaMenu(true)}
+              onMouseLeave={() => setShowMegaMenu(false)}
+            >
+              <div className="p-8">
+                <div className="grid grid-cols-5 gap-6">
+                  {mainNavItems.map((item) => (
+                    <div key={item.name}>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                        {item.name}
+                      </h3>
+                      <ul className="space-y-3">
+                        {item.subItems.length > 0 ? (
+                          item.subItems.map((subItem) => (
+                            <li key={subItem.href}>
+                              <Link
+                                href={subItem.href as any}
+                                className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+                                  pathname.startsWith(subItem.href)
+                                    ? 'text-blue-600 bg-blue-50 font-medium'
+                                    : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                                }`}
+                              >
+                                {subItem.name}
+                              </Link>
+                            </li>
+                          ))
+                        ) : (
+                          <li>
                             <Link
-                              href={subItem.href as any}
+                              href={item.href as any}
+                              onClick={item.name === 'Dashboard' ? handleDashboardClick : undefined}
                               className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
-                                pathname.startsWith(subItem.href)
+                                pathname.startsWith(item.href)
                                   ? 'text-blue-600 bg-blue-50 font-medium'
                                   : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
                               }`}
                             >
-                              {subItem.name}
+                              {item.name === 'Dashboard' ? '대시보드' : item.name === 'Report' ? '간행물' : item.name}
                             </Link>
                           </li>
-                        ))
-                      ) : (
-                        <li>
-                          <Link
-                            href={item.href as any}
-                            onClick={item.name === 'Dashboard' ? handleDashboardClick : undefined}
-                            className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
-                              pathname.startsWith(item.href)
-                                ? 'text-blue-600 bg-blue-50 font-medium'
-                                : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
-                            }`}
-                          >
-                            {item.name === 'Dashboard' ? '대시보드' : item.name === 'Report' ? '간행물' : item.name}
-                          </Link>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                ))}
+                        )}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 } 

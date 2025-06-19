@@ -44,24 +44,11 @@ class DisclosureRepository:
         ).all()
 
     # ISSB S2 Requirement 관련 메서드
-    def get_requirement_by_id(self, requirement_id: int) -> Optional[IssbS2Requirement]:
-        """ID로 요구사항을 조회합니다."""
-        return self.db.query(IssbS2Requirement).filter(
-            IssbS2Requirement.requirement_id == requirement_id
-        ).first()
-
     def get_requirements_by_disclosure_id(self, disclosure_id: int) -> List[IssbS2Requirement]:
         """공시 ID로 관련 요구사항들을 조회합니다."""
         return self.db.query(IssbS2Requirement).filter(
             IssbS2Requirement.disclosure_id == disclosure_id
         ).order_by(IssbS2Requirement.requirement_order).all()
-
-    def get_all_requirements(self) -> List[IssbS2Requirement]:
-        """모든 요구사항을 조회합니다."""
-        return self.db.query(IssbS2Requirement).order_by(
-            IssbS2Requirement.disclosure_id, 
-            IssbS2Requirement.requirement_order
-        ).all()
 
     # ISSB S2 Term 관련 메서드
     def get_term_by_id(self, term_id: int) -> Optional[IssbS2Term]:

@@ -1,10 +1,13 @@
 # IFRS S2 지표 및 지속가능성 공시 관련 서비스 
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import UUID
+from collections import defaultdict
 
 from app.domain.repository.disclosure_repository import DisclosureRepository
 from app.domain.model.disclosure_schema import (
     DisclosureResponse,
+    DisclosureItem,
+    StructuredDisclosureResponse,
     RequirementResponse,
     TermResponse,
     ConceptResponse,
@@ -45,22 +48,34 @@ class DisclosureService:
         disclosures = self.repo.get_disclosures_by_category(category)
         return [DisclosureResponse.from_orm(d) for d in disclosures]
 
-    # ISSB S2 Requirement 관련 서비스 메서드
-    def get_requirement_by_id(self, requirement_id: int) -> Optional[RequirementResponse]:
-        """ID로 요구사항을 조회합니다."""
-        requirement = self.repo.get_requirement_by_id(requirement_id)
-        if requirement:
-            return RequirementResponse.from_orm(requirement)
-        return None
+    def get_structured_disclosures(self) -> StructuredDisclosureResponse:
+        """모든 공시 정보를 계층적 구조로 조회합니다."""
+        # 모든 공시 정보를 가져옵니다
+        disclosures = self.repo.get_all_disclosures()
+        
+        # 계층적 구조를 위한 중첩 딕셔너리 생성
+        structured_data: Dict[str, Dict[str, List[DisclosureItem]]] = defaultdict(lambda: defaultdict(list))
+        
+        # 각 공시 정보를 section과 category로 그룹화
+        for disclosure in disclosures:
+            disclosure_item = DisclosureItem(
+                disclosure_id=disclosure.disclosure_id,
+                topic=disclosure.topic,
+                disclosure_ko=disclosure.disclosure_ko
+            )
+            
+            structured_data[disclosure.section][disclosure.category].append(disclosure_item)
+        
+        # defaultdict를 일반 dict로 변환하여 반환
+        return {
+            section: dict(categories) 
+            for section, categories in structured_data.items()
+        }
 
+    # ISSB S2 Requirement 관련 서비스 메서드
     def get_requirements_by_disclosure_id(self, disclosure_id: int) -> List[RequirementResponse]:
         """공시 ID로 관련 요구사항들을 조회합니다."""
         requirements = self.repo.get_requirements_by_disclosure_id(disclosure_id)
-        return [RequirementResponse.from_orm(r) for r in requirements]
-
-    def get_all_requirements(self) -> List[RequirementResponse]:
-        """모든 요구사항을 조회합니다."""
-        requirements = self.repo.get_all_requirements()
         return [RequirementResponse.from_orm(r) for r in requirements]
 
     # ISSB S2 Term 관련 서비스 메서드
