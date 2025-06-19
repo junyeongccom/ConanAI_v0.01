@@ -1,6 +1,7 @@
 export interface IndicatorItemData {
   disclosure_id: number;
   topic: string | null;
+  paragraph?: string;
   disclosure_ko: string;
 }
 
