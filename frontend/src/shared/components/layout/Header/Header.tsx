@@ -201,8 +201,7 @@ export default function Header() {
                     {item.name}
                   </button>
                 ) : (
-                  <Link
-                    href={item.href as any}
+                  <button
                     className={`inline-flex items-center text-sm font-medium transition-all duration-200 px-4 py-2 rounded-md ${
                       isActiveMenu(item)
                         ? 'text-blue-600 bg-blue-50 border border-blue-200' 
@@ -211,14 +210,16 @@ export default function Header() {
                   >
                     {item.name}
                     <svg 
-                      className="w-4 h-4 ml-1 transition-transform duration-200" 
+                      className={`w-4 h-4 ml-1 transition-all duration-300 ease-out ${
+                        showMegaMenu ? 'transform rotate-180' : 'transform rotate-0'
+                      }`} 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                  </Link>
+                  </button>
                 )}
               </div>
             ))}
@@ -308,60 +309,110 @@ export default function Header() {
         </div>
       </div>
 
-      {/* 통합 메가 메뉴 - header 바깥에 위치 */}
-      {showMegaMenu && (
-        <div className="absolute top-full left-0 right-0 z-50">
-          <div className="flex justify-center transition-all duration-300 opacity-100 pointer-events-auto transform translate-y-0">
-            <div 
-              ref={megaMenuRef}
-              data-mega-menu
-              className="w-[900px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 mt-1"
-              onMouseEnter={handleMegaMenuMouseEnter}
-              onMouseLeave={handleMegaMenuMouseLeave}
-            >
-              <div className="p-8">
-                <div className="grid grid-cols-5 gap-6">
-                  {mainNavItems.map((item) => (
-                    <div key={item.name}>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                        {item.name}
-                      </h3>
-                      <ul className="space-y-3">
-                        {item.subItems.length > 0 ? (
-                          item.subItems.map((subItem) => (
-                            <li key={subItem.href}>
+      {/* 통합 메가 메뉴 - header 바깥에 위치, 드롭다운 활성화 시 사이드바보다 위에 */}
+      {(!isDashboardPage || showMegaMenu) && (
+        <div className={`absolute top-full left-0 right-0 overflow-hidden transition-all duration-400 ease-out ${
+          isDashboardPage 
+            ? 'z-[100] pointer-events-auto' // 대시보드에서 활성화된 경우만 렌더링
+            : 'z-50'
+        }`}>
+        <div className={`flex justify-center transition-all duration-400 ease-out ${
+          showMegaMenu 
+            ? 'opacity-100 pointer-events-auto transform translate-y-0' 
+            : 'opacity-0 pointer-events-none transform -translate-y-8'
+        }`}>
+          <div 
+            ref={megaMenuRef}
+            data-mega-menu
+            className={`w-[900px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 mt-1 backdrop-blur-sm border border-gray-100 transition-all duration-400 ease-out relative ${
+              isDashboardPage && showMegaMenu ? 'z-[101]' : ''
+            } ${
+              showMegaMenu 
+                ? 'transform translate-y-0 scale-100' 
+                : 'transform -translate-y-4 scale-95'
+            }`}
+            onMouseEnter={handleMegaMenuMouseEnter}
+            onMouseLeave={handleMegaMenuMouseLeave}
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%)',
+              boxShadow: showMegaMenu 
+                ? '0 20px 60px -10px rgba(0, 0, 0, 0.15), 0 10px 30px -5px rgba(0, 0, 0, 0.1)'
+                : '0 5px 20px -5px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+                              <div className="p-8">
+                  <div className="grid grid-cols-5 gap-6">
+                    {mainNavItems.map((item, columnIndex) => (
+                      <div 
+                        key={item.name}
+                        className={`transform transition-all duration-400 ease-out ${
+                          showMegaMenu 
+                            ? 'translate-y-0 opacity-100' 
+                            : 'translate-y-6 opacity-0'
+                        }`}
+                        style={{
+                          transitionDelay: showMegaMenu ? `${columnIndex * 80}ms` : '0ms'
+                        }}
+                      >
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200 relative">
+                          {item.name}
+                          <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-500 group-hover:w-full"></div>
+                        </h3>
+                        <ul className="space-y-3">
+                          {item.subItems.length > 0 ? (
+                            item.subItems.map((subItem, itemIndex) => (
+                              <li 
+                                key={subItem.href}
+                                className={`transform transition-all duration-400 ease-out ${
+                                  showMegaMenu 
+                                    ? 'translate-x-0 opacity-100' 
+                                    : 'translate-x-4 opacity-0'
+                                }`}
+                                style={{
+                                  transitionDelay: showMegaMenu ? `${(columnIndex * 80) + (itemIndex * 40) + 150}ms` : '0ms'
+                                }}
+                              >
+                                <Link
+                                  href={subItem.href as any}
+                                  className={`block px-3 py-2 text-sm rounded-md transition-all duration-200 hover:scale-105 hover:shadow-sm ${
+                                    pathname.startsWith(subItem.href)
+                                      ? 'text-blue-600 bg-blue-50 font-medium border border-blue-200'
+                                      : 'text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600'
+                                  }`}
+                                >
+                                  {subItem.name}
+                                </Link>
+                              </li>
+                            ))
+                          ) : (
+                            <li
+                              className={`transform transition-all duration-400 ease-out ${
+                                showMegaMenu 
+                                  ? 'translate-x-0 opacity-100' 
+                                  : 'translate-x-4 opacity-0'
+                              }`}
+                              style={{
+                                transitionDelay: showMegaMenu ? `${(columnIndex * 80) + 150}ms` : '0ms'
+                              }}
+                            >
                               <Link
-                                href={subItem.href as any}
-                                className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
-                                  pathname.startsWith(subItem.href)
-                                    ? 'text-blue-600 bg-blue-50 font-medium'
-                                    : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                                href={item.href as any}
+                                onClick={item.name === 'Dashboard' ? handleDashboardClick : undefined}
+                                className={`block px-3 py-2 text-sm rounded-md transition-all duration-200 hover:scale-105 hover:shadow-sm ${
+                                  pathname.startsWith(item.href)
+                                    ? 'text-blue-600 bg-blue-50 font-medium border border-blue-200'
+                                    : 'text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600'
                                 }`}
                               >
-                                {subItem.name}
+                                {item.name === 'Dashboard' ? '대시보드' : item.name === 'Report' ? '간행물' : item.name}
                               </Link>
                             </li>
-                          ))
-                        ) : (
-                          <li>
-                            <Link
-                              href={item.href as any}
-                              onClick={item.name === 'Dashboard' ? handleDashboardClick : undefined}
-                              className={`block px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
-                                pathname.startsWith(item.href)
-                                  ? 'text-blue-600 bg-blue-50 font-medium'
-                                  : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
-                              }`}
-                            >
-                              {item.name === 'Dashboard' ? '대시보드' : item.name === 'Report' ? '간행물' : item.name}
-                            </Link>
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-                  ))}
+                          )}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
             </div>
           </div>
         </div>
