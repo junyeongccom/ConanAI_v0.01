@@ -1,5 +1,11 @@
 import { apiClient } from '@/shared/services/apiClient';
-import { StructuredIndicators, RequirementData } from '../types';
+import { StructuredIndicators, RequirementData, IndicatorItemData } from '../types';
+
+// 확장된 인디케이터 타입 (section, category 포함)
+interface ExtendedIndicatorItemData extends IndicatorItemData {
+  section: string;
+  category: string;
+}
 
 // 목업 데이터 (개발용)
 const mockData: StructuredIndicators = {
@@ -142,7 +148,7 @@ export const getFilteredIndicators = async (section?: string, category?: string)
     }
     
     // 플랫한 배열로 변환 (기존 API 형식에 맞춤)
-    const flatArray = [];
+    const flatArray: ExtendedIndicatorItemData[] = [];
     for (const [sectionName, categories] of Object.entries(filteredData)) {
       for (const [categoryName, items] of Object.entries(categories)) {
         for (const item of items) {
