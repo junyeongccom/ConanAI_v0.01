@@ -54,6 +54,8 @@ export default function Header() {
   const [showMegaMenu, setShowMegaMenu] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const megaMenuRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!user;
   const userName = user?.name;
@@ -69,7 +71,7 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 드롭다운 외부 클릭 감지
+  // 드롭다운 외부 클릭 감지 (사용자 드롭다운만)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -80,6 +82,33 @@ export default function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // 메가 메뉴 마우스 이벤트 처리
+  const handleNavMouseEnter = () => {
+    // 모든 페이지에서 메가 메뉴 활성화 (대시보드 포함)
+    setShowMegaMenu(true);
+  };
+
+  const handleNavMouseLeave = () => {
+    // 약간의 지연을 주어 메가 메뉴로 이동할 시간을 제공
+    setTimeout(() => {
+      // 네비게이션이나 메가 메뉴에 마우스가 없으면 닫기
+      const isNavHovered = navRef.current?.matches(':hover');
+      const isMegaMenuHovered = megaMenuRef.current?.matches(':hover');
+      
+      if (!isNavHovered && !isMegaMenuHovered) {
+        setShowMegaMenu(false);
+      }
+    }, 100);
+  };
+
+  const handleMegaMenuMouseEnter = () => {
+    setShowMegaMenu(true);
+  };
+
+  const handleMegaMenuMouseLeave = () => {
+    setShowMegaMenu(false);
+  };
 
   const handleDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -153,9 +182,10 @@ export default function Header() {
 
           {/* 중앙 네비게이션 메뉴 */}
           <nav 
+            ref={navRef}
             className="absolute left-1/2 transform -translate-x-1/2 hidden md:flex items-center space-x-1"
-            onMouseEnter={() => setShowMegaMenu(true)}
-            onMouseLeave={() => setShowMegaMenu(false)}
+            onMouseEnter={handleNavMouseEnter}
+            onMouseLeave={handleNavMouseLeave}
           >
             {mainNavItems.map((item) => (
               <div key={item.name} className="relative">
@@ -278,18 +308,16 @@ export default function Header() {
         </div>
       </div>
 
-      {/* 통합 메가 메뉴 - header 바깥에 위치, 대시보드 페이지에서는 렌더링하지 않음 */}
-      {!isDashboardPage && (
-        <div className="absolute top-full left-0 right-0 z-40">
-          <div className={`flex justify-center transition-all duration-300 ${
-            showMegaMenu 
-              ? 'opacity-100 pointer-events-auto transform translate-y-0' 
-              : 'opacity-0 pointer-events-none transform -translate-y-2'
-          }`}>
+      {/* 통합 메가 메뉴 - header 바깥에 위치 */}
+      {showMegaMenu && (
+        <div className="absolute top-full left-0 right-0 z-50">
+          <div className="flex justify-center transition-all duration-300 opacity-100 pointer-events-auto transform translate-y-0">
             <div 
+              ref={megaMenuRef}
+              data-mega-menu
               className="w-[900px] bg-white rounded-lg shadow-xl ring-1 ring-black ring-opacity-5 mt-1"
-              onMouseEnter={() => setShowMegaMenu(true)}
-              onMouseLeave={() => setShowMegaMenu(false)}
+              onMouseEnter={handleMegaMenuMouseEnter}
+              onMouseLeave={handleMegaMenuMouseLeave}
             >
               <div className="p-8">
                 <div className="grid grid-cols-5 gap-6">
