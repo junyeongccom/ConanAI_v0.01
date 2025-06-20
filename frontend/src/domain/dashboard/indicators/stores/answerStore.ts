@@ -16,11 +16,11 @@ interface Answer {
  */
 interface AnswerState {
   // 상태: requirementId를 키로 사용하는 답변 객체
-  answers: Record<number, Answer>;
+  answers: Record<string, Answer>;
   // 액션: 특정 답변을 추가하거나 수정합니다.
-  setAnswer: (requirementId: number, value: any) => void;
+  setAnswer: (requirementId: string, value: any) => void;
   // 액션: DB에 제출할 형태로 모든 답변을 배열로 반환합니다.
-  getAnswersForSubmission: () => Array<{ requirement_id: number; answer_value: any }>;
+  getAnswersForSubmission: () => Array<{ requirement_id: string; answer_value: any }>;
   // 액션: DB에 성공적으로 저장 후, 스토어의 모든 답변을 비웁니다.
   clearAnswers: () => void;
 }
@@ -52,7 +52,7 @@ export const useAnswerStore = create<AnswerState>()(
         const currentAnswers = get().answers;
         // 객체를 API가 요구하는 배열 형태로 변환
         return Object.entries(currentAnswers).map(([id, ans]) => ({
-          requirement_id: Number(id),
+          requirement_id: id,
           answer_value: ans.answer_value,
         }));
       },

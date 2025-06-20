@@ -158,7 +158,7 @@ async def get_adoption_status_by_id(
         )
 
 
-# ISSB S2 공시 정보 관련 엔드포인트
+
 @router.get("/disclosure-data/disclosures", 
            response_model=StructuredDisclosureResponse, 
            summary="ISSB S2 공시 정보 계층적 구조 조회")
@@ -179,9 +179,8 @@ async def get_disclosures(
             "지배구조": {
                 "기후 관련 위험과 기회에 대한 이사회의 감독 사항": [
                     {
-                        "disclosure_id": 1,
+                        "disclosure_id": "s2-g1",
                         "topic": "목적",
-                        "paragraph": "6-a",
                         "disclosure_ko": "기후 관련 위험 및 기회를 감독할 책임이 있는..."
                     }
                 ]
@@ -247,14 +246,14 @@ async def get_disclosures_list(
            response_model=DisclosureResponse, 
            summary="ISSB S2 공시 정보 상세 조회")
 async def get_disclosure_by_id(
-    disclosure_id: int,
+    disclosure_id: str,
     disclosure_service: DisclosureService = Depends(get_disclosure_service)
 ):
     """
     ID로 특정 ISSB S2 공시 정보를 조회합니다.
     
     Args:
-        disclosure_id: 공시 정보 ID
+        disclosure_id: 공시 정보 ID (예: s2-g1, s2-r2)
         
     Returns:
         DisclosureResponse: ISSB S2 공시 정보 상세 정보
@@ -283,14 +282,14 @@ async def get_disclosure_by_id(
            response_model=List[RequirementResponse],
            summary="특정 공시 지표에 대한 요구사항 목록 조회")
 async def get_requirements_for_disclosure(
-    disclosure_id: int,
+    disclosure_id: str,
     disclosure_service: DisclosureService = Depends(get_disclosure_service)
 ):
     """
     특정 disclosure_id에 해당하는 모든 요구사항(requirements) 목록을 조회합니다.
     
     Args:
-        disclosure_id: 공시 지표 ID
+        disclosure_id: 공시 지표 ID (예: s2-g1, s2-r2)
         
     Returns:
         List[RequirementResponse]: 해당 공시 지표의 요구사항 목록 (빈 리스트 가능)

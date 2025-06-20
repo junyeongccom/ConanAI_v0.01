@@ -12,23 +12,20 @@ const mockData: StructuredIndicators = {
   "지배구조": {
     "기후 관련 위험과 기회에 대한 이사회의 감독 사항": [
       {
-        disclosure_id: 1,
+        disclosure_id: "s2-g1",
         topic: "목적",
-        paragraph: "6-a",
         disclosure_ko: "기업은 기후 관련 위험 및 기회를 감독할 책임이 있는 이사회 구성원 또는 이사회 위원회(들)를 공시하여야 한다."
       },
       {
-        disclosure_id: 2,
+        disclosure_id: "s2-g2",
         topic: "기후 관련 위험과 기회에 대한 이사회의 감독 사항",
-        paragraph: "6-a-i",
         disclosure_ko: "기후 관련 위험 및 기회에 대한 책임이 해당 의사결정기구(들)에게 어떻게 반영되는지에 대한 설명"
       }
     ],
     "기후 관련 위험과 기회에 대한 경영진의 역할": [
       {
-        disclosure_id: 7,
+        disclosure_id: "s2-g3",
         topic: "목적",
-        paragraph: "6-b",
         disclosure_ko: "기업은 기후 관련 위험 및 기회를 모니터링, 관리 및 감독하는 데 있어서 경영진의 역할을 공시하여야 한다."
       }
     ]
@@ -36,23 +33,20 @@ const mockData: StructuredIndicators = {
   "전략": {
     "위험 및 기회": [
       {
-        disclosure_id: 11,
+        disclosure_id: "s2-s1",
         topic: "목적",
-        paragraph: "10",
         disclosure_ko: "기업은 일반목적재무보고서의 이용자가 기업 전망에 영향을 미칠 수 있는 기후 관련 위험 및 기회를 이해할 수 있도록 정보를 공시하여야 한다."
       },
       {
-        disclosure_id: 12,
+        disclosure_id: "s2-s2",
         topic: "위험 및 기회",
-        paragraph: "10-a",
         disclosure_ko: "기업이 단기, 중기 및 장기에 걸쳐 노출된 기후 관련 위험 및 기회에 대한 설명"
       }
     ],
     "전략 및 의사결정": [
       {
-        disclosure_id: 20,
+        disclosure_id: "s2-s3",
         topic: "목적",
-        paragraph: "14",
         disclosure_ko: "기업은 기후 관련 위험 및 기회에 대응하기 위한 전략을 공시하여야 한다."
       }
     ]
@@ -60,9 +54,8 @@ const mockData: StructuredIndicators = {
   "위험관리": {
     "위험관리 프로세스": [
       {
-        disclosure_id: 30,
+        disclosure_id: "s2-r1",
         topic: "목적",
-        paragraph: "25",
         disclosure_ko: "기업은 기후 관련 위험을 식별, 평가, 우선순위 설정 및 모니터링하는 프로세스를 공시하여야 한다."
       }
     ]
@@ -70,17 +63,15 @@ const mockData: StructuredIndicators = {
   "지표와 목표": {
     "기후 관련 지표": [
       {
-        disclosure_id: 40,
+        disclosure_id: "s2-m1",
         topic: "목적",
-        paragraph: "35",
         disclosure_ko: "기업은 기후 관련 위험 및 기회와 관련된 성과를 측정하고 모니터링하는 데 사용하는 지표를 공시하여야 한다."
       }
     ],
     "기후 관련 목표": [
       {
-        disclosure_id: 50,
+        disclosure_id: "s2-m2",
         topic: "목적",
-        paragraph: "53",
         disclosure_ko: "기업은 기후 관련 위험을 완화하거나 기후 관련 기회에 적응하기 위해 설정한 정량적 및 정성적 목표를 공시하여야 한다."
       }
     ]
@@ -102,7 +93,7 @@ export const getStructuredIndicators = async (): Promise<StructuredIndicators> =
 };
 
 // 개별 공시 지표 조회 (향후 사용을 위해)
-export const getIndicatorById = async (id: number) => {
+export const getIndicatorById = async (id: string) => {
   try {
     const response = await apiClient.get(`/api/disclosure/disclosure-data/disclosures/${id}`);
     return response.data;
@@ -170,7 +161,7 @@ export const getFilteredIndicators = async (section?: string, category?: string)
  * @param disclosureId 요구사항을 조회할 공시 지표의 ID
  * @returns 요구사항 데이터 배열, 실패 시 빈 배열을 반환합니다.
  */
-export const getRequirements = async (disclosureId: number): Promise<RequirementData[]> => {
+export const getRequirements = async (disclosureId: string): Promise<RequirementData[]> => {
   try {
     const response = await apiClient.get<RequirementData[]>(`/api/disclosure/disclosure-data/disclosures/${disclosureId}/requirements`);
     return response.data;

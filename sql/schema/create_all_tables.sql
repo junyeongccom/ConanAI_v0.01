@@ -17,58 +17,91 @@ CREATE TABLE IF NOT EXISTS "user" (
     last_login_at TIMESTAMP WITH TIME ZONE
 );
 
--- 2. issb_s2_disclosure Table (ISSB S2 지표 정보)
+-- 2. issb_s2_disclosure Table (ISSB S2 공시 지표 정보)
+-- 역할: 공시 보고서의 큰 틀을 구성하는 최상위 지표 정보를 담습니다.
 CREATE TABLE IF NOT EXISTS issb_s2_disclosure (
-    disclosure_id SERIAL PRIMARY KEY, -- INT 대신 SERIAL 사용 (자동 증가)
+    -- 기본 키, CSV 파일의 disclosure_id 형태 (s2-g1, s2-r2, s2-s5 등)를 그대로 사용
+    disclosure_id VARCHAR(255) PRIMARY KEY,
+    -- IFRS S2의 4대 영역 (지배구조, 전략, 위험관리, 지표 및 목표)
     section VARCHAR(255) NOT NULL,
+    -- 각 영역 내의 상세 카테고리
     category VARCHAR(255) NOT NULL,
-    topic VARCHAR(255), -- Nullable
-    paragraph VARCHAR(50), -- Nullable, 단락 번호 (예: 14(a), 15(b) 등)
-    disclosure_ko TEXT NOT NULL,
-    disclosure_en TEXT, -- Nullable
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL
+    -- 카테고리 하위의 구체적인 주제 (Nullable)
+    topic VARCHAR(255),
+    -- 공시 지표의 국문 설명
+    disclosure_ko TEXT NOT NULL
 );
 
+
 -- 3. issb_s2_requirement Table (S2 지표별 요구사항)
+-- 역할: 사용자에게 질문할 내용과 그 질문의 형태(type, schema)를 정의하는 핵심 테이블입니다.
 CREATE TABLE IF NOT EXISTS issb_s2_requirement (
-    requirement_id SERIAL PRIMARY KEY, -- INT 대신 SERIAL 사용 (자동 증가)
-    disclosure_id INT NOT NULL,
-    requirement_order INT NOT NULL,
+    -- 기본 키. 'gov-1', 'str-1'과 같은 접두사 기반 ID를 사용하기 위해 VARCHAR로 변경.
+    requirement_id VARCHAR(255) PRIMARY KEY,
+    -- 외래 키: 어떤 공시 지표(disclosure)에 속하는 질문인지 명시합니다.
+    disclosure_id VARCHAR(255),
+    -- 같은 지표 내에서 질문이 표시될 순서를 정의합니다.
+    requirement_order INT NOT NULL DEFAULT 0,
+    -- 사용자에게 실제로 보여줄 질문 텍스트입니다.
     requirement_text_ko TEXT NOT NULL,
+    -- 입력 UI의 형태를 결정하는 타입. (예: text, text_long, table_input, structured_list, select 등)
     data_required_type VARCHAR(50) NOT NULL,
-    input_placeholder_ko TEXT, -- Nullable
-    input_guidance_ko TEXT, -- Nullable
+    -- 'table_input', 'structured_list' 등 복합 입력 UI의 상세 구조(컬럼, 필드 정보)를 정의하는 JSONB 컬럼.
+    input_schema JSONB,
+    -- 단일 입력창에 보여줄 플레이스홀더 텍스트 (Nullable).
+    input_placeholder_ko TEXT,
+    -- 입력에 대한 추가적인 안내 문구 (Nullable).
+    input_guidance_ko TEXT,
+    -- 레코드 생성 및 마지막 수정 타임스탬프.
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+
+    -- 외래 키 제약 조건 설정
     CONSTRAINT fk_disclosure
         FOREIGN KEY (disclosure_id)
         REFERENCES issb_s2_disclosure(disclosure_id)
-        ON DELETE CASCADE -- 연관된 disclosure 삭제 시 requirement도 삭제
+        ON DELETE SET NULL -- disclosure가 삭제되어도 requirement는 남을 수 있도록 변경
 );
 
+
 -- 4. answer Table (사용자별 요구사항 응답 데이터)
+-- 역할: 각 사용자가 각 requirement에 대해 입력한 답변을 저장합니다.
 CREATE TABLE IF NOT EXISTS answer (
-    answer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- UUID 기본값 설정
-    user_id UUID NOT NULL, -- user_id가 UUID일 경우 UUID 타입으로 변경
-    requirement_id INT NOT NULL,
+    -- 답변의 고유 ID.
+    answer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- 답변을 작성한 사용자의 ID (user 테이블 외래 키).
+    user_id UUID NOT NULL,
+    -- 어떤 질문(requirement)에 대한 답변인지 명시 (issb_s2_requirement 외래 키). VARCHAR로 타입 일치.
+    requirement_id VARCHAR(255) NOT NULL,
+
+    -- --- 답변 값 저장 컬럼 ---
+    -- 'text', 'number', 'date' 등 단일 텍스트로 표현 가능한 답변 저장.
     answer_value_text TEXT,
-    answer_value_number DECIMAL(18, 4),
-    answer_value_boolean BOOLEAN,
-    answer_value_location VARCHAR(255),
-    answer_value_financial_impact DECIMAL(18, 4),
+    -- 'text_long' 타입의 긴 서술형 답변 저장.
+    answer_value_text_long TEXT,
+    -- 'table_input', 'structured_list' 등 JSON 형태로 저장되어야 하는 복합 답변 저장.
+    -- 가장 유연하고 강력한 방식.
+    answer_value_json JSONB,
+
+    -- 답변 생성 및 마지막 수정 타임스탬프.
     answered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     last_edited_at TIMESTAMP WITH TIME ZONE,
+    -- 답변의 상태 관리 (예: DRAFT, COMPLETED).
     status VARCHAR(50) DEFAULT 'DRAFT' NOT NULL,
+
+    -- 외래 키 제약 조건 설정
     CONSTRAINT fk_user
         FOREIGN KEY (user_id)
         REFERENCES "user"(user_id)
-        ON DELETE CASCADE, -- 연관된 user 삭제 시 answer도 삭제
+        ON DELETE CASCADE, -- 사용자가 탈퇴하면 답변도 함께 삭제
     CONSTRAINT fk_requirement
         FOREIGN KEY (requirement_id)
         REFERENCES issb_s2_requirement(requirement_id)
-        ON DELETE CASCADE, -- 연관된 requirement 삭제 시 answer도 삭제
-    CONSTRAINT uq_user_requirement UNIQUE (user_id, requirement_id) -- 한 사용자는 한 요구사항에 대해 하나의 응답만 가질 수 있도록 (또는 업데이트되도록)
+        ON DELETE CASCADE, -- 질문이 삭제되면 답변도 함께 삭제
+
+    -- 복합 고유 키 제약 조건: 한 사용자는 하나의 질문에 대해 하나의 답변만 가질 수 있도록 보장.
+    -- 이 제약 덕분에 'INSERT ... ON CONFLICT DO UPDATE' (Upsert) 구문을 효율적으로 사용할 수 있음.
+    CONSTRAINT uq_user_requirement UNIQUE (user_id, requirement_id)
 );
 
 
@@ -135,25 +168,3 @@ CREATE INDEX IF NOT EXISTS idx_heatwave_scenario ON heatwave_summary(scenario);
 CREATE INDEX IF NOT EXISTS idx_heatwave_region ON heatwave_summary(region_name);
 CREATE INDEX IF NOT EXISTS idx_heatwave_period ON heatwave_summary(year_period);
 CREATE INDEX IF NOT EXISTS idx_heatwave_composite ON heatwave_summary(scenario, region_name, year_period);
-
--- 샘플 데이터 조회 쿼리 예시
-/*
--- 특정 지역의 모든 시나리오 조회
-SELECT * FROM heatwave_summary
-WHERE region_name = '경기도'
-ORDER BY scenario, year_period;
-
--- 특정 시나리오의 모든 지역 조회
-SELECT * FROM heatwave_summary
-WHERE scenario = 'SSP5-8.5'
-ORDER BY region_name, year_period;
-
--- 변화율이 높은 상위 10개 지역-시나리오 조합
-SELECT scenario, region_name, year_period, change_rate
-FROM heatwave_summary
-WHERE year_period = '2050' AND change_rate IS NOT NULL
-ORDER BY change_rate DESC
-LIMIT 10;
-*/
-
--- SELECT 'All tables created successfully!' AS result;

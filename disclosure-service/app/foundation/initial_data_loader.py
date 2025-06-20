@@ -1,5 +1,7 @@
 import pandas as pd
 import os
+import csv
+import json
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 import logging
@@ -27,14 +29,29 @@ CSV_FILES = {
 
 
 def _load_csv(file_name: str) -> pd.DataFrame:
-    """CSV 파일을 읽어서 DataFrame으로 반환"""
+    """CSV 파일을 읽어서 DataFrame으로 반환 (멀티라인 JSON 처리를 위한 수정된 버전)"""
     file_path = os.path.join(DATA_DIR, file_name)
     if not os.path.exists(file_path):
         logger.error(f"CSV 파일을 찾을 수 없습니다: {file_path}")
         return pd.DataFrame()
     
     try:
-        df = pd.read_csv(file_path, encoding='utf-8')
+        # engine='python' : 멀티라인 필드 처리를 위한 필수 옵션
+        # dtype=str : 모든 컬럼을 문자열로 읽어와, pandas의 자동 타입 추론으로 인한 오류 방지
+        # quoting=csv.QUOTE_ALL : 모든 필드를 인용부호로 처리
+        # doublequote=True : 인용부호 안의 인용부호를 "" 형태로 이스케이프 처리 인식
+        import csv
+        df = pd.read_csv(
+            file_path, 
+            encoding='utf-8', 
+            engine='python', 
+            dtype=str,
+            quoting=csv.QUOTE_ALL,
+            doublequote=True,
+            skipinitialspace=True
+        )
+        # NaN 값들을 빈 문자열로 대체하여 후속 처리 용이
+        df.fillna('', inplace=True)
         logger.info(f"CSV 파일 읽기 성공: {file_name} ({len(df)} 행)")
         return df
     except Exception as e:
@@ -82,12 +99,11 @@ def _load_issb_s2_disclosures(db: Session) -> bool:
                     continue
 
                 disclosure = IssbS2Disclosure(
+                    disclosure_id=_clean_string_value(record.get('disclosure_id')),
                     section=_clean_string_value(record.get('section')),
                     category=_clean_string_value(record.get('category')),
                     topic=_clean_string_value(record.get('topic')),
-                    paragraph=_clean_string_value(record.get('paragraph')),
-                    disclosure_ko=_clean_string_value(record.get('disclosure_ko')),
-                    disclosure_en=_clean_string_value(record.get('disclosure_en'))
+                    disclosure_ko=_clean_string_value(record.get('disclosure_ko'))
                 )
                 
                 db.add(disclosure)
@@ -108,67 +124,90 @@ def _load_issb_s2_disclosures(db: Session) -> bool:
 
 
 def _load_issb_s2_requirements(db: Session) -> bool:
-    """ISSB S2 요구사항 데이터 적재"""
+    """ISSB S2 요구사항 데이터 적재 (멀티라인 JSON 처리 강화 버전)"""
     try:
         # 기존 데이터 확인
-        if db.query(IssbS2Requirement).count() > 0:
+        existing_count = db.query(IssbS2Requirement).count()
+        logger.info(f"🔍 기존 requirement 데이터 개수: {existing_count}")
+        if existing_count > 0:
             logger.info("IssbS2Requirement 테이블에 이미 데이터가 존재합니다. 건너뜁니다.")
             return True
 
-        df = _load_csv(CSV_FILES["requirement"])
-        if df.empty:
-            logger.warning("Requirement CSV 파일이 비어있습니다.")
-            return False
-
-        # disclosure_id 매핑을 위한 딕셔너리 생성
-        disclosures = db.query(IssbS2Disclosure).all()
-        disclosure_mapping = {}
-        for disc in disclosures:
-            # CSV의 disclosure_id 형식 (s2-1, s2-2 등)과 매핑
-            key = f"s2-{disc.disclosure_id}"
-            disclosure_mapping[key] = disc.disclosure_id
-
+        file_path = os.path.join(DATA_DIR, CSV_FILES["requirement"])
+        logger.info(f"📂 CSV 파일 경로: {file_path}")
         success_count = 0
         error_count = 0
 
-        for index, record in df.iterrows():
-            try:
-                # 빈 행 건너뛰기
-                if pd.isna(record.get('requirement_id')) or record.get('requirement_id') == '':
+        logger.info(f"🔄 CSV 파일 열기 시도: {file_path}")
+        with open(file_path, mode='r', encoding='utf-8-sig') as infile:  # BOM 처리를 위해 utf-8-sig 사용
+            # pandas 대신 파이썬 내장 csv.reader 사용
+            # 이 reader는 큰따옴표로 묶인 멀티라인 필드를 올바르게 하나의 필드로 인식합니다.
+            reader = csv.reader(infile, quotechar='"', skipinitialspace=True)
+            
+            # 헤더를 읽어서 각 컬럼의 인덱스를 매핑합니다.
+            header = next(reader)
+            logger.info(f"📋 CSV 헤더 (BOM 제거 후): {header}")
+            
+            for row_num, row in enumerate(reader, 2): # 헤더 다음인 2행부터 시작
+                # 행의 데이터가 헤더 개수와 맞지 않으면 건너뜁니다.
+                if len(row) != len(header):
+                    logger.warning(f"Skipping malformed row {row_num}: {row}")
                     continue
 
-                # disclosure_id 매핑
-                csv_disclosure_id = _clean_string_value(record.get('disclosure_id'))
-                if not csv_disclosure_id or csv_disclosure_id not in disclosure_mapping:
-                    logger.warning(f"매핑되지 않은 disclosure_id: {csv_disclosure_id} (행 {index + 1})")
+                record = dict(zip(header, row))
+
+                try:
+                    # 빈 행 건너뛰기
+                    if not record.get('requirement_id'):
+                        continue
+
+                    parsed_input_schema = None
+                    input_schema_str = record.get('input_schema', '').strip()
+
+                    if input_schema_str:
+                        # CSV 표준에 따라 ""로 이스케이프된 큰따옴표를 "로 복원합니다.
+                        # 이 과정이 파싱 성공의 핵심입니다.
+                        input_schema_str_fixed = input_schema_str.replace('""', '"')
+                        
+                        try:
+                            import json
+                            parsed_input_schema = json.loads(input_schema_str_fixed)
+                            logger.info(f"✅ {record.get('requirement_id')}: input_schema JSON 파싱 성공")
+                        except json.JSONDecodeError as e:
+                            logger.warning(f"❌ {record.get('requirement_id')}: input_schema JSON 파싱 실패 - {e}")
+                            logger.warning(f"   원본 데이터 (복원 후): {input_schema_str_fixed[:300]}")
+                            error_count += 1
+                            continue # 문제가 있는 행은 건너뜁니다.
+                    
+                    requirement = IssbS2Requirement(
+                        requirement_id=record.get('requirement_id'),
+                        disclosure_id=record.get('disclosure_id') if record.get('disclosure_id') else None,
+                        requirement_order=int(record.get('requirement_order', 0)),
+                        requirement_text_ko=record.get('requirement_text_ko', ''),
+                        data_required_type=record.get('data_required_type', 'text'),
+                        input_schema=parsed_input_schema,
+                        input_placeholder_ko=record.get('input_placeholder_ko', ''),
+                        input_guidance_ko=record.get('input_guidance_ko', '')
+                    )
+                    
+                    db.add(requirement)
+                    success_count += 1
+                    
+                except Exception as e:
                     error_count += 1
-                    continue
-
-                mapped_disclosure_id = disclosure_mapping[csv_disclosure_id]
-
-                requirement = IssbS2Requirement(
-                    disclosure_id=mapped_disclosure_id,
-                    requirement_order=int(record.get('requirement_order', 1)),
-                    requirement_text_ko=_clean_string_value(record.get('requirement_text_ko')),
-                    data_required_type=_clean_string_value(record.get('data_required_type', 'text')),
-                    input_placeholder_ko=_clean_string_value(record.get('input_placeholder_ko')),
-                    input_guidance_ko=_clean_string_value(record.get('input_guidance_ko'))
-                )
-                
-                db.add(requirement)
-                success_count += 1
-                
-            except Exception as e:
-                error_count += 1
-                logger.error(f"Requirement 데이터 추가 실패 (행 {index + 1}): {str(e)}")
+                    logger.error(f"Requirement 데이터 처리 실패 (행 {row_num}): {str(e)}")
 
         db.commit()
         logger.info(f"IssbS2Requirement 데이터 적재 완료: 성공 {success_count}건, 실패 {error_count}건")
         return success_count > 0
 
+    except FileNotFoundError:
+        logger.error(f"CSV 파일을 찾을 수 없습니다: {file_path}")
+        db.rollback()
+        return False
     except Exception as e:
         db.rollback()
-        logger.error(f"IssbS2Requirement 데이터 적재 중 오류 발생: {str(e)}")
+        logger.error(f"IssbS2Requirement 데이터 적재 중 심각한 오류 발생: {str(e)}")
         return False
 
 

@@ -3,8 +3,8 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Foreign
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
-from sqlalchemy.dialects.postgresql import UUID
 
 Base = declarative_base()
 
@@ -14,15 +14,11 @@ class IssbS2Disclosure(Base):
     
     __tablename__ = "issb_s2_disclosure"
     
-    disclosure_id = Column(Integer, primary_key=True, autoincrement=True)
+    disclosure_id = Column(String(255), primary_key=True)
     section = Column(String(255), nullable=False, comment="섹션")
     category = Column(String(255), nullable=False, comment="카테고리")
     topic = Column(String(255), nullable=True, comment="주제")
-    paragraph = Column(String(50), nullable=True, comment="단락 번호")
     disclosure_ko = Column(Text, nullable=False, comment="한국어 공시 내용")
-    disclosure_en = Column(Text, nullable=True, comment="영어 공시 내용")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
     # 관계 설정
     requirements = relationship("IssbS2Requirement", back_populates="disclosure", cascade="all, delete-orphan")
@@ -36,11 +32,12 @@ class IssbS2Requirement(Base):
     
     __tablename__ = "issb_s2_requirement"
     
-    requirement_id = Column(Integer, primary_key=True, autoincrement=True)
-    disclosure_id = Column(Integer, ForeignKey("issb_s2_disclosure.disclosure_id", ondelete="CASCADE"), nullable=False)
-    requirement_order = Column(Integer, nullable=False, comment="요구사항 순서")
+    requirement_id = Column(String(255), primary_key=True)
+    disclosure_id = Column(String(255), ForeignKey("issb_s2_disclosure.disclosure_id", ondelete="SET NULL"), nullable=True)
+    requirement_order = Column(Integer, nullable=False, default=0, comment="요구사항 순서")
     requirement_text_ko = Column(Text, nullable=False, comment="한국어 요구사항 내용")
     data_required_type = Column(String(50), nullable=False, comment="필요한 데이터 타입")
+    input_schema = Column(JSONB, nullable=True, comment="입력 스키마")
     input_placeholder_ko = Column(Text, nullable=True, comment="입력 플레이스홀더")
     input_guidance_ko = Column(Text, nullable=True, comment="입력 가이드")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -134,12 +131,10 @@ class Answer(Base):
     
     answer_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("user.user_id", ondelete="CASCADE"), nullable=False)
-    requirement_id = Column(Integer, ForeignKey("issb_s2_requirement.requirement_id", ondelete="CASCADE"), nullable=False)
+    requirement_id = Column(String(255), ForeignKey("issb_s2_requirement.requirement_id", ondelete="CASCADE"), nullable=False)
     answer_value_text = Column(Text, nullable=True)
-    answer_value_number = Column(DECIMAL(18, 4), nullable=True)
-    answer_value_boolean = Column(Boolean, nullable=True)
-    answer_value_location = Column(String(255), nullable=True)
-    answer_value_financial_impact = Column(DECIMAL(18, 4), nullable=True)
+    answer_value_text_long = Column(Text, nullable=True)
+    answer_value_json = Column(JSONB, nullable=True)
     answered_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_edited_at = Column(DateTime(timezone=True), nullable=True)
     status = Column(String(50), nullable=False, default='DRAFT', comment="상태 (DRAFT, SUBMITTED, APPROVED)")

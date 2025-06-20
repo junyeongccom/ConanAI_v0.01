@@ -21,7 +21,7 @@ class DisclosureRepository:
         self.db = db
 
     # ISSB S2 Disclosure 관련 메서드
-    def get_disclosure_by_id(self, disclosure_id: int) -> Optional[IssbS2Disclosure]:
+    def get_disclosure_by_id(self, disclosure_id: str) -> Optional[IssbS2Disclosure]:
         """ID로 공시 정보를 조회합니다."""
         return self.db.query(IssbS2Disclosure).filter(
             IssbS2Disclosure.disclosure_id == disclosure_id
@@ -44,7 +44,7 @@ class DisclosureRepository:
         ).all()
 
     # ISSB S2 Requirement 관련 메서드
-    def get_requirements_by_disclosure_id(self, disclosure_id: int) -> List[IssbS2Requirement]:
+    def get_requirements_by_disclosure_id(self, disclosure_id: str) -> List[IssbS2Requirement]:
         """공시 ID로 관련 요구사항들을 조회합니다."""
         return self.db.query(IssbS2Requirement).filter(
             IssbS2Requirement.disclosure_id == disclosure_id
@@ -146,7 +146,7 @@ class DisclosureRepository:
         """사용자 ID로 모든 답변을 조회합니다."""
         return self.db.query(Answer).filter(Answer.user_id == user_id).all()
 
-    def get_answer_by_user_and_requirement(self, user_id: UUID, requirement_id: int) -> Optional[Answer]:
+    def get_answer_by_user_and_requirement(self, user_id: UUID, requirement_id: str) -> Optional[Answer]:
         """사용자와 요구사항으로 답변을 조회합니다."""
         return self.db.query(Answer).filter(
             Answer.user_id == user_id,

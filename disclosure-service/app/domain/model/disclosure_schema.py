@@ -8,13 +8,11 @@ from decimal import Decimal
 
 class DisclosureResponse(BaseModel):
     """ISSB S2 공시 정보 응답 스키마"""
-    disclosure_id: int
+    disclosure_id: str
     section: str
     category: str
     topic: Optional[str] = None
-    paragraph: Optional[str] = None
     disclosure_ko: str
-    disclosure_en: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -22,7 +20,7 @@ class DisclosureResponse(BaseModel):
 
 class DisclosureItem(BaseModel):
     """계층적 구조를 위한 공시 정보 아이템 스키마"""
-    disclosure_id: int
+    disclosure_id: str
     topic: Optional[str] = None
     disclosure_ko: str
 
@@ -37,11 +35,12 @@ StructuredDisclosureResponse = Dict[str, Dict[str, List[DisclosureItem]]]
 
 class RequirementResponse(BaseModel):
     """ISSB S2 요구사항 응답 스키마"""
-    requirement_id: int
-    disclosure_id: int
+    requirement_id: str
+    disclosure_id: Optional[str] = None
     requirement_order: int
     requirement_text_ko: str
     data_required_type: str
+    input_schema: Optional[dict] = None
     input_placeholder_ko: Optional[str] = None
     input_guidance_ko: Optional[str] = None
 
@@ -103,12 +102,10 @@ class AnswerResponse(BaseModel):
     """사용자 답변 응답 스키마"""
     answer_id: UUID
     user_id: UUID
-    requirement_id: int
+    requirement_id: str
     answer_value_text: Optional[str] = None
-    answer_value_number: Optional[Decimal] = None
-    answer_value_boolean: Optional[bool] = None
-    answer_value_location: Optional[str] = None
-    answer_value_financial_impact: Optional[Decimal] = None
+    answer_value_text_long: Optional[str] = None
+    answer_value_json: Optional[dict] = None
     answered_at: datetime
     last_edited_at: Optional[datetime] = None
     status: str
@@ -120,19 +117,15 @@ class AnswerResponse(BaseModel):
 # 요청 스키마들 (필요한 경우)
 class AnswerCreateRequest(BaseModel):
     """답변 생성 요청 스키마"""
-    requirement_id: int
+    requirement_id: str
     answer_value_text: Optional[str] = None
-    answer_value_number: Optional[Decimal] = None
-    answer_value_boolean: Optional[bool] = None
-    answer_value_location: Optional[str] = None
-    answer_value_financial_impact: Optional[Decimal] = None
+    answer_value_text_long: Optional[str] = None
+    answer_value_json: Optional[dict] = None
 
 
 class AnswerUpdateRequest(BaseModel):
     """답변 수정 요청 스키마"""
     answer_value_text: Optional[str] = None
-    answer_value_number: Optional[Decimal] = None
-    answer_value_boolean: Optional[bool] = None
-    answer_value_location: Optional[str] = None
-    answer_value_financial_impact: Optional[Decimal] = None
+    answer_value_text_long: Optional[str] = None
+    answer_value_json: Optional[dict] = None
     status: Optional[str] = None 

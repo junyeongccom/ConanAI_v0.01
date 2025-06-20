@@ -26,7 +26,7 @@ class DisclosureService:
         self.repo = repo
 
     # ISSB S2 Disclosure 관련 서비스 메서드
-    def get_disclosure_by_id(self, disclosure_id: int) -> Optional[DisclosureResponse]:
+    def get_disclosure_by_id(self, disclosure_id: str) -> Optional[DisclosureResponse]:
         """ID로 공시 정보를 조회합니다."""
         disclosure = self.repo.get_disclosure_by_id(disclosure_id)
         if disclosure:
@@ -73,7 +73,7 @@ class DisclosureService:
         }
 
     # ISSB S2 Requirement 관련 서비스 메서드
-    def get_requirements_by_disclosure_id(self, disclosure_id: int) -> List[RequirementResponse]:
+    def get_requirements_by_disclosure_id(self, disclosure_id: str) -> List[RequirementResponse]:
         """공시 ID로 관련 요구사항들을 조회합니다."""
         requirements = self.repo.get_requirements_by_disclosure_id(disclosure_id)
         return [RequirementResponse.from_orm(r) for r in requirements]
@@ -181,7 +181,7 @@ class DisclosureService:
         answers = self.repo.get_answers_by_user_id(user_id)
         return [AnswerResponse.from_orm(a) for a in answers]
 
-    def get_answer_by_user_and_requirement(self, user_id: UUID, requirement_id: int) -> Optional[AnswerResponse]:
+    def get_answer_by_user_and_requirement(self, user_id: UUID, requirement_id: str) -> Optional[AnswerResponse]:
         """사용자와 요구사항으로 답변을 조회합니다."""
         answer = self.repo.get_answer_by_user_and_requirement(user_id, requirement_id)
         if answer:
