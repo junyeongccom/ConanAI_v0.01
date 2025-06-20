@@ -13,22 +13,35 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isInitialized } = useAuth();
 
-  // 로그인되지 않은 사용자는 로그인 페이지로 리다이렉트
+  // 인증 상태 초기화가 완료된 후에만 리다이렉트 체크
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (isInitialized && !isLoggedIn) {
+      console.log('🔄 인증되지 않은 사용자 - 로그인 페이지로 리다이렉트');
       router.push('/login');
     }
-  }, [isLoggedIn, router]);
+  }, [isLoggedIn, isInitialized, router]);
 
-  // 로그인되지 않은 상태에서는 렌더링하지 않음
+  // 인증 상태 초기화가 완료되지 않았거나 로그인되지 않은 상태에서는 로딩 표시
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">인증 상태 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 초기화는 완료되었지만 로그인되지 않은 상태 (리다이렉트 진행 중)
   if (!isLoggedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">인증 확인 중...</p>
+          <p className="text-gray-600">로그인 페이지로 이동 중...</p>
         </div>
       </div>
     );

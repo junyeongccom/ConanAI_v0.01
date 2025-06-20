@@ -30,6 +30,7 @@ export interface UserData {
 // 인증 상태 인터페이스
 interface AuthState {
   isAuthenticated: boolean;
+  isInitialized: boolean; // 인증 상태 초기화 완료 여부
   user: UserData | null;
   token: string | null;
   login: (token: string) => void;
@@ -70,6 +71,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       isAuthenticated: false,
+      isInitialized: false,
       user: null,
       token: null,
 
@@ -95,6 +97,7 @@ export const useAuthStore = create<AuthState>()(
         // 상태 업데이트
         set({
           isAuthenticated: true,
+          isInitialized: true,
           user: userData,
           token,
         });
@@ -112,6 +115,7 @@ export const useAuthStore = create<AuthState>()(
         // 상태 초기화
         set({
           isAuthenticated: false,
+          isInitialized: true, // 로그아웃 후에도 초기화는 완료된 상태
           user: null,
           token: null,
         });
@@ -127,6 +131,8 @@ export const useAuthStore = create<AuthState>()(
         
         if (!token) {
           console.log('📭 저장된 토큰이 없습니다.');
+          // 토큰이 없어도 초기화는 완료된 상태로 설정
+          set({ isInitialized: true });
           return;
         }
 
@@ -142,6 +148,7 @@ export const useAuthStore = create<AuthState>()(
         // 상태 복구
         set({
           isAuthenticated: true,
+          isInitialized: true,
           user: userData,
           token,
         });
@@ -160,6 +167,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        // isInitialized는 페이지 로드 시마다 다시 체크해야 하므로 영속화하지 않음
       }),
     }
   )

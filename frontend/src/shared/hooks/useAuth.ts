@@ -3,11 +3,12 @@ import { AuthService } from '@/domain/auth/services/authService';
 
 // 인증 관련 커스텀 훅
 export function useAuth() {
-  const { isAuthenticated, user, token } = useAuthStore();
+  const { isAuthenticated, isInitialized, user, token } = useAuthStore();
 
   return {
     // 상태
     isAuthenticated,
+    isInitialized,
     user,
     token,
     
