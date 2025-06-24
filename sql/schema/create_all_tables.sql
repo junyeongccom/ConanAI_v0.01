@@ -3,9 +3,9 @@
 -- Set the default schema if needed (e.g., public)
 SET search_path TO public;
 
--- 1. User Table (사용자 정보)
+-- 1. Member Table (사용자 정보)
 -- Google OAuth 연동 시 필드 반영
-CREATE TABLE IF NOT EXISTS "user" (
+CREATE TABLE IF NOT EXISTS member (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- UUID 기본값 설정
     google_id VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -69,40 +69,50 @@ CREATE TABLE IF NOT EXISTS issb_s2_requirement (
 CREATE TABLE IF NOT EXISTS answer (
     -- 답변의 고유 ID.
     answer_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    -- 답변을 작성한 사용자의 ID (user 테이블 외래 키).
+    -- 답변을 작성한 사용자의 ID (member 테이블 외래 키).
     user_id UUID NOT NULL,
-    -- 어떤 질문(requirement)에 대한 답변인지 명시 (issb_s2_requirement 외래 키). VARCHAR로 타입 일치.
+    -- 어떤 질문(requirement)에 대한 답변인지 명시 (issb_s2_requirement 외래 키).
     requirement_id VARCHAR(255) NOT NULL,
 
-    -- --- 답변 값 저장 컬럼 ---
-    -- 'text', 'number', 'date' 등 단일 텍스트로 표현 가능한 답변 저장.
+    -- --- 답변 값 저장 컬럼 (타입별로 최적화) ---
+    -- data_required_type: text, text_long, select 등
     answer_value_text TEXT,
-    -- 'text_long' 타입의 긴 서술형 답변 저장.
-    answer_value_text_long TEXT,
-    -- 'table_input', 'structured_list' 등 JSON 형태로 저장되어야 하는 복합 답변 저장.
-    -- 가장 유연하고 강력한 방식.
+
+    -- data_required_type: number
+    answer_value_number NUMERIC(18, 4), -- NUMERIC 또는 DECIMAL이 부동소수점 오류 없어 안전
+
+    -- data_required_type: boolean
+    answer_value_boolean BOOLEAN,
+
+    -- data_required_type: date
+    answer_value_date DATE,
+
+    -- data_required_type: table_input, structured_list, checkbox_group, ghg_*_input 등
+    -- 모든 복합/구조화된 데이터는 JSONB로 저장하여 최고의 유연성과 성능 확보
     answer_value_json JSONB,
 
-    -- 답변 생성 및 마지막 수정 타임스탬프.
+    -- --- 메타데이터 컬럼 ---
     answered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     last_edited_at TIMESTAMP WITH TIME ZONE,
-    -- 답변의 상태 관리 (예: DRAFT, COMPLETED).
     status VARCHAR(50) DEFAULT 'DRAFT' NOT NULL,
 
-    -- 외래 키 제약 조건 설정
+    -- --- 제약 조건 ---
     CONSTRAINT fk_user
         FOREIGN KEY (user_id)
-        REFERENCES "user"(user_id)
-        ON DELETE CASCADE, -- 사용자가 탈퇴하면 답변도 함께 삭제
+        REFERENCES member(user_id)
+        ON DELETE CASCADE,
     CONSTRAINT fk_requirement
         FOREIGN KEY (requirement_id)
         REFERENCES issb_s2_requirement(requirement_id)
-        ON DELETE CASCADE, -- 질문이 삭제되면 답변도 함께 삭제
-
-    -- 복합 고유 키 제약 조건: 한 사용자는 하나의 질문에 대해 하나의 답변만 가질 수 있도록 보장.
-    -- 이 제약 덕분에 'INSERT ... ON CONFLICT DO UPDATE' (Upsert) 구문을 효율적으로 사용할 수 있음.
+        ON DELETE CASCADE,
     CONSTRAINT uq_user_requirement UNIQUE (user_id, requirement_id)
 );
+
+COMMENT ON COLUMN answer.answer_value_text IS 'data_required_type이 text, text_long, select인 경우의 답변';
+COMMENT ON COLUMN answer.answer_value_number IS 'data_required_type이 number인 경우의 답변';
+COMMENT ON COLUMN answer.answer_value_boolean IS 'data_required_type이 boolean인 경우의 답변';
+COMMENT ON COLUMN answer.answer_value_date IS 'data_required_type이 date인 경우의 답변';
+COMMENT ON COLUMN answer.answer_value_json IS 'data_required_type이 table_input, structured_list 등 복합 타입인 경우의 JSON 답변';
 
 
 -- 5. issb_s2_term Table (S2 용어 정의)

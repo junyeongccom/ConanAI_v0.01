@@ -5,6 +5,14 @@ import TextareaAutosize from 'react-textarea-autosize';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { isTableInputSchema, isStructuredListSchema } from '../../types';
 
+// 지표 및 목표 파트의 전용 렌더러들 import
+import { GhgEmissionsInputRenderer } from './metrics/GhgEmissionsInputRenderer';
+import { GhgGuidelineInputRenderer } from './metrics/GhgGuidelineInputRenderer';
+import { GhgGasesInputRenderer } from './metrics/GhgGasesInputRenderer';
+import { GhgScope12ApproachInputRenderer } from './metrics/GhgScope12ApproachInputRenderer';
+import { GhgScope3ApproachInputRenderer } from './metrics/GhgScope3ApproachInputRenderer';
+import { PerformanceTrackingInputRenderer } from './metrics/PerformanceTrackingInputRenderer';
+
 interface FieldRendererProps {
   fieldSchema: any;
   value: any;
@@ -18,8 +26,26 @@ interface FieldRendererProps {
  */
 export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: FieldRendererProps) {
   // fieldSchema에서 직접 타입을 가져오거나, 최상위 requirement 객체에서 가져옵니다.
-  const type = fieldSchema.type || fieldSchema.data_required_type;
+  let type = fieldSchema.type || fieldSchema.data_required_type;
   const placeholder = fieldSchema.placeholder || fieldSchema.input_placeholder_ko || '';
+  
+  // 스키마 구조 기반 타입 자동 감지 (백엔드 타입이 잘못된 경우 대응)
+  if (fieldSchema.input_schema) {
+    const schema = fieldSchema.input_schema;
+    
+    // 타입별 스키마 구조 감지
+    if (type === 'ghg_emissions_input') {
+      // rows + value_column 구조이면서 categories가 없으면 ghg_guideline_input
+      if (schema.rows && schema.value_column && !schema.categories) {
+        type = 'ghg_guideline_input';
+        console.log('🔄 타입 자동 수정: ghg_emissions_input → ghg_guideline_input (rows + value_column 구조 감지)');
+      }
+      // categories가 있고 rows가 없으면 진짜 ghg_emissions_input
+      else if (schema.categories && !schema.rows) {
+        console.log('✅ 올바른 ghg_emissions_input 구조 확인 (categories 배열 존재)');
+      }
+    }
+  }
   
   console.log(`🎨 FieldRenderer: type=${type}, fieldSchema=`, fieldSchema);
 
@@ -232,6 +258,7 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
   };
 
   switch (type) {
+    // 기존 기본 타입들
     case 'table_input':
       return <InlineTableInputRenderer requirement={fieldSchema} value={value} onChange={onChange} />;
 
@@ -303,6 +330,25 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
           <span className="text-sm text-gray-700">예 / 아니오</span>
         </div>
       );
+
+    // --- 지표 및 목표 파트의 전용 타입들 ---
+    case 'ghg_emissions_input':
+      return <GhgEmissionsInputRenderer requirement={fieldSchema} />;
+
+    case 'ghg_guideline_input':
+      return <GhgGuidelineInputRenderer requirement={fieldSchema} />;
+
+    case 'ghg_gases_input':
+      return <GhgGasesInputRenderer requirement={fieldSchema} />;
+
+    case 'ghg_scope12_approach_input':
+      return <GhgScope12ApproachInputRenderer requirement={fieldSchema} />;
+
+    case 'ghg_scope3_approach_input':
+      return <GhgScope3ApproachInputRenderer requirement={fieldSchema} />;
+
+    case 'performance_tracking_input':
+      return <PerformanceTrackingInputRenderer requirement={fieldSchema} />;
 
     case 'text':
     default:

@@ -22,9 +22,15 @@ export function IndicatorItem({ item }: IndicatorItemProps) {
   // API로부터 받은 요구사항 데이터를 저장합니다.
   const [requirements, setRequirements] = useState<RequirementData[]>([]);
 
+  // topic이 '목적'인 경우 입력창을 표시하지 않음
+  const isInputDisabled = item.topic === '목적';
+
   // --- 이벤트 핸들러 ---
   // '입력' 또는 '닫기' 버튼 클릭 시 호출됩니다.
   const handleToggle = async () => {
+    // topic이 '목적'인 경우 동작하지 않음
+    if (isInputDisabled) return;
+
     const nextIsOpen = !isOpen;
     setIsOpen(nextIsOpen);
 
@@ -48,21 +54,34 @@ export function IndicatorItem({ item }: IndicatorItemProps) {
   return (
     <div className="border-t border-gray-200 first:border-t-0">
       {/* 항상 보이는 상단 영역 */}
-      <div className="flex items-start justify-between p-4 pl-8 hover:bg-blue-50/50 transition-colors cursor-pointer" onClick={handleToggle}>
+      <div className={`flex items-start justify-between p-4 pl-8 transition-colors ${
+        isInputDisabled 
+          ? 'cursor-default' 
+          : 'hover:bg-blue-50/50 cursor-pointer'
+      }`} onClick={handleToggle}>
         <div className="flex items-start gap-3">
-          <div className="w-2 h-2 mt-1.5 bg-gray-400 rounded-full flex-shrink-0" title="미작성"></div>
+          <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${
+            isInputDisabled 
+              ? 'bg-blue-400' 
+              : 'bg-gray-400'
+          }`} title={isInputDisabled ? '정보 제공' : '미작성'}></div>
           <div>
             <p className="text-sm font-medium text-gray-800">{item.disclosure_ko}</p>
+            {isInputDisabled && (
+              <p className="text-xs text-blue-600 mt-1">※ 이 항목은 정보 제공 목적이며 별도 입력이 필요하지 않습니다.</p>
+            )}
           </div>
         </div>
-        <button className="ml-4 text-sm font-semibold text-blue-600 hover:text-blue-800 flex-shrink-0 flex items-center gap-1">
-          {isOpen ? '닫기' : '입력'}
-        </button>
+        {!isInputDisabled && (
+          <button className="ml-4 text-sm font-semibold text-blue-600 hover:text-blue-800 flex-shrink-0 flex items-center gap-1">
+            {isOpen ? '닫기' : '입력'}
+          </button>
+        )}
       </div>
 
       {/* 확장/축소되는 하단 영역 (애니메이션 포함) */}
       <AnimatePresence initial={false}>
-        {isOpen && (
+        {isOpen && !isInputDisabled && (
           <motion.section
             key="content"
             initial="collapsed"
