@@ -1,12 +1,11 @@
 # IFRS S2 지표 및 지속가능성 공시 엔티티 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, DECIMAL
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 import uuid
 
-Base = declarative_base()
+from app.foundation.database import Base
 
 
 class IssbS2Disclosure(Base):
@@ -45,7 +44,7 @@ class IssbS2Requirement(Base):
     
     # 관계 설정
     disclosure = relationship("IssbS2Disclosure", back_populates="requirements")
-    answers = relationship("Answer", back_populates="requirement", cascade="all, delete-orphan")
+    # answers 관계는 answer_entity.py에서 역방향으로 관리됨
     
     def __repr__(self):
         return f"<IssbS2Requirement(id={self.requirement_id}, disclosure_id={self.disclosure_id}, order={self.requirement_order})>"
@@ -102,46 +101,4 @@ class IssbAdoptionStatus(Base):
         return f"<IssbAdoptionStatus(id={self.adoption_id}, country='{self.country}')>"
 
 
-class User(Base):
-    """사용자 테이블 (auth-service와 공유)"""
-    
-    __tablename__ = "user"
-    
-    user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    google_id = Column(String(255), unique=True, nullable=False)
-    email = Column(String(255), unique=True, nullable=False)
-    username = Column(String(255), nullable=True)
-    company_name = Column(String(255), nullable=True)
-    industry_type = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    last_login_at = Column(DateTime(timezone=True), nullable=True)
-    
-    # 관계 설정
-    answers = relationship("Answer", back_populates="user", cascade="all, delete-orphan")
-    
-    def __repr__(self):
-        return f"<User(id={self.user_id}, email='{self.email}')>"
-
-
-class Answer(Base):
-    """사용자별 요구사항 응답 데이터 테이블"""
-    
-    __tablename__ = "answer"
-    
-    answer_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("user.user_id", ondelete="CASCADE"), nullable=False)
-    requirement_id = Column(String(255), ForeignKey("issb_s2_requirement.requirement_id", ondelete="CASCADE"), nullable=False)
-    answer_value_text = Column(Text, nullable=True)
-    answer_value_text_long = Column(Text, nullable=True)
-    answer_value_json = Column(JSONB, nullable=True)
-    answered_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    last_edited_at = Column(DateTime(timezone=True), nullable=True)
-    status = Column(String(50), nullable=False, default='DRAFT', comment="상태 (DRAFT, SUBMITTED, APPROVED)")
-    
-    # 관계 설정
-    user = relationship("User", back_populates="answers")
-    requirement = relationship("IssbS2Requirement", back_populates="answers")
-    
-    def __repr__(self):
-        return f"<Answer(id={self.answer_id}, user_id={self.user_id}, requirement_id={self.requirement_id})>" 
+# User와 Answer 엔티티는 각각 auth-service와 answer 도메인으로 분리됨 

@@ -11,6 +11,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse as StarletteJSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.datastructures import MutableHeaders
 from dotenv import load_dotenv
 
 # 환경 변수 로드
@@ -107,8 +108,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 algorithms=[JWT_ALGORITHM]
             )
             
-            # 사용자 ID 추출 및 요청 상태 저장
-            request.state.user_id = decoded_token.get("user_id")
+            # 사용자 ID 추출
+            user_id = decoded_token.get("user_id")
+            
+            # 현재 요청 헤더를 복사하여 X-User-Id 헤더 추가
+            mutable_headers = MutableHeaders(request._scope["headers"])
+            mutable_headers["X-User-Id"] = str(user_id)
+            
+            # 요청 scope의 headers를 새로운 헤더로 교체
+            request._scope["headers"] = mutable_headers.raw
             
         except JWTError as e:
             logger.warning(f"JWT validation failed: {str(e)}")

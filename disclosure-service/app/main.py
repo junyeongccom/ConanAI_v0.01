@@ -5,10 +5,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.api.disclosure_router import router as disclosure_router
+from app.api.answer_router import router as answer_router
 
 # DB 세션 및 초기 데이터 로더 임포트
 from app.foundation.database import get_db, check_database_connection
 from app.foundation.initial_data_loader import load_initial_data, check_data_integrity
+from app.foundation.user_context_middleware import UserContextMiddleware
 
 # 환경 변수 로드
 load_dotenv()
@@ -88,8 +90,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 사용자 컨텍스트 미들웨어 추가 (X-User-Id 헤더 → request.state.user_id)
+app.add_middleware(UserContextMiddleware)
+
 # 라우터 등록
 app.include_router(disclosure_router, tags=["disclosure"])
+app.include_router(answer_router, prefix="/api", tags=["answers"])
 
 
 # 헬스 체크 엔드포인트

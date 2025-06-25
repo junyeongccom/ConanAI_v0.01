@@ -1,9 +1,13 @@
 # disclosure-service/app/foundation/database.py
 import os
 from sqlalchemy import create_engine, text
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 import logging
+
+# SQLAlchemy Base 생성 (모든 엔티티가 공유)
+Base = declarative_base()
 
 # 환경변수 로드
 load_dotenv()
@@ -52,7 +56,10 @@ def create_tables():
     데이터베이스 테이블 생성
     초기 테이블 스키마 생성용 (선택사항, Docker init SQL 사용 시)
     """
+    # 모든 엔티티를 임포트하여 메타데이터에 등록
     from app.domain.model.disclosure_entity import Base
+    from app.domain.model.answer_entity import Answer  # 엔티티 임포트로 메타데이터 등록
+    
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("✅ 데이터베이스 테이블 생성 완료")

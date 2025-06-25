@@ -29,20 +29,20 @@ SELECT * FROM heatwave_summary LIMIT 10;
 # 1. 사용자 테이블 (user) - 인증 서비스
 # ------------------------------------------------------------
 # 모든 사용자 조회
-SELECT * FROM "user";
+SELECT * FROM member;
 
 # 사용자 수 확인
-SELECT COUNT(*) FROM "user";
+SELECT COUNT(*) FROM member;
 
 # 최근 가입한 사용자 10명
 SELECT user_id, email, username, company_name, created_at 
-FROM "user" 
+FROM member 
 ORDER BY created_at DESC 
 LIMIT 10;
 
 # 마지막 로그인 기준 활성 사용자
 SELECT email, username, last_login_at 
-FROM "user" 
+FROM member 
 WHERE last_login_at IS NOT NULL 
 ORDER BY last_login_at DESC 
 LIMIT 10;

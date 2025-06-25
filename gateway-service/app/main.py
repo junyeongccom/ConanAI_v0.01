@@ -104,10 +104,8 @@ async def proxy_get(
     try:
         factory = ServiceProxyFactory(service_type=service)
         
-        # 헤더 전달 (JWT 및 사용자 ID)
+        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
         headers = dict(request.headers)
-        if hasattr(request.state, 'user_id') and request.state.user_id:
-            headers["X-User-Id"] = str(request.state.user_id)
         
         response = await factory.request(
             method="GET",
@@ -146,10 +144,8 @@ async def proxy_post(
         body = None
         data = None
         
-        # 헤더 전달 (JWT 및 사용자 ID)
+        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
         headers = dict(request.headers)
-        if hasattr(request.state, 'user_id') and request.state.user_id:
-            headers["X-User-Id"] = str(request.state.user_id)
         
         # 파일이 필요한 서비스 처리
         if service in FILE_REQUIRED_SERVICES:
@@ -214,10 +210,8 @@ async def proxy_put(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceProxyFactory(service_type=service)
         
-        # 헤더 전달 (JWT 및 사용자 ID)
+        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
         headers = dict(request.headers)
-        if hasattr(request.state, 'user_id') and request.state.user_id:
-            headers["X-User-Id"] = str(request.state.user_id)
         
         response = await factory.request(
             method="PUT",
@@ -239,10 +233,8 @@ async def proxy_delete(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceProxyFactory(service_type=service)
         
-        # 헤더 전달 (JWT 및 사용자 ID)
+        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
         headers = dict(request.headers)
-        if hasattr(request.state, 'user_id') and request.state.user_id:
-            headers["X-User-Id"] = str(request.state.user_id)
         
         response = await factory.request(
             method="DELETE",
@@ -264,10 +256,8 @@ async def proxy_patch(service: ServiceType, path: str, request: Request):
     try:
         factory = ServiceProxyFactory(service_type=service)
         
-        # 헤더 전달 (JWT 및 사용자 ID)
+        # 헤더 전달 (JWT 및 사용자 ID - 미들웨어에서 이미 X-User-Id 헤더가 추가됨)
         headers = dict(request.headers)
-        if hasattr(request.state, 'user_id') and request.state.user_id:
-            headers["X-User-Id"] = str(request.state.user_id)
         
         response = await factory.request(
             method="PATCH",
