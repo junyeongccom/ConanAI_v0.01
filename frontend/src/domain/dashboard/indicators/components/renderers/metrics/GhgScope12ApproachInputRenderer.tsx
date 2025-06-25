@@ -68,8 +68,8 @@ export function GhgScope12ApproachInputRenderer({ requirement }: GhgScope12Appro
   };
 
   // 중첩된 컬럼 헤더 렌더링을 위한 재귀 함수
-  const renderNestedHeaders = (columns: any[], level: number = 0): JSX.Element[] => {
-    const headers: JSX.Element[] = [];
+  const renderNestedHeaders = (columns: any[], level: number = 0): React.JSX.Element[] => {
+    const headers: React.JSX.Element[] = [];
     
     columns.forEach((col: any, index: number) => {
       if (col.sub_columns && col.sub_columns.length > 0) {

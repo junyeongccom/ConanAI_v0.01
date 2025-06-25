@@ -20,7 +20,7 @@ export function GhgGasesInputRenderer({ requirement }: GhgGasesInputRendererProp
   useEffect(() => {
     // 저장된 답변이 있으면 복원
     if (currentAnswer && typeof currentAnswer === 'object') {
-      setData(currentAnswer);
+      setData(currentAnswer as unknown as Record<string, Record<string, boolean>>);
     }
   }, [currentAnswer]);
 

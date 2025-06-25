@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { isTableInputSchema, isStructuredListSchema } from '../../types';
+import { useAnswerStore } from '../../stores/answerStore';
 
 // 지표 및 목표 파트의 전용 렌더러들 import
 import { GhgEmissionsInputRenderer } from './metrics/GhgEmissionsInputRenderer';
@@ -67,6 +68,8 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
 
   // 내부 TableInputRenderer 컴포넌트
   const InlineTableInputRenderer = ({ requirement, value, onChange }: any) => {
+    const { answers } = useAnswerStore();
+    
     const initialData = (() => {
       return Array.isArray(value) && value.length > 0 ? value : [{}];
     })();
@@ -109,13 +112,51 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       );
     }
 
+    // 동적 컬럼 생성
+    const dynamicColumns = [];
+    console.log('🔍 Dynamic columns debug:', {
+      hasDynamicConfig: !!inputSchema.dynamic_columns_from,
+      dynamicConfig: inputSchema.dynamic_columns_from,
+      allAnswers: answers
+    });
+    
+    if (inputSchema.dynamic_columns_from && Array.isArray(inputSchema.dynamic_columns_from)) {
+      for (const dynamicCol of inputSchema.dynamic_columns_from) {
+        // 답변 구조에 맞게 수정: answers[id]?.answer_value 또는 answers[id] 직접 접근
+        const answerData = answers[dynamicCol.source_req_id];
+        const sourceAnswer = answerData?.answer_value || answerData;
+        
+        console.log(`🔍 Checking ${dynamicCol.source_req_id}:`, {
+          answerData,
+          sourceAnswer,
+          type: typeof sourceAnswer,
+          trimmed: sourceAnswer?.toString?.()?.trim?.()
+        });
+        
+        if (sourceAnswer && String(sourceAnswer).trim()) {
+          const newColumn = {
+            name: dynamicCol.value_key,
+            type: 'text',
+            label: `${dynamicCol.label_prefix}${String(sourceAnswer)}${dynamicCol.label_suffix}`
+          };
+          console.log('✅ Adding dynamic column:', newColumn);
+          dynamicColumns.push(newColumn);
+        }
+      }
+    }
+    
+    console.log('🎯 Final dynamic columns:', dynamicColumns);
+
+    // 전체 컬럼 = 기본 컬럼 + 동적 컬럼
+    const allColumns = [...inputSchema.columns, ...dynamicColumns];
+
     return (
       <div className="mt-2">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 border border-gray-300">
             <thead className="bg-gray-50">
               <tr>
-                {inputSchema.columns.map((col: any) => (
+                {allColumns.map((col: any) => (
                   <th
                     key={col.name}
                     className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300"
@@ -129,7 +170,7 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
             <tbody className="bg-white divide-y divide-gray-200">
               {rows.map((row: any, rowIndex: number) => (
                 <tr key={rowIndex}>
-                  {inputSchema.columns.map((col: any) => (
+                  {allColumns.map((col: any) => (
                     <td key={col.name} className="px-3 py-2 border-r border-gray-300">
                       {/* 재귀적 렌더링을 위해 FieldRenderer 사용하되, onBlur 기반으로 처리 */}
                       <FieldRenderer

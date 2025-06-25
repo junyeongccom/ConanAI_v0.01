@@ -176,8 +176,8 @@ def _load_issb_s2_requirements(db: Session) -> bool:
                         except json.JSONDecodeError as e:
                             logger.warning(f"❌ {record.get('requirement_id')}: input_schema JSON 파싱 실패 - {e}")
                             logger.warning(f"   원본 데이터 (복원 후): {input_schema_str_fixed[:300]}")
-                            error_count += 1
-                            continue # 문제가 있는 행은 건너뜁니다.
+                            logger.info(f"   → input_schema를 null로 설정하고 레코드는 저장합니다.")
+                            parsed_input_schema = None  # JSON 파싱 실패 시 null로 설정
                     
                     requirement = IssbS2Requirement(
                         requirement_id=record.get('requirement_id'),
