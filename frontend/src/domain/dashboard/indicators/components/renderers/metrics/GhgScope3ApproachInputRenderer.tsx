@@ -86,32 +86,35 @@ export function GhgScope3ApproachInputRenderer({ requirement }: GhgScope3Approac
     console.log('Value change:', { rowKey, entryIndex, path, value }); // 디버깅용
     
     setData(prevData => {
-      const newData = { ...prevData };
+      const currentEntries = prevData[rowKey]?.entries || [];
+      const currentEntry = currentEntries[entryIndex] || {};
       
-      if (!newData[rowKey]) {
-        newData[rowKey] = { entries: [{}] };
-      }
-      
-      if (!newData[rowKey].entries) {
-        newData[rowKey].entries = [{}];
-      }
-      
-      if (!newData[rowKey].entries[entryIndex]) {
-        newData[rowKey].entries[entryIndex] = {};
-      }
-      
-      // 중첩된 경로로 값 설정
+      // 중첩된 경로로 값 설정 (불변성 보장)
       const pathArray = path.split('.');
-      let current = newData[rowKey].entries[entryIndex];
+      const updatedEntry = { ...currentEntry };
       
+      // 중첩된 객체 구조를 불변성을 유지하며 업데이트
+      let current = updatedEntry;
       for (let i = 0; i < pathArray.length - 1; i++) {
-        if (!current[pathArray[i]]) {
-          current[pathArray[i]] = {};
-        }
-        current = current[pathArray[i]];
+        const key = pathArray[i];
+        current[key] = { ...current[key] };
+        current = current[key];
       }
-      
       current[pathArray[pathArray.length - 1]] = value;
+      
+      // 새로운 entries 배열 생성
+      const newEntries = [...currentEntries];
+      newEntries[entryIndex] = updatedEntry;
+      
+      // 완전한 불변성을 보장하는 새로운 객체 생성
+      const newData = {
+        ...prevData,
+        [rowKey]: {
+          ...prevData[rowKey],
+          entries: newEntries
+        }
+      };
+      
       console.log('New data after value change:', newData); // 디버깅용
       return newData;
     });
@@ -132,27 +135,23 @@ export function GhgScope3ApproachInputRenderer({ requirement }: GhgScope3Approac
     lastClickTimeRef.current[rowKey] = now;
     
     console.log('Adding entry for:', rowKey); // 디버깅용
-    console.log('Current data before adding:', data); // 디버깅용
     
     setData(prevData => {
       console.log('Previous data in setData:', prevData); // 디버깅용
       
       // 현재 entries 길이를 기록
-      const currentLength = prevData[rowKey]?.entries?.length || 0;
+      const currentEntries = prevData[rowKey]?.entries || [];
+      const currentLength = currentEntries.length;
       console.log('Current entries length:', currentLength); // 디버깅용
       
-      const newData = { ...prevData };
-      
-      if (!newData[rowKey]) {
-        newData[rowKey] = { entries: [] };
-      }
-      
-      if (!newData[rowKey].entries) {
-        newData[rowKey].entries = [];
-      }
-      
-      // 정확히 하나만 추가
-      newData[rowKey].entries = [...newData[rowKey].entries, {}];
+      // 완전한 불변성을 보장하는 새로운 객체 생성
+      const newData = {
+        ...prevData,
+        [rowKey]: {
+          ...prevData[rowKey],
+          entries: [...currentEntries, {}] // 기존 배열을 복사하고 새 항목 추가
+        }
+      };
       
       const newLength = newData[rowKey].entries.length;
       console.log('New entries length:', newLength); // 디버깅용
@@ -160,7 +159,7 @@ export function GhgScope3ApproachInputRenderer({ requirement }: GhgScope3Approac
       
       return newData;
     });
-  }, [data]);
+  }, []); // 의존성 배열에서 data 제거
 
   // 행 삭제 핸들러
   const handleRemoveEntry = useCallback((e: React.MouseEvent, rowKey: string, entryIndex: number) => {
@@ -180,22 +179,34 @@ export function GhgScope3ApproachInputRenderer({ requirement }: GhgScope3Approac
     console.log('Removing entry:', { rowKey, entryIndex }); // 디버깅용
     
     setData(prevData => {
-      const newData = { ...prevData };
+      const currentEntries = prevData[rowKey]?.entries || [];
       
-      if (newData[rowKey] && newData[rowKey].entries && newData[rowKey].entries.length > 1) {
-        const beforeLength = newData[rowKey].entries.length;
-        newData[rowKey].entries = newData[rowKey].entries.filter((_, index) => index !== entryIndex);
-        const afterLength = newData[rowKey].entries.length;
-        
-        console.log('Removed entries count:', beforeLength - afterLength); // 디버깅용
-        console.log('New data after removing entry:', newData); // 디버깅용
+      // 최소 1개 항목은 유지
+      if (currentEntries.length <= 1) {
+        console.log('Cannot remove last entry, keeping at least one'); // 디버깅용
+        return prevData; // 변경 없이 기존 상태 반환
       }
+      
+      const beforeLength = currentEntries.length;
+      
+      // 완전한 불변성을 보장하는 새로운 객체 생성
+      const newData = {
+        ...prevData,
+        [rowKey]: {
+          ...prevData[rowKey],
+          entries: currentEntries.filter((_, index) => index !== entryIndex) // 새로운 배열 생성
+        }
+      };
+      
+      const afterLength = newData[rowKey].entries.length;
+      console.log('Removed entries count:', beforeLength - afterLength); // 디버깅용
+      console.log('New data after removing entry:', newData); // 디버깅용
       
       return newData;
     });
   }, []);
 
-  // 값 가져오기
+  // 값 가져오기 (함수형 업데이트가 아니므로 data 의존성 유지)
   const getValue = useCallback((rowKey: string, entryIndex: number, path: string): string => {
     if (!data[rowKey] || !data[rowKey].entries || !data[rowKey].entries[entryIndex]) {
       return '';
@@ -210,7 +221,7 @@ export function GhgScope3ApproachInputRenderer({ requirement }: GhgScope3Approac
     }
     
     return current || '';
-  }, [data]);
+  }, [data]); // getValue는 현재 data를 읽어야 하므로 의존성 유지
 
   // 데이터가 변경될 때마다 저장 (렌더링과 분리)
   useEffect(() => {
