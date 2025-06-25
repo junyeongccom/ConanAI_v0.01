@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import { PlusCircle, Trash2, InformationCircleIcon } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { isTableInputSchema, isStructuredListSchema } from '../../types';
 import { useAnswerStore } from '../../stores/answerStore';
-import { MetricInputCard } from '../MetricInputCard';
 
 // 지표 및 목표 파트의 전용 렌더러들 import
 import { GhgEmissionsInputRenderer } from './metrics/GhgEmissionsInputRenderer';
@@ -71,17 +70,126 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
   const InlineTableInputRenderer = ({ requirement, value, onChange }: any) => {
     const { answers } = useAnswerStore();
     
+    const inputSchema = requirement.input_schema || requirement.schema;
+    if (!isTableInputSchema(inputSchema)) {
+      return (
+        <div className="mt-2 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-600 text-sm">테이블 스키마 정보가 없습니다.</p>
+        </div>
+      );
+    }
+
+    // 동적 행 생성 로직
+    const shouldCreateDynamicRows = inputSchema.source_requirement && inputSchema.source_field_to_display;
+    let dynamicRowData = [];
+    
+    if (shouldCreateDynamicRows) {
+      // zustand 저장소에서 올바르게 데이터 가져오기
+      const sourceAnswerData = answers[inputSchema.source_requirement];
+      const sourceAnswer = sourceAnswerData?.answer_value || sourceAnswerData;
+      
+      console.log('🔍 Table dynamic rows debug:', {
+        sourceRequirement: inputSchema.source_requirement,
+        sourceFieldToDisplay: inputSchema.source_field_to_display,
+        sourceAnswerData: sourceAnswerData,
+        sourceAnswer: sourceAnswer
+      });
+      
+      if (sourceAnswer && Array.isArray(sourceAnswer)) {
+        dynamicRowData = sourceAnswer.map((row: any) => ({
+          [inputSchema.source_field_to_display]: row[inputSchema.source_field_to_display] || ''
+        }));
+        console.log('✅ Generated dynamic row data:', dynamicRowData);
+      }
+    }
+    
+    // 동적 행이 있으면 첫 번째 컬럼으로 target_metric 컬럼 추가
+    const finalColumns = shouldCreateDynamicRows && dynamicRowData.length > 0 
+      ? [
+          { name: inputSchema.source_field_to_display, label: '목표지표', type: 'text', is_dynamic: true },
+          ...inputSchema.columns
+        ]
+      : inputSchema.columns;
+    
     const initialData = (() => {
+      if (shouldCreateDynamicRows && dynamicRowData.length > 0) {
+        // 동적 행이 있으면 기존 값과 병합하고, 읽기 전용 필드들을 다른 requirement에서 가져오기
+        return dynamicRowData.map((dynamicRow: any, index: number) => {
+          const baseRow = {
+            ...dynamicRow,
+            ...(Array.isArray(value) && value[index] ? value[index] : {})
+          };
+          
+          // 읽기 전용 필드들을 다른 requirement에서 가져와서 채우기
+          inputSchema.columns.forEach((col: any) => {
+            if (col.is_readonly && col.name === 'progress_metric') {
+              // met-24에서 progress_metric 가져오기
+              const met24Answer = answers['met-24'];
+              const met24Data = met24Answer?.answer_value || met24Answer;
+              if (Array.isArray(met24Data) && met24Data[index]) {
+                baseRow[col.name] = met24Data[index].progress_metric || '';
+              }
+            } else if (col.is_readonly && (col.name === 'interim_target' || col.name === 'final_target')) {
+              // met-24에서 interim_target_recap, final_target_recap 가져오기
+              const met24Answer = answers['met-24'];
+              const met24Data = met24Answer?.answer_value || met24Answer;
+              if (Array.isArray(met24Data) && met24Data[index]) {
+                if (col.name === 'interim_target') {
+                  baseRow[col.name] = met24Data[index].interim_target_recap || '';
+                } else if (col.name === 'final_target') {
+                  baseRow[col.name] = met24Data[index].final_target_recap || '';
+                }
+              }
+            }
+          });
+          
+          return baseRow;
+        });
+      }
       return Array.isArray(value) && value.length > 0 ? value : [{}];
     })();
     
     const [rows, setRows] = useState(initialData);
 
     useEffect(() => {
-      if (Array.isArray(value) && value.length > 0) {
+      if (shouldCreateDynamicRows && dynamicRowData.length > 0) {
+        // 동적 행 업데이트
+        const updatedRows = dynamicRowData.map((dynamicRow: any, index: number) => {
+          const baseRow = {
+            ...dynamicRow,
+            ...(Array.isArray(value) && value[index] ? value[index] : {})
+          };
+          
+          // 읽기 전용 필드들을 다른 requirement에서 가져와서 채우기
+          inputSchema.columns.forEach((col: any) => {
+            if (col.is_readonly && col.name === 'progress_metric') {
+              // met-24에서 progress_metric 가져오기
+              const met24Answer = answers['met-24'];
+              const met24Data = met24Answer?.answer_value || met24Answer;
+              if (Array.isArray(met24Data) && met24Data[index]) {
+                baseRow[col.name] = met24Data[index].progress_metric || '';
+              }
+            } else if (col.is_readonly && (col.name === 'interim_target' || col.name === 'final_target')) {
+              // met-24에서 interim_target_recap, final_target_recap 가져오기
+              const met24Answer = answers['met-24'];
+              const met24Data = met24Answer?.answer_value || met24Answer;
+              if (Array.isArray(met24Data) && met24Data[index]) {
+                if (col.name === 'interim_target') {
+                  baseRow[col.name] = met24Data[index].interim_target_recap || '';
+                } else if (col.name === 'final_target') {
+                  baseRow[col.name] = met24Data[index].final_target_recap || '';
+                }
+              }
+            }
+          });
+          
+          return baseRow;
+        });
+        setRows(updatedRows);
+      } else if (Array.isArray(value) && value.length > 0) {
         setRows(value);
       }
-    }, [value]);
+    }, [value, JSON.stringify(dynamicRowData), JSON.stringify(answers)]);
 
     // 개별 필드의 onBlur 이벤트 핸들러
     const handleInputBlur = (rowIndex: number, fieldName: string, newValue: any) => {
@@ -103,15 +211,6 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       setRows(newRows);
       onChange(newRows);
     };
-
-    const inputSchema = requirement.input_schema || requirement.schema;
-    if (!isTableInputSchema(inputSchema)) {
-      return (
-        <div className="mt-2 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-600 text-sm">테이블 스키마 정보가 없습니다.</p>
-        </div>
-      );
-    }
 
     // 동적 컬럼 생성
     const dynamicColumns = [];
@@ -148,11 +247,18 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
     
     console.log('🎯 Final dynamic columns:', dynamicColumns);
 
-    // 전체 컬럼 = 기본 컬럼 + 동적 컬럼
-    const allColumns = [...inputSchema.columns, ...dynamicColumns];
+    // 전체 컬럼 = finalColumns + 동적 컬럼
+    const allColumns = [...finalColumns, ...dynamicColumns];
 
     return (
       <div className="mt-2">
+        {shouldCreateDynamicRows && dynamicRowData.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-blue-700 text-sm">
+              📊 목표지표별 진척도 모니터링: 위에서 설정한 각 목표지표({dynamicRowData.length}개)에 대한 진척도 모니터링 정보를 입력해주세요.
+            </p>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 border border-gray-300">
             <thead className="bg-gray-50">
@@ -165,7 +271,7 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
                     {col.label}
                   </th>
                 ))}
-                <th className="w-10 px-3 py-2"></th>
+                {!shouldCreateDynamicRows && <th className="w-10 px-3 py-2"></th>}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -173,37 +279,47 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
                 <tr key={rowIndex}>
                   {allColumns.map((col: any) => (
                     <td key={col.name} className="px-3 py-2 border-r border-gray-300">
-                      {/* 재귀적 렌더링을 위해 FieldRenderer 사용하되, onBlur 기반으로 처리 */}
-                      <FieldRenderer
-                        fieldSchema={col}
-                        value={row[col.name]}
-                        onChange={(newValue) => handleInputBlur(rowIndex, col.name, newValue)}
-                        className="text-sm"
-                      />
+                      {/* 동적 행에서 is_dynamic 컬럼 또는 is_readonly 컬럼은 읽기 전용 */}
+                      {((col.is_dynamic && shouldCreateDynamicRows) || col.is_readonly) ? (
+                        <div className="px-2 py-1 text-sm text-gray-700 bg-gray-50 rounded">
+                          {row[col.name]}
+                        </div>
+                      ) : (
+                        <FieldRenderer
+                          fieldSchema={col}
+                          value={row[col.name]}
+                          onChange={(newValue) => handleInputBlur(rowIndex, col.name, newValue)}
+                          className="text-sm"
+                        />
+                      )}
                     </td>
                   ))}
-                  <td className="px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => removeRow(rowIndex)}
-                      className="text-red-500 hover:text-red-700"
-                      disabled={rows.length <= 1}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
+                  {!shouldCreateDynamicRows && (
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => removeRow(rowIndex)}
+                        className="text-red-500 hover:text-red-700"
+                        disabled={rows.length <= 1}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <button
-          type="button"
-          onClick={addRow}
-          className="mt-2 flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-        >
-          <PlusCircle size={16} /> 행 추가
-        </button>
+        {!shouldCreateDynamicRows && (
+          <button
+            type="button"
+            onClick={addRow}
+            className="mt-2 flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+          >
+            <PlusCircle size={16} /> 행 추가
+          </button>
+        )}
       </div>
     );
   };
@@ -286,21 +402,13 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
     return (
       <div className="mt-2">
         {shouldUseDynamicItems && (
-          <div className="mb-6 p-4 bg-sky-50 rounded-lg">
-            <div className="flex items-start gap-3">
-              <InformationCircleIcon className="w-5 h-5 text-sky-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-sky-800 mb-1">
-                  목표지표별 진척도 모니터링
-                </p>
-                <p className="text-xs text-sky-700">
-                  위에서 설정한 각 목표지표({dynamicItemLabels.length}개)에 대한 진척도 모니터링 정보를 입력해주세요.
-                </p>
-              </div>
-            </div>
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-blue-700 text-sm">
+              📊 목표지표별 진척도 모니터링: 위에서 설정한 각 목표지표({dynamicItemLabels.length}개)에 대한 진척도 모니터링 정보를 입력해주세요.
+            </p>
           </div>
         )}
-                <div className="space-y-6">
+        <div className="space-y-4">
           {finalItems.map((item: any, itemIndex: number) => {
             // 동적 레이블이 있으면 사용, 없으면 기본 레이블
             const itemLabel = shouldUseDynamicItems 
@@ -308,13 +416,10 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
               : `항목 ${itemIndex + 1}`;
               
             return (
-              <MetricInputCard 
-                key={itemIndex} 
-                title={itemLabel} 
-                isDynamic={shouldUseDynamicItems}
-              >
-                {!shouldUseDynamicItems && (
-                  <div className="flex justify-end mb-4">
+              <div key={itemIndex} className="border border-gray-200 rounded-md p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-lg font-medium text-gray-900">{itemLabel}</h4>
+                  {!shouldUseDynamicItems && (
                     <button
                       type="button"
                       onClick={() => removeItem(itemIndex)}
@@ -324,17 +429,16 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
                       <Trash2 size={16} />
                       항목 삭제
                     </button>
-                  </div>
-                )}
-                
-                <div className="space-y-6">
+                  )}
+                </div>
+                <div className="space-y-4">
                   {inputSchema.fields.map((field: any, fieldIndex: number) => (
                     <div key={field.name}>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         {field.label}
                       </label>
                       {field.guidance && (
-                        <p className="text-xs text-gray-500 mb-3">{field.guidance}</p>
+                        <p className="text-xs text-gray-500 mb-2">{field.guidance}</p>
                       )}
                       {/* 재귀적 렌더링을 위해 FieldRenderer 사용하되, onBlur 기반으로 처리 */}
                       <FieldRenderer
@@ -342,27 +446,22 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
                         value={item[field.name]}
                         onChange={(newValue) => handleFieldBlur(itemIndex, field.name, newValue)}
                       />
-                      {fieldIndex < inputSchema.fields.length - 1 && (
-                        <hr className="border-gray-200 mt-6" />
-                      )}
                     </div>
                   ))}
                 </div>
-              </MetricInputCard>
+              </div>
             );
           })}
         </div>
         {!shouldUseDynamicItems && (
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={addItem}
-              className="w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200 flex items-center justify-center gap-2"
-            >
-              <PlusCircle size={16} />
-              새 항목 추가
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={addItem}
+            className="mt-4 w-full py-2 px-4 border border-dashed border-gray-300 rounded-md text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+          >
+            <PlusCircle size={16} />
+            새 항목 추가
+          </button>
         )}
       </div>
     );
@@ -459,7 +558,7 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       return <GhgScope3ApproachInputRenderer requirement={fieldSchema} />;
 
     case 'performance_tracking_input':
-      return <PerformanceTrackingInputRenderer requirement={fieldSchema} />;
+      return <PerformanceTrackingInputRenderer requirement={fieldSchema} value={value} onChange={onChange} />;
 
     case 'internal_carbon_price_input':
       return <InternalCarbonPriceInputRenderer requirement={fieldSchema} />;
