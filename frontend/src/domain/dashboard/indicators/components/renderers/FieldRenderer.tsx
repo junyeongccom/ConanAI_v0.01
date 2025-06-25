@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, InformationCircleIcon } from 'lucide-react';
 import { isTableInputSchema, isStructuredListSchema } from '../../types';
 import { useAnswerStore } from '../../stores/answerStore';
+import { MetricInputCard } from '../MetricInputCard';
 
 // 지표 및 목표 파트의 전용 렌더러들 import
 import { GhgEmissionsInputRenderer } from './metrics/GhgEmissionsInputRenderer';
@@ -209,6 +210,8 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
 
   // 내부 StructuredListRenderer 컴포넌트
   const InlineStructuredListRenderer = ({ requirement, value, onChange }: any) => {
+    const { answers } = useAnswerStore();
+    
     const initialData = (() => {
       return Array.isArray(value) && value.length > 0 ? value : [{}];
     })();
@@ -223,7 +226,7 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
 
     // 개별 필드의 onBlur 이벤트 핸들러
     const handleFieldBlur = (itemIndex: number, fieldName: string, newValue: any) => {
-      const newItems = [...items];
+      const newItems = shouldUseDynamicItems ? [...finalItems] : [...items];
       newItems[itemIndex] = { ...newItems[itemIndex], [fieldName]: newValue };
       setItems(newItems);
       // 즉시 상위 컴포넌트에 변경사항 전달
@@ -251,50 +254,116 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       );
     }
 
+    // 동적 항목 생성: source_requirement가 있으면 해당 답변에서 데이터를 가져와서 항목 생성
+    let dynamicItemLabels = [];
+    if (inputSchema.source_requirement && inputSchema.source_field_to_display) {
+      const sourceAnswerData = answers[inputSchema.source_requirement];
+      const sourceAnswer = sourceAnswerData?.answer_value || sourceAnswerData;
+      
+      console.log('🔍 Dynamic items debug:', {
+        sourceRequirement: inputSchema.source_requirement,
+        sourceFieldToDisplay: inputSchema.source_field_to_display,
+        sourceAnswerData,
+        sourceAnswer
+      });
+      
+      if (Array.isArray(sourceAnswer)) {
+        // 각 행의 지정된 필드 값을 가져와서 항목 레이블로 사용
+        dynamicItemLabels = sourceAnswer
+          .map((row: any) => row[inputSchema.source_field_to_display])
+          .filter((label: any) => label && String(label).trim());
+        
+        console.log('✅ Generated dynamic labels:', dynamicItemLabels);
+      }
+    }
+
+    // 동적 항목이 있으면 그 개수만큼 items 초기화, 없으면 기본 1개
+    const shouldUseDynamicItems = dynamicItemLabels.length > 0;
+    const finalItems = shouldUseDynamicItems 
+      ? dynamicItemLabels.map((label: string, index: number) => items[index] || {})
+      : items;
+
     return (
       <div className="mt-2">
-        <div className="space-y-4">
-          {items.map((item: any, itemIndex: number) => (
-            <div key={itemIndex} className="p-4 border border-gray-300 rounded-md bg-gray-50">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="text-sm font-medium text-gray-700">항목 {itemIndex + 1}</h4>
-                <button
-                  type="button"
-                  onClick={() => removeItem(itemIndex)}
-                  className="text-red-500 hover:text-red-700"
-                  disabled={items.length <= 1}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-              <div className="space-y-3">
-                {inputSchema.fields.map((field: any) => (
-                  <div key={field.name}>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      {field.label}
-                    </label>
-                    {field.guidance && (
-                      <p className="text-xs text-gray-500 mt-0.5 mb-2">{field.guidance}</p>
-                    )}
-                    {/* 재귀적 렌더링을 위해 FieldRenderer 사용하되, onBlur 기반으로 처리 */}
-                    <FieldRenderer
-                      fieldSchema={field}
-                      value={item[field.name]}
-                      onChange={(newValue) => handleFieldBlur(itemIndex, field.name, newValue)}
-                    />
-                  </div>
-                ))}
+        {shouldUseDynamicItems && (
+          <div className="mb-6 p-4 bg-sky-50 rounded-lg">
+            <div className="flex items-start gap-3">
+              <InformationCircleIcon className="w-5 h-5 text-sky-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-sky-800 mb-1">
+                  목표지표별 진척도 모니터링
+                </p>
+                <p className="text-xs text-sky-700">
+                  위에서 설정한 각 목표지표({dynamicItemLabels.length}개)에 대한 진척도 모니터링 정보를 입력해주세요.
+                </p>
               </div>
             </div>
-          ))}
+          </div>
+        )}
+                <div className="space-y-6">
+          {finalItems.map((item: any, itemIndex: number) => {
+            // 동적 레이블이 있으면 사용, 없으면 기본 레이블
+            const itemLabel = shouldUseDynamicItems 
+              ? `${dynamicItemLabels[itemIndex]}` 
+              : `항목 ${itemIndex + 1}`;
+              
+            return (
+              <MetricInputCard 
+                key={itemIndex} 
+                title={itemLabel} 
+                isDynamic={shouldUseDynamicItems}
+              >
+                {!shouldUseDynamicItems && (
+                  <div className="flex justify-end mb-4">
+                    <button
+                      type="button"
+                      onClick={() => removeItem(itemIndex)}
+                      className="text-red-500 hover:text-red-700 flex items-center gap-1 text-sm"
+                      disabled={finalItems.length <= 1}
+                    >
+                      <Trash2 size={16} />
+                      항목 삭제
+                    </button>
+                  </div>
+                )}
+                
+                <div className="space-y-6">
+                  {inputSchema.fields.map((field: any, fieldIndex: number) => (
+                    <div key={field.name}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {field.label}
+                      </label>
+                      {field.guidance && (
+                        <p className="text-xs text-gray-500 mb-3">{field.guidance}</p>
+                      )}
+                      {/* 재귀적 렌더링을 위해 FieldRenderer 사용하되, onBlur 기반으로 처리 */}
+                      <FieldRenderer
+                        fieldSchema={field}
+                        value={item[field.name]}
+                        onChange={(newValue) => handleFieldBlur(itemIndex, field.name, newValue)}
+                      />
+                      {fieldIndex < inputSchema.fields.length - 1 && (
+                        <hr className="border-gray-200 mt-6" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </MetricInputCard>
+            );
+          })}
         </div>
-        <button
-          type="button"
-          onClick={addItem}
-          className="mt-3 flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-        >
-          <PlusCircle size={16} /> 항목 추가
-        </button>
+        {!shouldUseDynamicItems && (
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={addItem}
+              className="w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+              <PlusCircle size={16} />
+              새 항목 추가
+            </button>
+          </div>
+        )}
       </div>
     );
   };
