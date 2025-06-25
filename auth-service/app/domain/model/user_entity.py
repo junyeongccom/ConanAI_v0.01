@@ -7,7 +7,7 @@ import uuid
 Base = declarative_base()
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "member"
     
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     google_id = Column(String(255), unique=True, nullable=False)
