@@ -93,9 +93,9 @@ app.add_middleware(
 # 사용자 컨텍스트 미들웨어 추가 (X-User-Id 헤더 → request.state.user_id)
 app.add_middleware(UserContextMiddleware)
 
-# 라우터 등록
-app.include_router(disclosure_router, tags=["disclosure"])
-app.include_router(answer_router, prefix="/api", tags=["answers"])
+# 라우터 등록 (각 라우터의 자체 태그 사용)
+app.include_router(disclosure_router)
+app.include_router(answer_router, prefix="/api")
 
 
 # 헬스 체크 엔드포인트
