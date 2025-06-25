@@ -44,7 +44,7 @@ class IssbS2Requirement(Base):
     
     # 관계 설정
     disclosure = relationship("IssbS2Disclosure", back_populates="requirements")
-    # answers 관계는 answer_entity.py에서 역방향으로 관리됨
+    # answers 관계는 도메인 분리를 위해 설정하지 않음 (Answer 엔티티는 별도 도메인)
     
     def __repr__(self):
         return f"<IssbS2Requirement(id={self.requirement_id}, disclosure_id={self.disclosure_id}, order={self.requirement_order})>"

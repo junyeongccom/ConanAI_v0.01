@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { useAnswerStore } from '../../../stores/answerStore';
+import { useAnswers } from '@/shared/hooks/useAnswerHooks';
+import useAnswerStore from '@/shared/store/answerStore';
 import { YearAddModal } from './YearAddModal';
 
 interface GhgEmissionsInputRendererProps {
@@ -10,13 +11,14 @@ interface GhgEmissionsInputRendererProps {
 }
 
 export function GhgEmissionsInputRenderer({ requirement }: GhgEmissionsInputRendererProps) {
-  const { answers, setAnswer } = useAnswerStore();
-  const currentAnswer = answers[requirement.requirement_id];
+  const { currentAnswers } = useAnswers();
+  const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
   
-  // 초기 연도와 데이터 설정
-  const [years, setYears] = useState<string[]>(['2023']);
-  const [data, setData] = useState<Record<string, Record<string, number>>>({});
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // 전역 상태에서 직접 데이터를 가져옴
+  const currentData = currentAnswers[requirement.requirement_id] || [];
+  
+  // 로컬 상태 대신 전역 상태에서 연도와 데이터 추출
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
   
   // input_schema에서 카테고리 목록 가져오기
   const categories = requirement.input_schema?.categories || [];
@@ -24,13 +26,13 @@ export function GhgEmissionsInputRenderer({ requirement }: GhgEmissionsInputRend
   // Scope 3 하위 카테고리들 (C1~C15)
   const scope3Categories = categories.filter((cat: string) => cat.startsWith(' C'));
   
-  useEffect(() => {
-    // 저장된 답변이 있으면 복원
-    if (currentAnswer && Array.isArray(currentAnswer)) {
-      const restoredData: Record<string, Record<string, number>> = {};
-      const restoredYears = new Set<string>();
-      
-      currentAnswer.forEach((item: any) => {
+  // 전역 상태에서 연도와 데이터 추출
+  const extractYearsAndData = () => {
+    const restoredData: Record<string, Record<string, number>> = {};
+    const restoredYears = new Set<string>();
+    
+    if (Array.isArray(currentData)) {
+      currentData.forEach((item: any) => {
         if (item.category && item.year && item.value !== undefined) {
           if (!restoredData[item.category]) {
             restoredData[item.category] = {};
@@ -39,30 +41,32 @@ export function GhgEmissionsInputRenderer({ requirement }: GhgEmissionsInputRend
           restoredYears.add(item.year);
         }
       });
-      
-      if (restoredYears.size > 0) {
-        setYears(Array.from(restoredYears).sort());
-        setData(restoredData);
-      }
     }
-  }, [currentAnswer]);
+    
+    return {
+      years: restoredYears.size > 0 ? Array.from(restoredYears).sort() : ['2023'],
+      data: restoredData
+    };
+  };
+  
+  const { years, data } = extractYearsAndData();
 
   // 연도 추가
   const addYear = (newYear: string) => {
-    setYears([...years, newYear].sort());
+    const newYears = [...years, newYear].sort();
+    saveToStore(data, newYears);
   };
 
   // 연도 삭제
   const removeYear = (yearToRemove: string) => {
     if (years.length <= 1) return;
     
-    setYears(years.filter(year => year !== yearToRemove));
+    const newYears = years.filter(year => year !== yearToRemove);
     const newData = { ...data };
     Object.keys(newData).forEach(category => {
       delete newData[category][yearToRemove];
     });
-    setData(newData);
-    saveToStore(newData, years.filter(year => year !== yearToRemove));
+    saveToStore(newData, newYears);
   };
 
   // 값 변경 핸들러
@@ -75,7 +79,9 @@ export function GhgEmissionsInputRenderer({ requirement }: GhgEmissionsInputRend
         [year]: numValue
       }
     };
-    setData(newData);
+    
+    // 바로 전역 상태 업데이트 액션 호출
+    saveToStore(newData, years);
   };
 
   // Scope 3 자동 계산
@@ -113,12 +119,7 @@ export function GhgEmissionsInputRenderer({ requirement }: GhgEmissionsInputRend
       });
     });
     
-    setAnswer(requirement.requirement_id, tidyData);
-  };
-
-  // 입력 필드 onBlur 이벤트
-  const handleBlur = () => {
-    saveToStore(data, years);
+    updateCurrentAnswer(requirement.requirement_id, tidyData);
   };
 
   return (
@@ -190,7 +191,6 @@ export function GhgEmissionsInputRenderer({ requirement }: GhgEmissionsInputRend
                           value={displayValue}
                           disabled={isCalculated}
                           onChange={(e) => handleValueChange(category, year, e.target.value)}
-                          onBlur={handleBlur}
                           placeholder={isCalculated ? '자동계산' : '0'}
                         />
                       </td>
@@ -204,10 +204,10 @@ export function GhgEmissionsInputRenderer({ requirement }: GhgEmissionsInputRend
       </div>
       
       <div className="mt-2 text-xs text-gray-500">
-        * Scope 3와 합계는 하위 항목들의 합으로 자동 계산됩니다. (단위: tCO₂eq)
+        * 단위: tCO2e (이산화탄소 환산톤)
+        * Scope 3와 합계는 자동으로 계산됩니다.
       </div>
 
-      {/* 연도 추가 모달 */}
       <YearAddModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

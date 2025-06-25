@@ -8,9 +8,7 @@ from app.domain.model.disclosure_entity import (
     IssbS2Requirement, 
     IssbS2Term,
     ClimateDisclosureConcept, 
-    IssbAdoptionStatus,
-    User,
-    Answer
+    IssbAdoptionStatus
 )
 
 
@@ -44,6 +42,12 @@ class DisclosureRepository:
         ).all()
 
     # ISSB S2 Requirement 관련 메서드
+    def get_requirement_by_id(self, requirement_id: str) -> Optional[IssbS2Requirement]:
+        """ID로 요구사항을 조회합니다."""
+        return self.db.query(IssbS2Requirement).filter(
+            IssbS2Requirement.requirement_id == requirement_id
+        ).first()
+
     def get_requirements_by_disclosure_id(self, disclosure_id: str) -> List[IssbS2Requirement]:
         """공시 ID로 관련 요구사항들을 조회합니다."""
         return self.db.query(IssbS2Requirement).filter(
@@ -106,76 +110,4 @@ class DisclosureRepository:
             IssbAdoptionStatus.country == country
         ).first()
 
-    # User 관련 메서드
-    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
-        """ID로 사용자를 조회합니다."""
-        return self.db.query(User).filter(User.user_id == user_id).first()
-
-    def get_user_by_email(self, email: str) -> Optional[User]:
-        """이메일로 사용자를 조회합니다."""
-        return self.db.query(User).filter(User.email == email).first()
-
-    def get_user_by_google_id(self, google_id: str) -> Optional[User]:
-        """Google ID로 사용자를 조회합니다."""
-        return self.db.query(User).filter(User.google_id == google_id).first()
-
-    def create_user(self, user_data: dict) -> User:
-        """새 사용자를 생성합니다."""
-        user = User(**user_data)
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
-        return user
-
-    def update_user(self, user_id: UUID, user_data: dict) -> Optional[User]:
-        """사용자 정보를 업데이트합니다."""
-        user = self.get_user_by_id(user_id)
-        if user:
-            for key, value in user_data.items():
-                setattr(user, key, value)
-            self.db.commit()
-            self.db.refresh(user)
-        return user
-
-    # Answer 관련 메서드
-    def get_answer_by_id(self, answer_id: UUID) -> Optional[Answer]:
-        """ID로 답변을 조회합니다."""
-        return self.db.query(Answer).filter(Answer.answer_id == answer_id).first()
-
-    def get_answers_by_user_id(self, user_id: UUID) -> List[Answer]:
-        """사용자 ID로 모든 답변을 조회합니다."""
-        return self.db.query(Answer).filter(Answer.user_id == user_id).all()
-
-    def get_answer_by_user_and_requirement(self, user_id: UUID, requirement_id: str) -> Optional[Answer]:
-        """사용자와 요구사항으로 답변을 조회합니다."""
-        return self.db.query(Answer).filter(
-            Answer.user_id == user_id,
-            Answer.requirement_id == requirement_id
-        ).first()
-
-    def create_answer(self, answer_data: dict) -> Answer:
-        """새 답변을 생성합니다."""
-        answer = Answer(**answer_data)
-        self.db.add(answer)
-        self.db.commit()
-        self.db.refresh(answer)
-        return answer
-
-    def update_answer(self, answer_id: UUID, answer_data: dict) -> Optional[Answer]:
-        """답변을 업데이트합니다."""
-        answer = self.get_answer_by_id(answer_id)
-        if answer:
-            for key, value in answer_data.items():
-                setattr(answer, key, value)
-            self.db.commit()
-            self.db.refresh(answer)
-        return answer
-
-    def delete_answer(self, answer_id: UUID) -> bool:
-        """답변을 삭제합니다."""
-        answer = self.get_answer_by_id(answer_id)
-        if answer:
-            self.db.delete(answer)
-            self.db.commit()
-            return True
-        return False 
+    # User와 Answer 관련 메서드는 각각 auth-service와 answer 도메인으로 분리됨 

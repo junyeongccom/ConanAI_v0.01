@@ -1,9 +1,10 @@
 # Answer 도메인 Service
 import logging
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from uuid import UUID
 from datetime import datetime
+from sqlalchemy.orm import Session
 
 from app.domain.repository.answer_repository import AnswerRepository
 from app.domain.repository.disclosure_repository import DisclosureRepository
@@ -18,7 +19,8 @@ logger = logging.getLogger("disclosure-service")
 class AnswerService:
     """Answer 도메인 비즈니스 로직 처리 계층"""
     
-    def __init__(self, answer_repository: AnswerRepository, disclosure_repository: DisclosureRepository):
+    def __init__(self, db: Session, answer_repository: AnswerRepository, disclosure_repository: DisclosureRepository):
+        self.db = db
         self.answer_repository = answer_repository
         self.disclosure_repository = disclosure_repository
     
@@ -39,7 +41,7 @@ class AnswerService:
             "answer_value_boolean": None,
             "answer_value_date": None,
             "answer_value_json": None,
-            "updated_at": datetime.utcnow()
+            "last_edited_at": datetime.utcnow()
         }
         
         try:
@@ -119,59 +121,73 @@ class AnswerService:
         
         logger.info(f"답변 배치 처리 시작: user_id={user_id}, 답변 수={len(payload.answers)}")
         
-        for answer_payload in payload.answers:
-            try:
-                requirement_id = answer_payload.requirement_id
-                answer_data = answer_payload.answer_data
-                
-                # 기존 답변 존재 여부 확인
-                existing_answer = self.answer_repository.get_answer_by_user_and_requirement(
-                    user_id, requirement_id
-                )
-                is_update = existing_answer is not None
-                
-                # 요구사항의 데이터 타입 조회
-                requirement = self.disclosure_repository.get_requirement_by_id(requirement_id)
-                if not requirement:
-                    logger.error(f"요구사항을 찾을 수 없음: {requirement_id}")
-                    failed_count += 1
-                    failed_requirements.append(requirement_id)
-                    continue
-                
-                data_required_type = requirement.data_required_type
-                logger.debug(f"요구사항 {requirement_id}의 데이터 타입: {data_required_type}")
-                
-                # 답변 데이터를 적절한 컬럼에 매핑
-                column_data = self._map_answer_data_to_columns(answer_data, data_required_type)
-                
-                # UPSERT 수행
-                success = self.answer_repository.upsert_answer(
-                    user_id=user_id,
-                    requirement_id=requirement_id,
-                    data_to_update=column_data
-                )
-                
-                if success:
-                    processed_count += 1
-                    if is_update:
-                        updated_count += 1
-                    else:
-                        created_count += 1
-                    logger.debug(f"답변 처리 성공: {requirement_id} ({'업데이트' if is_update else '생성'})")
-                else:
-                    failed_count += 1
-                    failed_requirements.append(requirement_id)
-                    logger.error(f"답변 처리 실패: {requirement_id}")
+        try:
+            for answer_payload in payload.answers:
+                try:
+                    requirement_id = answer_payload.requirement_id
+                    answer_data = answer_payload.answer_data
                     
-            except Exception as e:
-                failed_count += 1
-                failed_requirements.append(answer_payload.requirement_id)
-                logger.error(f"답변 처리 중 예외 발생: {answer_payload.requirement_id}, error={str(e)}")
+                    # 요구사항의 데이터 타입 조회 (DisclosureRepository 사용)
+                    requirement = self.disclosure_repository.get_requirement_by_id(requirement_id)
+                    if not requirement:
+                        logger.error(f"요구사항을 찾을 수 없음: {requirement_id}")
+                        failed_count += 1
+                        failed_requirements.append(requirement_id)
+                        continue
+                    
+                    data_required_type = requirement.data_required_type
+                    logger.debug(f"요구사항 {requirement_id}의 데이터 타입: {data_required_type}")
+                    
+                    # 기존 답변 존재 여부 확인 (생성/수정 카운트를 위해)
+                    existing_answer = self.answer_repository.get_answer_by_user_and_requirement(
+                        user_id, requirement_id
+                    )
+                    is_update = existing_answer is not None
+                    
+                    # 답변 데이터를 적절한 컬럼에 매핑
+                    column_data = self._map_answer_data_to_columns(answer_data, data_required_type)
+                    
+                    # UPSERT 수행
+                    answer = self.answer_repository.upsert_answer(
+                        user_id=user_id,
+                        requirement_id=requirement_id,
+                        data_to_update=column_data
+                    )
+                    
+                    if answer:
+                        processed_count += 1
+                        if is_update:
+                            updated_count += 1
+                        else:
+                            created_count += 1
+                        logger.debug(f"답변 처리 성공: {requirement_id} ({'업데이트' if is_update else '생성'})")
+                    else:
+                        failed_count += 1
+                        failed_requirements.append(requirement_id)
+                        logger.error(f"답변 처리 실패: {requirement_id}")
+                        
+                except Exception as e:
+                    failed_count += 1
+                    failed_requirements.append(answer_payload.requirement_id)
+                    logger.error(f"답변 처리 중 예외 발생: {answer_payload.requirement_id}, error={str(e)}")
+            
+            # 트랜잭션 커밋
+            self.db.commit()
+            logger.info(f"답변 배치 처리 완료 및 커밋: user_id={user_id}, 성공={processed_count}, 실패={failed_count}")
+            
+        except Exception as e:
+            # 트랜잭션 롤백
+            self.db.rollback()
+            logger.error(f"답변 배치 처리 중 심각한 오류 발생, 롤백: user_id={user_id}, error={str(e)}")
+            # 전체 실패로 처리
+            failed_count = len(payload.answers)
+            failed_requirements = [answer.requirement_id for answer in payload.answers]
+            processed_count = 0
+            created_count = 0
+            updated_count = 0
         
         success = failed_count == 0
         message = f"답변 배치 처리가 완료되었습니다. (성공: {processed_count}, 실패: {failed_count})"
-        
-        logger.info(f"답변 배치 처리 완료: user_id={user_id}, 성공={processed_count}, 실패={failed_count}")
         
         return AnswerBatchResponse(
             success=success,
@@ -193,13 +209,22 @@ class AnswerService:
         Returns:
             List[AnswerResponse]: 사용자 답변 목록
         """
-        return self.answer_repository.get_answers_by_user_id(user_id)
+        try:
+            # Repository에서 ORM 객체들을 받아옴
+            answers = self.answer_repository.get_answers_by_user_id(user_id)
+            
+            # ORM 객체를 DTO로 변환하여 반환
+            return [AnswerResponse.from_attributes(answer) for answer in answers]
+            
+        except Exception as e:
+            logger.error(f"사용자 답변 목록 조회 실패: user_id={user_id}, error={str(e)}")
+            return []
     
     def get_answer_by_requirement(
         self, 
         user_id: UUID, 
         requirement_id: str
-    ) -> AnswerResponse:
+    ) -> Optional[AnswerResponse]:
         """
         특정 요구사항에 대한 사용자 답변을 조회합니다.
         
@@ -210,7 +235,18 @@ class AnswerService:
         Returns:
             AnswerResponse 또는 None
         """
-        return self.answer_repository.get_answer_by_user_and_requirement(user_id, requirement_id)
+        try:
+            # Repository에서 ORM 객체를 받아옴
+            answer = self.answer_repository.get_answer_by_user_and_requirement(user_id, requirement_id)
+            
+            # ORM 객체를 DTO로 변환하여 반환
+            if answer:
+                return AnswerResponse.from_attributes(answer)
+            return None
+            
+        except Exception as e:
+            logger.error(f"답변 조회 실패: user_id={user_id}, requirement_id={requirement_id}, error={str(e)}")
+            return None
     
     def delete_answer(self, user_id: UUID, requirement_id: str) -> bool:
         """
@@ -223,4 +259,14 @@ class AnswerService:
         Returns:
             bool: 삭제 성공 여부
         """
-        return self.answer_repository.delete_answer(user_id, requirement_id) 
+        try:
+            result = self.answer_repository.delete_answer(user_id, requirement_id)
+            if result:
+                self.db.commit()
+                logger.info(f"답변 삭제 완료 및 커밋: user_id={user_id}, requirement_id={requirement_id}")
+            return result
+            
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"답변 삭제 실패 및 롤백: user_id={user_id}, requirement_id={requirement_id}, error={str(e)}")
+            return False 

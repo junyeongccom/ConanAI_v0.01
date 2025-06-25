@@ -1,70 +1,74 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useAnswerStore } from '../../../stores/answerStore';
+import React from 'react';
+import { useAnswers } from '@/shared/hooks/useAnswerHooks';
+import useAnswerStore from '@/shared/store/answerStore';
 
 interface PerformanceTrackingInputRendererProps {
   requirement: any;
 }
 
 export function PerformanceTrackingInputRenderer({ requirement }: PerformanceTrackingInputRendererProps) {
-  const { answers, setAnswer } = useAnswerStore();
-  const currentAnswer = answers[requirement.requirement_id];
+  const { currentAnswers } = useAnswers();
+  const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
   
-  const [data, setData] = useState<any[]>([]);
+  // 전역 상태에서 직접 데이터를 가져옴
+  const currentData = currentAnswers[requirement.requirement_id] || [];
   
   // input_schema에서 설정 정보 가져오기
   const sourceRequirement = requirement.input_schema?.source_requirement;
   const columns = requirement.input_schema?.columns || [];
   
   // 소스 requirement에서 목표 데이터 가져오기
-  const sourceData = sourceRequirement ? answers[sourceRequirement] : [];
-  
-  useEffect(() => {
-    // 소스 데이터가 있으면 초기 구조 생성
-    if (sourceData && Array.isArray(sourceData) && sourceData.length > 0) {
-      if (!currentAnswer || !Array.isArray(currentAnswer) || currentAnswer.length === 0) {
-        // 초기 데이터 구조 생성 (읽기 전용 필드들은 소스에서 가져오고, 입력 필드들은 빈 값으로 초기화)
-        const initialData = sourceData.map((sourceItem: any) => {
-          const newItem: any = {};
-          
-          columns.forEach((col: any) => {
-            if (col.type === 'read_only' && col.source_field) {
-              newItem[col.key] = sourceItem[col.source_field] || '';
-            } else {
-              newItem[col.key] = '';
-            }
-          });
-          
-          return newItem;
-        });
-        
-        setData(initialData);
-        setAnswer(requirement.requirement_id, initialData);
-      } else {
-        setData(currentAnswer);
-      }
-    } else if (currentAnswer && Array.isArray(currentAnswer)) {
-      setData(currentAnswer);
+  const sourceData = sourceRequirement ? currentAnswers[sourceRequirement] : [];
+
+  // 초기 데이터 구조 생성 함수
+  const generateInitialData = () => {
+    if (!sourceData || !Array.isArray(sourceData) || sourceData.length === 0) {
+      return [];
     }
-  }, [sourceData, currentAnswer, requirement.requirement_id]);
+
+    return sourceData.map((sourceItem: any) => {
+      const newItem: any = {};
+      
+      columns.forEach((col: any) => {
+        if (col.type === 'read_only' && col.source_field) {
+          newItem[col.key] = sourceItem[col.source_field] || '';
+        } else {
+          newItem[col.key] = '';
+        }
+      });
+      
+      return newItem;
+    });
+  };
+
+  // 데이터가 없거나 비어있으면 초기 데이터로 설정
+  React.useEffect(() => {
+    if (sourceData && Array.isArray(sourceData) && sourceData.length > 0) {
+      if (!currentData || !Array.isArray(currentData) || currentData.length === 0) {
+        const initialData = generateInitialData();
+        updateCurrentAnswer(requirement.requirement_id, initialData);
+      }
+    }
+  }, [sourceData, currentData, requirement.requirement_id, updateCurrentAnswer]);
 
   // 값 변경 핸들러
   const handleValueChange = (rowIndex: number, columnKey: string, value: string) => {
-    const newData = [...data];
+    if (!Array.isArray(currentData)) return;
+    
+    // 현재 전역 상태를 기반으로 새로운 데이터 생성
+    const newData = [...currentData];
     newData[rowIndex] = {
       ...newData[rowIndex],
       [columnKey]: value
     };
-    setData(newData);
+    
+    // 바로 전역 상태 업데이트 액션 호출
+    updateCurrentAnswer(requirement.requirement_id, newData);
   };
 
-  // 저장
-  const saveToStore = () => {
-    setAnswer(requirement.requirement_id, data);
-  };
-
-  if (!data || data.length === 0) {
+  if (!Array.isArray(currentData) || currentData.length === 0) {
     return (
       <div className="mt-2 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
         <p className="text-yellow-700 text-sm">
@@ -91,7 +95,7 @@ export function PerformanceTrackingInputRenderer({ requirement }: PerformanceTra
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((row: any, rowIndex: number) => (
+            {currentData.map((row: any, rowIndex: number) => (
               <tr key={rowIndex}>
                 {columns.map((col: any) => (
                   <td key={col.key} className="px-3 py-2 border-r border-gray-300">
@@ -105,7 +109,6 @@ export function PerformanceTrackingInputRenderer({ requirement }: PerformanceTra
                         className="w-full p-2 border border-gray-300 rounded text-sm"
                         value={row[col.key] || ''}
                         onChange={(e) => handleValueChange(rowIndex, col.key, e.target.value)}
-                        onBlur={saveToStore}
                         placeholder={col.placeholder || '실적을 입력하세요'}
                       />
                     )}

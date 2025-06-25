@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -12,15 +12,15 @@ interface YearAddModalProps {
 }
 
 export function YearAddModal({ isOpen, onClose, onAdd, existingYears }: YearAddModalProps) {
-  const [year, setYear] = useState('');
-  const [error, setError] = useState('');
-  const [mounted, setMounted] = useState(false);
+  const [year, setYear] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [mounted, setMounted] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isOpen) {
       // 모달이 열릴 때 현재 연도로 초기화
       const currentYear = new Date().getFullYear().toString();
@@ -30,7 +30,7 @@ export function YearAddModal({ isOpen, onClose, onAdd, existingYears }: YearAddM
   }, [isOpen]);
 
   // ESC 키로 모달 닫기
-  useEffect(() => {
+  React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         handleClose();

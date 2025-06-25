@@ -1,42 +1,37 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useAnswerStore } from '../../../stores/answerStore';
+import React from 'react';
+import { useAnswers } from '@/shared/hooks/useAnswerHooks';
+import useAnswerStore from '@/shared/store/answerStore';
 
 interface GhgGasesInputRendererProps {
   requirement: any;
 }
 
 export function GhgGasesInputRenderer({ requirement }: GhgGasesInputRendererProps) {
-  const { answers, setAnswer } = useAnswerStore();
-  const currentAnswer = answers[requirement.requirement_id];
+  const { currentAnswers } = useAnswers();
+  const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
   
-  const [data, setData] = useState<Record<string, Record<string, boolean>>>({});
+  // 전역 상태에서 직접 데이터를 가져옴
+  const currentData = currentAnswers[requirement.requirement_id] || {};
   
   // input_schema에서 행과 컬럼 정보 가져오기
   const rows = requirement.input_schema?.rows || [];
   const columns = requirement.input_schema?.columns || [];
-  
-  useEffect(() => {
-    // 저장된 답변이 있으면 복원
-    if (currentAnswer && typeof currentAnswer === 'object') {
-      setData(currentAnswer as unknown as Record<string, Record<string, boolean>>);
-    }
-  }, [currentAnswer]);
 
   // 체크박스 변경 핸들러
   const handleCheckboxChange = (rowKey: string, columnKey: string, checked: boolean) => {
+    // 현재 전역 상태를 기반으로 새로운 데이터 생성
     const newData = {
-      ...data,
+      ...currentData,
       [rowKey]: {
-        ...data[rowKey],
+        ...currentData[rowKey],
         [columnKey]: checked
       }
     };
-    setData(newData);
     
-    // 즉시 저장
-    setAnswer(requirement.requirement_id, newData);
+    // 바로 전역 상태 업데이트 액션 호출
+    updateCurrentAnswer(requirement.requirement_id, newData);
   };
 
   return (
@@ -66,7 +61,7 @@ export function GhgGasesInputRenderer({ requirement }: GhgGasesInputRendererProp
                     <input
                       type="checkbox"
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      checked={data[row.key]?.[col.key] || false}
+                      checked={currentData[row.key]?.[col.key] || false}
                       onChange={(e) => handleCheckboxChange(row.key, col.key, e.target.checked)}
                     />
                   </td>

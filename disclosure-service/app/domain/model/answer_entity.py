@@ -26,12 +26,11 @@ class Answer(Base):
     answer_value_json = Column(JSONB, nullable=True, comment="JSON/복합 타입 답변")
     
     # 메타데이터
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    answered_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    last_edited_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     status = Column(String(50), nullable=False, default='DRAFT', comment="상태 (DRAFT, SUBMITTED, APPROVED)")
     
-    # 관계 설정 (requirement만 참조, user는 auth-service 영역이므로 FK 제약 없음)
-    requirement = relationship("IssbS2Requirement", back_populates="answers")
+    # 관계 설정 없음 - 도메인 분리를 위해 직접 참조 대신 ID로만 연결
     
     # 복합 유니크 제약 (사용자당 요구사항별로 하나의 답변만)
     __table_args__ = (

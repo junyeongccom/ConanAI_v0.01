@@ -1,93 +1,33 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useAnswerStore } from '../../../stores/answerStore';
+import { useAnswers } from '@/shared/hooks/useAnswerHooks';
+import useAnswerStore from '@/shared/store/answerStore';
 
 interface InternalCarbonPriceInputRendererProps {
-  requirement: any;
+  value: any;
+  onChange: (value: any) => void;
 }
 
-export function InternalCarbonPriceInputRenderer({ requirement }: InternalCarbonPriceInputRendererProps) {
-  const { answers, setAnswer } = useAnswerStore();
-  const currentAnswer = answers[requirement.requirement_id];
+export function InternalCarbonPriceInputRenderer({ value, onChange }: InternalCarbonPriceInputRendererProps) {
+  const { currentAnswers } = useAnswers();
+  const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
   
-  const [data, setData] = useState<Record<string, string>>({});
-  const [isInitialized, setIsInitialized] = useState(false);
+  // 전역 상태에서 직접 데이터를 가져옴
+  const currentData = currentAnswers[value.requirement_id] || {};
   
   // input_schema에서 행 정보 가져오기
-  const rows = requirement.input_schema?.rows || [];
-  
-  // 저장 함수
-  const saveData = useCallback((newData: Record<string, string>) => {
-    console.log('Saving internal carbon price data:', newData);
-    setAnswer(requirement.requirement_id, newData);
-  }, [requirement.requirement_id, setAnswer]);
-  
-  useEffect(() => {
-    // 이미 초기화되었으면 실행하지 않음
-    if (isInitialized) {
-      return;
-    }
-    
-    console.log('Initializing InternalCarbonPriceInputRenderer, currentAnswer:', currentAnswer);
-    console.log('rows:', rows);
-    
-    if (rows.length === 0) {
-      console.log('No rows available, skipping initialization');
-      return;
-    }
-    
-    // 저장된 답변이 있으면 복원
-    if (currentAnswer && typeof currentAnswer === 'object' && Object.keys(currentAnswer).length > 0) {
-      console.log('Restoring existing answer:', currentAnswer);
-      setData(currentAnswer);
-    } else {
-      console.log('Initializing empty data for rows:', rows);
-      // 초기화: 각 행별로 빈 문자열로 초기화
-      const initialData: Record<string, string> = {};
-      rows.forEach((row: any) => {
-        initialData[row.key] = '';
-      });
-      console.log('Initial data:', initialData);
-      setData(initialData);
-    }
-    
-    setIsInitialized(true);
-  }, [currentAnswer, rows, isInitialized]);
+  const rows = value.input_schema?.rows || [];
 
   // 값 변경 핸들러
-  const handleValueChange = useCallback((rowKey: string, value: string) => {
-    console.log('Value change:', { rowKey, value });
+  const handleValueChange = (rowKey: string, value: string) => {
+    // 현재 전역 상태를 기반으로 새로운 데이터 생성
+    const newData = { ...currentData, [rowKey]: value };
     
-    setData(prevData => {
-      const newData = { ...prevData, [rowKey]: value };
-      console.log('New data after value change:', newData);
-      return newData;
-    });
-  }, []);
-
-  // 데이터가 변경될 때마다 저장 (디바운싱)
-  useEffect(() => {
-    // 초기화가 완료되지 않았으면 저장하지 않음
-    if (!isInitialized) {
-      console.log('Not initialized yet, skipping auto-save');
-      return;
-    }
-    
-    console.log('Data changed, current data:', data);
-    
-    if (Object.keys(data).length > 0) {
-      const timeoutId = setTimeout(() => {
-        console.log('Auto-saving data:', data);
-        saveData(data);
-      }, 500);
-      
-      return () => {
-        clearTimeout(timeoutId);
-      };
-    }
-  }, [data, saveData, isInitialized]);
+    // 바로 전역 상태 업데이트 액션 호출
+    updateCurrentAnswer(value.requirement_id, newData);
+  };
 
   return (
     <div className="mt-2">
@@ -101,7 +41,7 @@ export function InternalCarbonPriceInputRenderer({ requirement }: InternalCarbon
               minRows={3}
               maxRows={8}
               className="w-full p-3 border border-gray-200 rounded-md text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={data[row.key] || ''}
+              value={currentData[row.key] || ''}
               onChange={(e) => handleValueChange(row.key, e.target.value)}
               placeholder={`${row.label}에 대해 상세히 작성해주세요`}
             />

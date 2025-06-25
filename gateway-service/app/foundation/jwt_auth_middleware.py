@@ -67,6 +67,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         return False
     
     async def dispatch(self, request: Request, call_next):
+        # CORS Preflight OPTIONS 요청은 인증 검사를 건너뛰고 즉시 통과
+        if request.method == "OPTIONS":
+            return await call_next(request)
+        
         # 디버깅을 위한 출력 (print로 변경)
         print(f"🔍 Request path: {request.url.path}")
         print(f"📋 Exempt paths: {self.exempt_paths}")

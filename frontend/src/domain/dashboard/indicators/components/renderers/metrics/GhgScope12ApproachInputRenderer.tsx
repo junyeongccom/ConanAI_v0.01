@@ -2,42 +2,36 @@
 
 import React, { useState, useEffect } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useAnswerStore } from '../../../stores/answerStore';
+import { useAnswers } from '@/shared/hooks/useAnswerHooks';
+import useAnswerStore from '@/shared/store/answerStore';
 
 interface GhgScope12ApproachInputRendererProps {
-  requirement: any;
+  value: any;
+  onChange: (value: any) => void;
 }
 
-export function GhgScope12ApproachInputRenderer({ requirement }: GhgScope12ApproachInputRendererProps) {
-  const { answers, setAnswer } = useAnswerStore();
-  const currentAnswer = answers[requirement.requirement_id];
+export function GhgScope12ApproachInputRenderer({ value, onChange }: GhgScope12ApproachInputRendererProps) {
+  const { currentAnswers } = useAnswers();
+  const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
   
-  const [data, setData] = useState<Record<string, any>>({});
+  // 전역 상태에서 직접 데이터를 가져옴
+  const currentData = currentAnswers[value.requirement_id] || {};
   
   // input_schema에서 행과 컬럼 정보 가져오기
-  const rows = requirement.input_schema?.rows || [];
-  const columns = requirement.input_schema?.columns || [];
-  
-  useEffect(() => {
-    // 저장된 답변이 있으면 복원
-    if (currentAnswer && typeof currentAnswer === 'object') {
-      setData(currentAnswer);
-    }
-  }, [currentAnswer]);
+  const rows = value.input_schema?.rows || [];
+  const columns = value.input_schema?.columns || [];
 
   // 값 변경 핸들러
   const handleValueChange = (rowKey: string, path: string, value: string) => {
-    const newData = { ...data };
-    
     // 중첩된 경로로 값 설정
     const pathArray = path.split('.');
-    let current = newData;
+    const newData = { ...currentData };
     
-    if (!current[rowKey]) {
-      current[rowKey] = {};
+    if (!newData[rowKey]) {
+      newData[rowKey] = {};
     }
-    current = current[rowKey];
     
+    let current = newData[rowKey];
     for (let i = 0; i < pathArray.length - 1; i++) {
       if (!current[pathArray[i]]) {
         current[pathArray[i]] = {};
@@ -46,18 +40,15 @@ export function GhgScope12ApproachInputRenderer({ requirement }: GhgScope12Appro
     }
     
     current[pathArray[pathArray.length - 1]] = value;
-    setData(newData);
-  };
-
-  // 저장
-  const saveToStore = () => {
-    setAnswer(requirement.requirement_id, data);
+    
+    // 바로 전역 상태 업데이트 액션 호출
+    updateCurrentAnswer(value.requirement_id, newData);
   };
 
   // 값 가져오기
   const getValue = (rowKey: string, path: string): string => {
     const pathArray = path.split('.');
-    let current = data[rowKey];
+    let current = currentData[rowKey];
     
     for (const key of pathArray) {
       if (!current || typeof current !== 'object') return '';
@@ -65,41 +56,6 @@ export function GhgScope12ApproachInputRenderer({ requirement }: GhgScope12Appro
     }
     
     return current || '';
-  };
-
-  // 중첩된 컬럼 헤더 렌더링을 위한 재귀 함수
-  const renderNestedHeaders = (columns: any[], level: number = 0): React.JSX.Element[] => {
-    const headers: React.JSX.Element[] = [];
-    
-    columns.forEach((col: any, index: number) => {
-      if (col.sub_columns && col.sub_columns.length > 0) {
-        headers.push(
-          <th 
-            key={`${level}-${index}`}
-            className={`px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300 ${
-              level === 0 ? 'bg-gray-100' : level === 1 ? 'bg-gray-50' : 'bg-white'
-            }`}
-            colSpan={col.sub_columns.length}
-          >
-            {col.label}
-          </th>
-        );
-      } else {
-        headers.push(
-          <th 
-            key={`${level}-${index}`}
-            className={`px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-300 ${
-              level === 0 ? 'bg-gray-100' : level === 1 ? 'bg-gray-50' : 'bg-white'
-            }`}
-            rowSpan={3 - level}
-          >
-            {col.label}
-          </th>
-        );
-      }
-    });
-    
-    return headers;
   };
 
   // 중첩된 컬럼들을 펼쳐서 입력 필드 경로 생성
@@ -202,33 +158,30 @@ export function GhgScope12ApproachInputRenderer({ requirement }: GhgScope12Appro
               )}
             </tr>
           </thead>
-          
           <tbody className="bg-white">
             {rows.map((row: any) => (
               <tr key={row.key}>
                 <td className="px-2 py-2 font-medium text-sm border border-gray-300 bg-gray-50">
                   {row.label}
                 </td>
-                {flatColumns.map((flatCol, colIndex) => (
-                  <td key={colIndex} className="px-2 py-2 border border-gray-300">
-                    {flatCol.isTextarea ? (
+                {flatColumns.map((col) => (
+                  <td key={col.path} className="px-2 py-2 border border-gray-300">
+                    {col.isTextarea ? (
                       <TextareaAutosize
                         minRows={2}
                         maxRows={6}
-                        className="w-full p-1 border border-gray-200 rounded text-sm resize-none"
-                        value={getValue(row.key, flatCol.path)}
-                        onChange={(e) => handleValueChange(row.key, flatCol.path, e.target.value)}
-                        onBlur={saveToStore}
-                        placeholder="주요 가정을 입력하세요"
+                        className="w-full p-2 border border-gray-200 rounded text-sm resize-none"
+                        value={getValue(row.key, col.path)}
+                        onChange={(e) => handleValueChange(row.key, col.path, e.target.value)}
+                        placeholder="내용을 입력하세요"
                       />
                     ) : (
                       <input
                         type="text"
-                        className="w-full p-1 border border-gray-200 rounded text-sm"
-                        value={getValue(row.key, flatCol.path)}
-                        onChange={(e) => handleValueChange(row.key, flatCol.path, e.target.value)}
-                        onBlur={saveToStore}
-                        placeholder="내용을 입력하세요"
+                        className="w-full p-2 border border-gray-200 rounded text-sm"
+                        value={getValue(row.key, col.path)}
+                        onChange={(e) => handleValueChange(row.key, col.path, e.target.value)}
+                        placeholder="입력"
                       />
                     )}
                   </td>
@@ -240,7 +193,7 @@ export function GhgScope12ApproachInputRenderer({ requirement }: GhgScope12Appro
       </div>
       
       <div className="mt-2 text-xs text-gray-500">
-        * Scope 1, 2 온실가스 배출량 측정을 위해 적용한 접근법, 투입변수, 가정을 작성해주세요.
+        * Scope 1, 2 온실가스 배출량 산정 접근법에 대해 각 항목별로 구체적으로 작성해주세요.
       </div>
     </div>
   );
