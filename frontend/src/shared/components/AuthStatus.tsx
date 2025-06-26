@@ -8,8 +8,8 @@ export default function AuthStatus() {
   const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
 
-  const handleLogout = () => {
-    AuthService.logout();
+  const handleLogout = async () => {
+    await AuthService.logout();
     router.push('/login');
   };
 

@@ -48,10 +48,11 @@ app = FastAPI(
 )
 
 # ✅ CORS 설정
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실제 환경에서는 구체적인 도메인 지정 필요
-    allow_credentials=True,
+    allow_origins=[FRONTEND_URL],  # 프론트엔드 주소 명시
+    allow_credentials=True,  # HttpOnly 쿠키 사용을 위해 필수
     allow_methods=["*"],
     allow_headers=["*"],
 )

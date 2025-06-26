@@ -1,6 +1,7 @@
 """
 JWT 인증 미들웨어
 Gateway에서 모든 요청에 대해 JWT 토큰을 검증하는 미들웨어
+Redis 블랙리스트 확인 기능 포함
 """
 import os
 import logging
@@ -13,6 +14,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.datastructures import MutableHeaders
 from dotenv import load_dotenv
+from app.foundation.redis_client import get_redis_client
 
 # 환경 변수 로드
 load_dotenv()
@@ -38,14 +40,14 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self.exempt_paths = {
             "/docs", "/redoc", "/openapi.json", 
             "/auth/google/login", "/auth/google/callback",
-            "/", "/api/health",
+            "/", "/api/health", "/api/health/",
             # disclosure-data 관련 공개 API들
             "/api/disclosure/disclosure-data/concepts",
             "/api/disclosure/disclosure-data/adoption-status",
             "/api/disclosure/disclosure-data/disclosures",
             "/api/disclosure/disclosure-data/requirements", 
             "/api/disclosure/disclosure-data/terms",
-            "/api/disclosure/health"
+            "/api/disclosure/health", "/api/disclosure/health/"
         }
         
         # 경로 패턴 매칭을 위한 접두사들 (선택사항)
@@ -76,6 +78,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         print(f"📋 Exempt paths: {self.exempt_paths}")
         print(f"📂 Exempt prefixes: {self.exempt_prefixes}")
         
+        # 디버깅: 특정 경로 확인
+        if request.url.path == "/api/health/":
+            print(f"🔍 Special check for /api/health/: {'/api/health/' in self.exempt_paths}")
+        
         # 미인증 경로 제외
         if self._is_exempt_path(request.url.path):
             print(f"✅ Exempt path: {request.url.path}")
@@ -83,25 +89,34 @@ class AuthMiddleware(BaseHTTPMiddleware):
         else:
             print(f"🔒 Authentication required for: {request.url.path}")
         
-        # Authorization 헤더 추출
-        authorization: str = request.headers.get("Authorization")
+        # 토큰 추출 로직 (Authorization 헤더 우선, 쿠키 보조)
+        token: str | None = None
         
-        if not authorization:
-            print(f"❌ No authorization header for: {request.url.path}")
+        # 1. 먼저 Authorization 헤더 확인
+        authorization: str | None = request.headers.get("Authorization")
+        if authorization:
+            try:
+                scheme, token_from_header = authorization.split()
+                if scheme.lower() == "bearer":
+                    token = token_from_header
+                    print(f"✅ Token extracted from Authorization header")
+            except ValueError:
+                # 헤더 형식이 잘못된 경우, 무시하고 쿠키 확인으로 넘어감
+                print(f"⚠️ Invalid Authorization header format, checking cookie...")
+                pass
+        
+        # 2. 헤더에 유효한 토큰이 없으면, 쿠키 확인
+        if not token:
+            token = request.cookies.get("access_token")
+            if token:
+                print(f"✅ Token extracted from access_token cookie")
+        
+        # 3. 최종적으로 토큰이 없는 경우에만 401 에러 반환
+        if not token:
+            print("❌ Authorization 헤더와 access_token 쿠키 모두에서 토큰을 찾을 수 없습니다.")
             return StarletteJSONResponse(
                 status_code=401,
                 content={"detail": "인증 정보가 없습니다."}
-            )
-        
-        try:
-            # Bearer 토큰 추출
-            scheme, token = authorization.split()
-            if scheme.lower() != "bearer":
-                raise ValueError("Invalid authentication scheme")
-        except ValueError:
-            return StarletteJSONResponse(
-                status_code=401,
-                content={"detail": "잘못된 인증 형식입니다."}
             )
         
         try:
@@ -111,6 +126,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 JWT_SECRET_KEY,
                 algorithms=[JWT_ALGORITHM]
             )
+            
+            # 블랙리스트 확인
+            jti = decoded_token.get("jti")
+            if jti:
+                redis_client = get_redis_client()
+                if await redis_client.exists(f"blacklist:{jti}"):
+                    logger.warning(f"블랙리스트 토큰 사용 시도: jti={jti}")
+                    return StarletteJSONResponse(
+                        status_code=401,
+                        content={"detail": "무효화된 토큰입니다. 다시 로그인해주세요."}
+                    )
             
             # 사용자 ID 추출
             user_id = decoded_token.get("user_id")

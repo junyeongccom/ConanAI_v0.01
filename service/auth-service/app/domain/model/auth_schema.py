@@ -1,4 +1,4 @@
-# 사용자 스키마 
+# 인증 관련 스키마 
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 import uuid
@@ -32,4 +32,23 @@ class GoogleUserInfo(BaseModel):
     google_id: str
     email: EmailStr
     name: Optional[str] = None
-    picture: Optional[str] = None 
+    picture: Optional[str] = None
+
+class HealthResponse(BaseModel):
+    """서비스 상태 확인 응답 모델"""
+    message: str
+    status: str
+
+class AuthCallbackUser(BaseModel):
+    """OAuth 콜백 응답에 포함될 사용자 정보"""
+    user_id: str
+    email: str
+    username: Optional[str] = None
+    company_name: Optional[str] = None
+    industry_type: Optional[str] = None
+
+class AuthCallbackResponse(BaseModel):
+    """OAuth 콜백 성공 응답 모델"""
+    success: bool
+    message: str
+    user: AuthCallbackUser 

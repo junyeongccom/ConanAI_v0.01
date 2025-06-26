@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { jwtDecode } from 'jwt-decode';
-import Cookies from 'js-cookie';
+import Cookies from 'universal-cookie';
 
 // JWT 페이로드 인터페이스
 export interface JWTPayload {
@@ -33,9 +33,9 @@ interface AuthState {
   isInitialized: boolean; // 인증 상태 초기화 완료 여부
   user: UserData | null;
   token: string | null;
-  login: (token: string) => void;
-  logout: () => void;
-  checkAuthStatus: () => void;
+  login: (userData: UserData) => void;
+  logout: () => Promise<void>;
+  checkAuthStatus: () => Promise<void>;
   setUser: (user: UserData) => void;
 }
 
@@ -75,44 +75,38 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
 
-      login: (token: string) => {
+      login: (userData: UserData) => {
         console.log('🔐 로그인 처리 시작');
         
-        // JWT 디코딩 및 검증
-        const userData = decodeAndValidateToken(token);
-        
-        if (!userData) {
-          console.error('❌ 유효하지 않은 토큰');
-          return;
-        }
-
-        // 토큰을 localStorage와 쿠키에 저장
-        localStorage.setItem('access_token', token);
-        Cookies.set('auth_token', token, { 
-          expires: 7, 
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict' 
-        });
-
-        // 상태 업데이트
+        // 쿠키는 서버에서 HttpOnly로 설정되므로 클라이언트에서는 사용자 데이터만 관리
         set({
           isAuthenticated: true,
           isInitialized: true,
           user: userData,
-          token,
+          token: null, // HttpOnly 쿠키로 관리되므로 클라이언트에서는 접근 불가
         });
 
         console.log('✅ 로그인 성공:', userData.email);
       },
 
-      logout: () => {
+      logout: async () => {
         console.log('🚪 로그아웃 처리');
         
-        // 토큰 제거
-        localStorage.removeItem('access_token');
-        Cookies.remove('auth_token');
+        try {
+          // 백엔드 로그아웃 API 호출 (HttpOnly 쿠키 삭제 및 블랙리스트 등록)
+          const response = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8080'}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include', // 쿠키 포함
+          });
+          
+          if (!response.ok) {
+            console.warn('로그아웃 API 호출 실패, 로컬 상태만 정리합니다.');
+          }
+        } catch (error) {
+          console.warn('로그아웃 API 호출 중 오류:', error);
+        }
 
-        // 상태 초기화
+        // 상태 초기화 (쿠키는 서버에서 삭제됨)
         set({
           isAuthenticated: false,
           isInitialized: true, // 로그아웃 후에도 초기화는 완료된 상태
@@ -123,37 +117,44 @@ export const useAuthStore = create<AuthState>()(
         console.log('✅ 로그아웃 완료');
       },
 
-      checkAuthStatus: () => {
+      checkAuthStatus: async () => {
         console.log('🔍 인증 상태 확인 시작');
         
-        // localStorage에서 토큰 확인
-        const token = localStorage.getItem('access_token');
-        
-        if (!token) {
-          console.log('📭 저장된 토큰이 없습니다.');
-          // 토큰이 없어도 초기화는 완료된 상태로 설정
-          set({ isInitialized: true });
-          return;
+        try {
+          // 백엔드에 현재 사용자 정보 요청 (HttpOnly 쿠키 기반)
+          const response = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8080'}/auth/me`, {
+            method: 'GET',
+            credentials: 'include', // 쿠키 포함
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            console.log('✅ 인증 상태 복구 완료:', userData.email);
+            
+            set({
+              isAuthenticated: true,
+              isInitialized: true,
+              user: userData,
+              token: null, // HttpOnly 쿠키로 관리
+            });
+          } else {
+            console.log('📭 유효한 인증 토큰이 없습니다.');
+            set({
+              isAuthenticated: false,
+              isInitialized: true,
+              user: null,
+              token: null,
+            });
+          }
+        } catch (error) {
+          console.error('🔄 인증 상태 확인 중 오류:', error);
+          set({
+            isAuthenticated: false,
+            isInitialized: true,
+            user: null,
+            token: null,
+          });
         }
-
-        // 토큰 디코딩 및 검증
-        const userData = decodeAndValidateToken(token);
-        
-        if (!userData) {
-          console.log('🔄 토큰이 유효하지 않아 로그아웃 처리');
-          get().logout();
-          return;
-        }
-
-        // 상태 복구
-        set({
-          isAuthenticated: true,
-          isInitialized: true,
-          user: userData,
-          token,
-        });
-
-        console.log('✅ 인증 상태 복구 완료:', userData.email);
       },
 
       setUser: (user: UserData) => {

@@ -1,4 +1,4 @@
-# 사용자 엔티티 
+# 인증 관련 엔티티 
 from sqlalchemy import Column, String, DateTime, UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func

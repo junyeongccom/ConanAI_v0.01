@@ -50,16 +50,22 @@ export class AuthService {
    */
   static async handleCallback(callbackUrl: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // 1. URL에서 토큰 추출
-      const token = this.extractTokenFromCallback(callbackUrl);
-      if (!token) {
-        return { success: false, error: '토큰을 찾을 수 없습니다.' };
+      // HttpOnly 쿠키가 이미 설정되었으므로 백엔드에서 사용자 정보 가져오기
+      const response = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8080'}/auth/me`, {
+        method: 'GET',
+        credentials: 'include', // 쿠키 포함
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // 스토어에 사용자 데이터 저장
+        useAuthStore.getState().login(userData);
+        
+        return { success: true };
+      } else {
+        return { success: false, error: '사용자 정보를 가져올 수 없습니다.' };
       }
-
-      // 2. 스토어의 login 메서드 사용 (토큰만 전달하면 내부에서 디코딩 처리)
-      useAuthStore.getState().login(token);
-
-      return { success: true };
     } catch (error) {
       console.error('콜백 처리 오류:', error);
       return { success: false, error: '인증 처리 중 오류가 발생했습니다.' };
@@ -77,8 +83,8 @@ export class AuthService {
   /**
    * 로그아웃을 처리합니다.
    */
-  static logout(): void {
-    useAuthStore.getState().logout();
+  static async logout(): Promise<void> {
+    await useAuthStore.getState().logout();
   }
 
   /**
@@ -98,7 +104,7 @@ export class AuthService {
   /**
    * 애플리케이션 초기화 시 인증 상태를 복구합니다.
    */
-  static initializeAuth(): void {
-    useAuthStore.getState().checkAuthStatus();
+  static async initializeAuth(): Promise<void> {
+    await useAuthStore.getState().checkAuthStatus();
   }
 } 

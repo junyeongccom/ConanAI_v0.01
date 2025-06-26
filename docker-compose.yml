@@ -15,6 +15,18 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis-server
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: always
+    networks:
+      - app-network
+
   frontend:
     build:
       context: ./frontend
@@ -41,6 +53,7 @@ services:
       - ./gateway/.env
     depends_on:
       - postgres
+      - redis
     networks:
       - app-network
 
@@ -113,6 +126,7 @@ services:
       - ./service/auth-service/.env
     depends_on:
       - postgres
+      - redis
     networks:
       - app-network
 
@@ -152,6 +166,7 @@ services:
               capabilities: [gpu] # GPU 사용 권한
 volumes:
   pgdata:
+  redis-data:
   n8n_data:
   n8n_workflows:
 

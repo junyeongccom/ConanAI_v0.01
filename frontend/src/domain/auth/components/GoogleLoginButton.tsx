@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { AuthService } from '../services/authService';
 
 interface GoogleLoginButtonProps {
   className?: string;
@@ -14,10 +13,12 @@ export default function GoogleLoginButton({
 }: GoogleLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     try {
       setIsLoading(true);
-      AuthService.initiateGoogleLogin();
+      // 전체 페이지 리다이렉션 방식으로 변경
+      const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8080';
+      window.location.href = `${gatewayUrl}/auth/google/login`;
     } catch (error) {
       console.error('Google 로그인 시작 오류:', error);
       setIsLoading(false);

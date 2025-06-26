@@ -39,6 +39,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsparticles-basic": "^2.12.0",
     "tsparticles-engine": "^2.12.0",
+    "universal-cookie": "^8.0.1",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
@@ -52,6 +53,7 @@
     "@types/react": "^19.1.5",
     "@types/react-dom": "^19.1.5",
     "@types/react-textarea-autosize": "^4.3.6",
+    "@types/universal-cookie": "^3.0.0",
     "autoprefixer": "10.4.16",
     "babel-loader": "^10.0.0",
     "postcss": "8.4.38",

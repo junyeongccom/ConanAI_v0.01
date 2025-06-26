@@ -140,6 +140,8 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
   }
   
   console.log(`🎨 FieldRenderer: type=${type}, fieldSchema=`, fieldSchema);
+  console.log(`🎨 FieldRenderer: 입력받은 타입: ${fieldSchema.type || fieldSchema.data_required_type}`);
+  console.log(`🎨 FieldRenderer: 최종 선택된 타입: ${type}`);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     onChange(e.target.value);
@@ -534,7 +536,7 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       return <GhgGasesInputRenderer requirement={fieldSchema} />;
 
     case 'ghg_scope12_approach_input':
-      return <GhgScope12ApproachInputRenderer value={fieldSchema} onChange={onChange} />;
+      return <GhgScope12ApproachInputRenderer requirement={fieldSchema} />;
 
     case 'ghg_scope3_approach_input':
       return <GhgScope3ApproachInputRenderer requirement={fieldSchema} />;
@@ -543,7 +545,7 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       return <PerformanceTrackingInputRenderer requirement={fieldSchema} />;
 
     case 'internal_carbon_price_input':
-      return <InternalCarbonPriceInputRenderer value={fieldSchema} onChange={onChange} />;
+      return <InternalCarbonPriceInputRenderer requirement={fieldSchema} />;
 
     // 기본 텍스트 입력 (fallback)
     default:

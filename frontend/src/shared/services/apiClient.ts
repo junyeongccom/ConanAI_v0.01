@@ -12,34 +12,17 @@ const BASE_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8080';
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 30000, // 30초 타임아웃
+  withCredentials: true, // 쿠키 자동 전송 활성화 (HttpOnly 쿠키 지원)
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// 요청 인터셉터 - JWT 토큰 자동 추가
+// 요청 인터셉터 - 요청 로깅만 처리 (쿠키는 브라우저가 자동 관리)
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig): any => {
     console.log(`🚀 API 요청: ${config.method?.toUpperCase()} ${config.url}`);
-    
-    // 클라이언트 사이드에서만 localStorage 접근
-    if (typeof window !== 'undefined') {
-      // localStorage에서 JWT 토큰 가져오기
-      const token = localStorage.getItem('access_token');
-      
-      if (token) {
-        // Authorization 헤더에 Bearer 토큰 추가
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${token}`,
-        };
-        console.log('🔐 JWT 토큰이 요청에 포함되었습니다.');
-      } else {
-        console.log('📭 JWT 토큰이 없습니다.');
-      }
-    } else {
-      console.log('🖥️ 서버 사이드 렌더링 중 - 토큰 스킵');
-    }
+    console.log('🍪 HttpOnly 쿠키가 브라우저에 의해 자동 전송됩니다.');
     
     return config;
   },

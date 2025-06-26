@@ -6,26 +6,25 @@ import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
 
 interface InternalCarbonPriceInputRendererProps {
-  value: any;
-  onChange: (value: any) => void;
+  requirement: any;
 }
 
-export function InternalCarbonPriceInputRenderer({ value, onChange }: InternalCarbonPriceInputRendererProps) {
+export function InternalCarbonPriceInputRenderer({ requirement }: InternalCarbonPriceInputRendererProps) {
   const { currentAnswers } = useAnswers();
   const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
   
   // 전역 상태에서 직접 데이터를 가져옴
-  const currentData = currentAnswers[value.requirement_id] || {};
+  const currentData = currentAnswers[requirement.requirement_id] || {};
   
   // input_schema에서 행 정보 가져오기
-  const rows = value.input_schema?.rows || [];
+  const rows = requirement.input_schema?.rows || [];
 
   // 로컬 상태 관리 (하이브리드 상태 패턴)
   const [localValues, setLocalValues] = useState<Record<string, string>>(currentData);
 
   // 전역 상태 -> 로컬 상태 동기화 (초기값 설정)
   useEffect(() => {
-    const globalData = currentAnswers[value.requirement_id] || {};
+    const globalData = currentAnswers[requirement.requirement_id] || {};
     
     // 전역 상태와 로컬 상태가 다를 때만 업데이트
     const hasChanges = Object.keys(globalData).some(key => 
@@ -37,7 +36,7 @@ export function InternalCarbonPriceInputRenderer({ value, onChange }: InternalCa
     if (hasChanges) {
       setLocalValues(globalData);
     }
-  }, [currentAnswers, value.requirement_id]);
+  }, [currentAnswers, requirement.requirement_id]);
 
   // 로컬 상태 -> 전역 상태 동기화 (디바운싱)
   useEffect(() => {
@@ -45,7 +44,7 @@ export function InternalCarbonPriceInputRenderer({ value, onChange }: InternalCa
     if (Object.keys(localValues).length === 0) return;
 
     // 현재 전역 상태와 로컬 상태가 같다면 실행하지 않음
-    const currentGlobalData = currentAnswers[value.requirement_id] || {};
+    const currentGlobalData = currentAnswers[requirement.requirement_id] || {};
     const hasRealChanges = Object.keys(localValues).some(key => 
       localValues[key] !== (currentGlobalData[key] || '')
     );
@@ -53,14 +52,14 @@ export function InternalCarbonPriceInputRenderer({ value, onChange }: InternalCa
     if (!hasRealChanges) return;
 
     const handler = setTimeout(() => {
-      console.log(`[Debounce] Saving ${value.requirement_id}...`);
-      updateCurrentAnswer(value.requirement_id, localValues);
+      console.log(`[Debounce] Saving ${requirement.requirement_id}...`);
+      updateCurrentAnswer(requirement.requirement_id, localValues);
     }, 500); // 500ms 지연
 
     return () => {
       clearTimeout(handler);
     };
-  }, [localValues, value.requirement_id, updateCurrentAnswer, currentAnswers]);
+  }, [localValues, requirement.requirement_id, updateCurrentAnswer, currentAnswers]);
 
   // 값 변경 핸들러 (로컬 상태만 업데이트)
   const handleValueChange = (rowKey: string, inputValue: string) => {

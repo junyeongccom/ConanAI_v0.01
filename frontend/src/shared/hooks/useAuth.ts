@@ -13,9 +13,9 @@ export function useAuth() {
     token,
     
     // 편의 메서드
-    login: (token: string) => useAuthStore.getState().login(token),
-    logout: () => AuthService.logout(),
-    checkAuthStatus: () => AuthService.initializeAuth(),
+    login: (userData: UserData) => useAuthStore.getState().login(userData),
+    logout: async () => await useAuthStore.getState().logout(),
+    checkAuthStatus: async () => await useAuthStore.getState().checkAuthStatus(),
     
     // 사용자 정보 관련
     isLoggedIn: isAuthenticated && !!user,

@@ -6,20 +6,19 @@ import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
 
 interface GhgScope12ApproachInputRendererProps {
-  value: any;
-  onChange: (value: any) => void;
+  requirement: any;
 }
 
-export function GhgScope12ApproachInputRenderer({ value, onChange }: GhgScope12ApproachInputRendererProps) {
+export function GhgScope12ApproachInputRenderer({ requirement }: GhgScope12ApproachInputRendererProps) {
   const { currentAnswers } = useAnswers();
   const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
   
   // 전역 상태에서 직접 데이터를 가져옴
-  const currentData = currentAnswers[value.requirement_id] || {};
+  const currentData = currentAnswers[requirement.requirement_id] || {};
   
   // input_schema에서 행과 컬럼 정보 가져오기
-  const rows = value.input_schema?.rows || [];
-  const columns = value.input_schema?.columns || [];
+  const rows = requirement.input_schema?.rows || [];
+  const columns = requirement.input_schema?.columns || [];
 
   // 값 변경 핸들러
   const handleValueChange = (rowKey: string, path: string, value: string) => {
@@ -42,7 +41,7 @@ export function GhgScope12ApproachInputRenderer({ value, onChange }: GhgScope12A
     current[pathArray[pathArray.length - 1]] = value;
     
     // 바로 전역 상태 업데이트 액션 호출
-    updateCurrentAnswer(value.requirement_id, newData);
+    updateCurrentAnswer(requirement.requirement_id, newData);
   };
 
   // 값 가져오기

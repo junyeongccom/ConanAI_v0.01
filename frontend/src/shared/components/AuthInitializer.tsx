@@ -1,13 +1,21 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AuthService } from '@/domain/auth/services/authService';
+import { useAuthStore } from '@/shared/store/authStore';
 
 export default function AuthInitializer() {
+  const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
+
   useEffect(() => {
-    // 애플리케이션 초기화 시 인증 상태 복구
-    AuthService.initializeAuth();
-  }, []);
+    const init = async () => {
+      try {
+        await checkAuthStatus();
+      } catch (error) {
+        console.log("초기 인증 확인 실패 (로그아웃 상태)");
+      }
+    };
+    init();
+  }, [checkAuthStatus]);
 
   // 이 컴포넌트는 UI를 렌더링하지 않음
   return null;
