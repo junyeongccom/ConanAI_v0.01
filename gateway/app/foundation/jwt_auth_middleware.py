@@ -39,7 +39,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # 인증이 필요 없는 경로들
         self.exempt_paths = {
             "/docs", "/redoc", "/openapi.json", 
-            "/auth/google/login", "/auth/google/callback",
+            "/auth/google/login", "/auth/google/callback", "/auth/me",
             "/", "/api/health", "/api/health/",
             # disclosure-data 관련 공개 API들
             "/api/disclosure/disclosure-data/concepts",

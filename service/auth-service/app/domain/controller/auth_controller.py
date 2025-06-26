@@ -1,5 +1,5 @@
 # 인증 관련 컨트롤러 - 요청/응답 처리 계층
-from fastapi import HTTPException, status, Response
+from fastapi import HTTPException, status, Response, RedirectResponse
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any
 import os
@@ -19,7 +19,6 @@ class AuthController:
     def google_login(self):
         """Google OAuth 로그인 시작"""
         try:
-            from fastapi.responses import RedirectResponse
             google_auth_url = self.auth_service.generate_google_oauth_url()
             return RedirectResponse(url=google_auth_url, status_code=302)
         except ValueError as e:
@@ -28,7 +27,7 @@ class AuthController:
                 detail=str(e)
             )
     
-    async def google_callback(self, response: Response, db: Session, code: str) -> AuthCallbackResponse:
+    async def google_callback(self, response: Response, db: Session, code: str):
         """Google OAuth 콜백 처리 (GET 방식) - HttpOnly 쿠키 설정 및 JSON 응답"""
         
         if not code:
@@ -58,18 +57,12 @@ class AuthController:
                 max_age=7 * 24 * 60 * 60  # 7일
             )
             
-            # 2. 본문에는 리다이렉트가 아닌, JSON 데이터 반환
-            user_info = token_data.user
-            return AuthCallbackResponse(
-                success=True,
-                message="인증에 성공했으며, access_token 쿠키가 설정되었습니다.",
-                user=AuthCallbackUser(
-                    user_id=str(user_info.user_id),
-                    email=user_info.email,
-                    username=user_info.username,
-                    company_name=user_info.company_name,
-                    industry_type=user_info.industry_type,
-                )
+            # 2. 성공 시 프론트엔드 성공 페이지로 리다이렉트
+            from fastapi.responses import RedirectResponse
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            return RedirectResponse(
+                url=f"{frontend_url}/auth/success",
+                status_code=302
             )
             
         except HTTPException:

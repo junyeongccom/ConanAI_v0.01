@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { jwtDecode } from 'jwt-decode';
-import Cookies from 'universal-cookie';
 
 // JWT 페이로드 인터페이스
 export interface JWTPayload {
@@ -118,42 +117,42 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuthStatus: async () => {
-        console.log('🔍 인증 상태 확인 시작');
-        
-        try {
-          // 백엔드에 현재 사용자 정보 요청 (HttpOnly 쿠키 기반)
-          const response = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8080'}/auth/me`, {
-            method: 'GET',
-            credentials: 'include', // 쿠키 포함
-          });
-          
-          if (response.ok) {
-            const userData = await response.json();
-            console.log('✅ 인증 상태 복구 완료:', userData.email);
-            
-            set({
-              isAuthenticated: true,
-              isInitialized: true,
-              user: userData,
-              token: null, // HttpOnly 쿠키로 관리
-            });
-          } else {
-            console.log('📭 유효한 인증 토큰이 없습니다.');
-            set({
-              isAuthenticated: false,
-              isInitialized: true,
-              user: null,
-              token: null,
-            });
-          }
-        } catch (error) {
-          console.error('🔄 인증 상태 확인 중 오류:', error);
+        // 인증 상태 확인을 조용히 수행 (에러 로그 없음)
+        const setUnauthenticated = () => {
           set({
             isAuthenticated: false,
             isInitialized: true,
             user: null,
             token: null,
           });
+        };
+
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5초 타임아웃
+          
+          const response = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8080'}/auth/me`, {
+            method: 'GET',
+            credentials: 'include',
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (response.ok) {
+            const userData = await response.json();
+            set({
+              isAuthenticated: true,
+              isInitialized: true,
+              user: userData,
+              token: null,
+            });
+          } else {
+            setUnauthenticated();
+          }
+        } catch (error) {
+          // 모든 에러(네트워크, 타임아웃, 401 등)를 조용히 처리
+          setUnauthenticated();
         }
       },
 

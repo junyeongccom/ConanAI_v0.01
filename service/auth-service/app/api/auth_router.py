@@ -29,7 +29,7 @@ async def google_login(controller: AuthController = Depends(get_auth_controller)
     """Google OAuth 로그인을 시작합니다."""
     return controller.google_login()
 
-@router.get("/google/callback", response_model=AuthCallbackResponse)
+@router.get("/google/callback")
 async def google_callback_get(
     response: Response,
     code: Optional[str] = Query(None),

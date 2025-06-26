@@ -61,6 +61,15 @@ export default function Header() {
   const userName = user?.name;
   const userEmail = user?.email;
 
+  // 디버깅을 위한 로그
+  console.log('🧪 Header 상태:', {
+    isLoggedIn,
+    userName,
+    userEmail,
+    isDropdownOpen,
+    user
+  });
+
   // 스크롤 감지
   useEffect(() => {
     const handleScroll = () => {
@@ -111,6 +120,10 @@ export default function Header() {
   };
 
   const handleDropdownToggle = () => {
+    // 사용자 드롭다운 토글 시 메가 메뉴 숨기기
+    if (showMegaMenu) {
+      setShowMegaMenu(false);
+    }
     setIsDropdownOpen(!isDropdownOpen);
   };
 
@@ -252,7 +265,7 @@ export default function Header() {
 
                 {/* 드롭다운 메뉴 */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-[150]">
                     <div className="py-1">
                       <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100">
                         {userName || userEmail || '사용자'}

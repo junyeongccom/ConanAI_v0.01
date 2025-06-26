@@ -98,11 +98,18 @@ async def google_callback(request: Request):
                 logger.info(f"🔍 Location 헤더 값: {location}")
                 
                 if location:
-                    # auth-service의 리다이렉트 응답을 그대로 전달
+                    # auth-service의 리다이렉트 응답을 그대로 전달 (Set-Cookie 포함)
                     from fastapi import Response
+                    
+                    # 응답 헤더에 쿠키 포함
+                    response_headers = {"Location": location}
+                    if "set-cookie" in response.headers:
+                        response_headers["set-cookie"] = response.headers["set-cookie"]
+                        logger.info(f"🍪 리다이렉트와 함께 Set-Cookie 헤더 전달: {response.headers['set-cookie']}")
+                    
                     redirect_response = Response(
                         status_code=response.status_code,
-                        headers={"Location": location}
+                        headers=response_headers
                     )
                     logger.info(f"✅ 리다이렉트 응답 생성 완료: {location}")
                     return redirect_response
@@ -113,15 +120,91 @@ async def google_callback(request: Request):
                         status_code=500
                     )
             else:
-                # JSON 응답을 그대로 반환 (JWT 토큰 포함)
+                # JSON 응답과 함께 Set-Cookie 헤더도 전달
+                response_content = response.json() if response.content else {"detail": "No content"}
+                
+                # Set-Cookie 헤더가 있으면 포함하여 응답 생성
+                response_headers = {}
+                if "set-cookie" in response.headers:
+                    response_headers["set-cookie"] = response.headers["set-cookie"]
+                    logger.info(f"🍪 Set-Cookie 헤더 전달: {response.headers['set-cookie']}")
+                
                 return JSONResponse(
-                    content=response.json() if response.content else {"detail": "No content"},
-                    status_code=response.status_code
+                    content=response_content,
+                    status_code=response.status_code,
+                    headers=response_headers
                 )
                 
     except Exception as e:
         logger.error(f"Google callback proxy error: {str(e)}")
         return JSONResponse(
             content={"detail": f"Google 콜백 프록시 오류: {str(e)}"},
+            status_code=500
+        )
+
+@auth_proxy_router.get("/me", summary="현재 사용자 정보 조회")
+async def get_current_user(request: Request):
+    """현재 사용자 정보를 조회합니다."""
+    try:
+        async with httpx.AsyncClient() as client:
+            # 원본 요청의 쿠키를 그대로 전달
+            cookies = dict(request.cookies)
+            
+            logger.info(f"🔄 auth-service로 사용자 정보 요청 전달 (쿠키: {list(cookies.keys())})")
+            
+            response = await client.get(
+                f"{AUTH_SERVICE_URL}/auth/me",
+                cookies=cookies
+            )
+            
+            logger.info(f"📡 auth-service 응답 상태: {response.status_code}")
+            
+            return JSONResponse(
+                content=response.json() if response.content else {"detail": "No content"},
+                status_code=response.status_code
+            )
+                
+    except Exception as e:
+        logger.error(f"Get current user proxy error: {str(e)}")
+        return JSONResponse(
+            content={"detail": f"사용자 정보 조회 프록시 오류: {str(e)}"},
+            status_code=500
+        )
+
+@auth_proxy_router.post("/logout", summary="로그아웃 처리")
+async def logout(request: Request):
+    """사용자 로그아웃을 처리합니다."""
+    try:
+        async with httpx.AsyncClient() as client:
+            # 원본 요청의 쿠키를 그대로 전달
+            cookies = dict(request.cookies)
+            
+            logger.info(f"🔄 auth-service로 로그아웃 요청 전달 (쿠키: {list(cookies.keys())})")
+            
+            response = await client.post(
+                f"{AUTH_SERVICE_URL}/auth/logout",
+                cookies=cookies
+            )
+            
+            logger.info(f"📡 auth-service 응답 상태: {response.status_code}")
+            
+            # 로그아웃 응답에서 Set-Cookie 헤더도 전달 (쿠키 삭제용)
+            response_content = response.json() if response.content else {"detail": "No content"}
+            
+            response_headers = {}
+            if "set-cookie" in response.headers:
+                response_headers["set-cookie"] = response.headers["set-cookie"]
+                logger.info(f"🍪 Set-Cookie 헤더 전달 (로그아웃): {response.headers['set-cookie']}")
+            
+            return JSONResponse(
+                content=response_content,
+                status_code=response.status_code,
+                headers=response_headers
+            )
+                
+    except Exception as e:
+        logger.error(f"Logout proxy error: {str(e)}")
+        return JSONResponse(
+            content={"detail": f"로그아웃 프록시 오류: {str(e)}"},
             status_code=500
         ) 
