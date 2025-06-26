@@ -210,11 +210,8 @@ class AnswerService:
             List[AnswerResponse]: 사용자 답변 목록
         """
         try:
-            # Repository에서 ORM 객체들을 받아옴
-            answers = self.answer_repository.get_answers_by_user_id(user_id)
-            
-            # ORM 객체를 DTO로 변환하여 반환
-            return [AnswerResponse.from_attributes(answer) for answer in answers]
+            # Repository가 이미 변환된 DTO를 주므로, 그대로 반환
+            return self.answer_repository.get_answers_by_user_id(user_id)
             
         except Exception as e:
             logger.error(f"사용자 답변 목록 조회 실패: user_id={user_id}, error={str(e)}")
@@ -236,13 +233,8 @@ class AnswerService:
             AnswerResponse 또는 None
         """
         try:
-            # Repository에서 ORM 객체를 받아옴
-            answer = self.answer_repository.get_answer_by_user_and_requirement(user_id, requirement_id)
-            
-            # ORM 객체를 DTO로 변환하여 반환
-            if answer:
-                return AnswerResponse.from_attributes(answer)
-            return None
+            # Repository가 이미 변환된 DTO를 주므로, 그대로 반환
+            return self.answer_repository.get_answer_by_user_and_requirement(user_id, requirement_id)
             
         except Exception as e:
             logger.error(f"답변 조회 실패: user_id={user_id}, requirement_id={requirement_id}, error={str(e)}")

@@ -42,14 +42,8 @@ export function RequirementInputForm({ requirements }: RequirementInputFormProps
     updateCurrentAnswer(requirementId, value);
   }, [updateCurrentAnswer]);
 
-  // 폼 제출 핸들러
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log('현재 저장된 답변들:', currentAnswers);
-  };
-
   return (
-    <form className="space-y-8" onSubmit={handleSubmit}>
+    <div className="space-y-8">
       {requirements.map(req => {
         // 현재 requirement에 대한 저장된 값 가져오기
         const currentValue = currentAnswers[req.requirement_id];
@@ -76,15 +70,6 @@ export function RequirementInputForm({ requirements }: RequirementInputFormProps
           </div>
         );
       })}
-      
-      <div className="flex justify-end pt-4">
-        <button 
-          type="submit" 
-          className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          답변 저장
-        </button>
-      </div>
-    </form>
+    </div>
   );
 } 

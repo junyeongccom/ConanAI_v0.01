@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
@@ -20,13 +20,54 @@ export function InternalCarbonPriceInputRenderer({ value, onChange }: InternalCa
   // input_schema에서 행 정보 가져오기
   const rows = value.input_schema?.rows || [];
 
-  // 값 변경 핸들러
-  const handleValueChange = (rowKey: string, value: string) => {
-    // 현재 전역 상태를 기반으로 새로운 데이터 생성
-    const newData = { ...currentData, [rowKey]: value };
+  // 로컬 상태 관리 (하이브리드 상태 패턴)
+  const [localValues, setLocalValues] = useState<Record<string, string>>(currentData);
+
+  // 전역 상태 -> 로컬 상태 동기화 (초기값 설정)
+  useEffect(() => {
+    const globalData = currentAnswers[value.requirement_id] || {};
     
-    // 바로 전역 상태 업데이트 액션 호출
-    updateCurrentAnswer(value.requirement_id, newData);
+    // 전역 상태와 로컬 상태가 다를 때만 업데이트
+    const hasChanges = Object.keys(globalData).some(key => 
+      globalData[key] !== localValues[key]
+    ) || Object.keys(localValues).some(key => 
+      localValues[key] !== (globalData[key] || '')
+    );
+
+    if (hasChanges) {
+      setLocalValues(globalData);
+    }
+  }, [currentAnswers, value.requirement_id]);
+
+  // 로컬 상태 -> 전역 상태 동기화 (디바운싱)
+  useEffect(() => {
+    // 초기 로딩 시에는 실행하지 않음
+    if (Object.keys(localValues).length === 0) return;
+
+    // 현재 전역 상태와 로컬 상태가 같다면 실행하지 않음
+    const currentGlobalData = currentAnswers[value.requirement_id] || {};
+    const hasRealChanges = Object.keys(localValues).some(key => 
+      localValues[key] !== (currentGlobalData[key] || '')
+    );
+
+    if (!hasRealChanges) return;
+
+    const handler = setTimeout(() => {
+      console.log(`[Debounce] Saving ${value.requirement_id}...`);
+      updateCurrentAnswer(value.requirement_id, localValues);
+    }, 500); // 500ms 지연
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [localValues, value.requirement_id, updateCurrentAnswer, currentAnswers]);
+
+  // 값 변경 핸들러 (로컬 상태만 업데이트)
+  const handleValueChange = (rowKey: string, inputValue: string) => {
+    setLocalValues(prev => ({
+      ...prev,
+      [rowKey]: inputValue
+    }));
   };
 
   return (
@@ -41,7 +82,7 @@ export function InternalCarbonPriceInputRenderer({ value, onChange }: InternalCa
               minRows={3}
               maxRows={8}
               className="w-full p-3 border border-gray-200 rounded-md text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={currentData[row.key] || ''}
+              value={localValues[row.key] || ''}
               onChange={(e) => handleValueChange(row.key, e.target.value)}
               placeholder={`${row.label}에 대해 상세히 작성해주세요`}
             />

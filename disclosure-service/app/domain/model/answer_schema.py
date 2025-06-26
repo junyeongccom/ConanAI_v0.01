@@ -53,7 +53,7 @@ class AnswerResponse(BaseModel):
     answer_value_number: Optional[float] = None
     answer_value_boolean: Optional[bool] = None
     answer_value_date: Optional[datetime] = None
-    answer_value_json: Optional[Dict[str, Any]] = None
+    answer_value_json: Optional[Any] = None
     answered_at: datetime
     last_edited_at: datetime
     

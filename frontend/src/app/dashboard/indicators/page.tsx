@@ -101,7 +101,7 @@ export default function IndicatorsPage() {
 
   // Zustand 스토어 상태들
   const { isLoading: isAnswerLoading } = useAnswerLoading();
-  const fetchMyAnswers = useAnswerStore((state) => state.fetchMyAnswers);
+  const initializeAnswers = useAnswerStore((state) => state.initializeAnswers);
 
   // 안전한 데이터 로딩 함수
   const loadData = useCallback(async () => {
@@ -113,16 +113,16 @@ export default function IndicatorsPage() {
       setIndicatorData(indicators);
       console.log('✅ 지표 구조 데이터 로딩 완료');
       
-      // 2. 내 답변 데이터 로딩
-      await fetchMyAnswers();
-      console.log('✅ 답변 데이터 로딩 완료');
+      // 2. 내 답변 데이터 초기화 (서버 + 로컬 병합)
+      await initializeAnswers();
+      console.log('✅ 답변 데이터 초기화 완료');
       
     } catch (error) {
       console.error('❌ 데이터 로딩 실패:', error);
     } finally {
       setIsIndicatorLoading(false);
     }
-  }, [fetchMyAnswers]);
+  }, [initializeAnswers]);
 
   // 컴포넌트 마운트 시 데이터 로딩
   useEffect(() => {

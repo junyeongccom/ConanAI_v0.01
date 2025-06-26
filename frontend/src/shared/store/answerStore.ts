@@ -37,7 +37,7 @@ export interface AnswerState {
  */
 export interface AnswerActions {
   // 데이터 로딩
-  fetchMyAnswers: () => Promise<void>;
+  initializeAnswers: () => Promise<void>;
   
   // 답변 업데이트
   updateCurrentAnswer: (requirementId: string, answerData: any) => void;
@@ -85,46 +85,48 @@ const useAnswerStore = create<AnswerStore>()(
         // ========================================================================
 
         /**
-         * 내 답변 데이터를 서버에서 가져와서 초기화
-         * 🎯 중앙 관제실에서 모든 데이터를 통제
+         * 답변 데이터 초기화 - 서버 데이터와 로컬 데이터를 지능적으로 병합
+         * 🎯 데이터 유실 방지를 위한 지능적 병합 로직
          */
-        fetchMyAnswers: async () => {
-          console.log('🚀 [AnswerStore] 답변 데이터 로딩 시작');
-          
-          set({ isLoading: true, error: null }, false, 'fetchMyAnswers/start');
-          
+        initializeAnswers: async () => {
+          console.log('🚀 [AnswerStore] 답변 데이터 초기화 시작');
+
+          // 1. 로컬에 저장된 미반영 데이터를 먼저 가져온다.
+          const localCurrentAnswers = get().currentAnswers;
+
+          set({ isLoading: true, error: null }, false, 'initializeAnswers/start');
+
           try {
-            // API 호출
-            const responses = await getMyAnswers();
-            console.log('✅ [AnswerStore] API 응답:', responses);
-            
-            // AnswerResponse 배열을 Record<string, any> 형태로 변환
-            const answersRecord = transformAnswersToRecord(responses);
-            console.log('🔄 [AnswerStore] 변환된 답변 데이터:', answersRecord);
-            
-            // 초기값과 현재값을 모두 설정 (깊은 복사로 독립성 보장)
+            // 2. 서버에서 최신 저장본을 가져온다.
+            const serverResponses = await getMyAnswers();
+            const serverAnswersRecord = transformAnswersToRecord(serverResponses);
+
+            // 3. 병합 로직 실행
+            // 3-1. 원본(initial)은 항상 서버 데이터를 기준으로 한다.
+            const newInitialAnswers = serverAnswersRecord;
+
+            // 3-2. 편집본(current)은 서버 데이터 위에 로컬 데이터를 덮어쓴다.
+            const newCurrentAnswers = {
+              ...serverAnswersRecord,
+              ...localCurrentAnswers,
+            };
+
+            console.log('✅ [AnswerStore] 서버 데이터와 로컬 데이터 병합 완료');
+
+            // 4. 병합된 데이터로 최종 상태를 설정한다.
             set(
               {
-                initialAnswers: answersRecord,
-                currentAnswers: JSON.parse(JSON.stringify(answersRecord)), // 🔧 깊은 복사로 버그 수정
+                initialAnswers: newInitialAnswers,
+                currentAnswers: newCurrentAnswers,
                 isLoading: false,
-                error: null,
               },
               false,
-              'fetchMyAnswers/success'
+              'initializeAnswers/success'
             );
-            
+
           } catch (error: any) {
-            console.error('❌ [AnswerStore] 답변 데이터 로딩 실패:', error);
-            
-            set(
-              {
-                isLoading: false,
-                error: error as ApiError,
-              },
-              false,
-              'fetchMyAnswers/error'
-            );
+            console.error('❌ [AnswerStore] 데이터 초기화 실패:', error);
+            set({ isLoading: false, error: error as ApiError }, false, 'initializeAnswers/error');
           }
         },
 

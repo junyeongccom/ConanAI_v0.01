@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
@@ -30,16 +30,76 @@ export function GhgGuidelineInputRenderer({ requirement }: GhgGuidelineInputRend
     });
   }
 
-  // 값 변경 핸들러
-  const handleValueChange = (scope: string, value: string) => {
-    // 현재 전역 상태를 기반으로 새로운 배열 데이터 생성
-    const newArrayData = rows.map((row: any) => ({
-      scope: row.label,
-      guideline: row.label === scope ? value : (dataRecord[row.label] || '')
-    }));
+  // 로컬 상태 관리 (하이브리드 상태 패턴)
+  const [localValues, setLocalValues] = useState<Record<string, string>>(dataRecord);
+
+  // 전역 상태 -> 로컬 상태 동기화 (초기값 설정)
+  useEffect(() => {
+    const newDataRecord: Record<string, string> = {};
+    if (Array.isArray(currentData)) {
+      currentData.forEach((item: any) => {
+        if (item.scope && item.guideline !== undefined) {
+          newDataRecord[item.scope] = item.guideline;
+        }
+      });
+    }
     
-    // 바로 전역 상태 업데이트 액션 호출
-    updateCurrentAnswer(requirement.requirement_id, newArrayData);
+    // 전역 상태와 로컬 상태가 다를 때만 업데이트
+    const hasChanges = Object.keys(newDataRecord).some(key => 
+      newDataRecord[key] !== localValues[key]
+    ) || Object.keys(localValues).some(key => 
+      localValues[key] !== (newDataRecord[key] || '')
+    );
+
+    if (hasChanges) {
+      setLocalValues(newDataRecord);
+    }
+  }, [currentData, requirement.requirement_id]);
+
+  // 로컬 상태 -> 전역 상태 동기화 (디바운싱)
+  useEffect(() => {
+    // 초기 로딩 시에는 실행하지 않음
+    if (Object.keys(localValues).length === 0) return;
+
+    // 현재 전역 상태와 로컬 상태가 같다면 실행하지 않음
+    const currentDataRecord: Record<string, string> = {};
+    if (Array.isArray(currentData)) {
+      currentData.forEach((item: any) => {
+        if (item.scope && item.guideline !== undefined) {
+          currentDataRecord[item.scope] = item.guideline;
+        }
+      });
+    }
+
+    const hasRealChanges = Object.keys(localValues).some(key => 
+      localValues[key] !== (currentDataRecord[key] || '')
+    );
+
+    if (!hasRealChanges) return;
+
+    const handler = setTimeout(() => {
+      console.log(`[Debounce] Saving ${requirement.requirement_id}...`);
+      
+      // 현재 전역 상태를 기반으로 새로운 배열 데이터 생성
+      const newArrayData = rows.map((row: any) => ({
+        scope: row.label,
+        guideline: localValues[row.label] || ''
+      }));
+      
+      updateCurrentAnswer(requirement.requirement_id, newArrayData);
+    }, 500); // 500ms 지연
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [localValues, requirement.requirement_id, updateCurrentAnswer, rows]);
+
+  // 값 변경 핸들러 (로컬 상태만 업데이트)
+  const handleValueChange = (scope: string, value: string) => {
+    setLocalValues(prev => ({
+      ...prev,
+      [scope]: value
+    }));
   };
 
   return (
@@ -58,7 +118,7 @@ export function GhgGuidelineInputRenderer({ requirement }: GhgGuidelineInputRend
                 maxRows={8}
                 className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none"
                 placeholder={valueColumn.placeholder || '적용된 산정 방법론, 기준, 지침 등을 서술해주세요.'}
-                value={dataRecord[row.label] || ''}
+                value={localValues[row.label] || ''}
                 onChange={(e) => handleValueChange(row.label, e.target.value)}
               />
             </div>

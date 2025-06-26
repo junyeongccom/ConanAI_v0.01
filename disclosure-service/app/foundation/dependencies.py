@@ -12,7 +12,8 @@ from app.domain.repository.disclosure_repository import DisclosureRepository
 
 def get_current_user_id(request: Request) -> UUID:
     """
-    UserContextMiddleware가 request.state에 저장한 user_id를 추출하고 검증합니다.
+    UserContextMiddleware에 의해 설정된 request.state에서
+    사용자 ID(UUID 객체)를 추출하고 검증합니다.
     
     Args:
         request: FastAPI Request 객체
@@ -23,20 +24,24 @@ def get_current_user_id(request: Request) -> UUID:
     Raises:
         HTTPException: 인증 정보가 없거나 잘못된 형식인 경우
     """
-    user_id_str = getattr(request.state, 'user_id', None)
-    if not user_id_str:
+    user_id = getattr(request.state, 'user_id', None)
+
+    # 미들웨어에서 user_id가 설정되었는지 확인
+    if not user_id:
+        # 이 에러는 미들웨어가 제대로 동작하지 않았다는 의미의 서버 에러에 가까움
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="사용자 인증 정보가 없습니다."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="사용자 컨텍스트를 설정할 수 없습니다."
         )
-    
-    try:
-        return UUID(user_id_str)
-    except (ValueError, TypeError):
+
+    # user_id가 UUID 타입이 맞는지 확인
+    if not isinstance(user_id, UUID):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="잘못된 사용자 ID 형식입니다."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"잘못된 사용자 ID 타입입니다: {type(user_id)}"
         )
+
+    return user_id
 
 
 def get_answer_controller(db: Session = Depends(get_db)) -> AnswerController:

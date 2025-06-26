@@ -115,12 +115,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # 사용자 ID 추출
             user_id = decoded_token.get("user_id")
             
-            # 현재 요청 헤더를 복사하여 X-User-Id 헤더 추가
-            mutable_headers = MutableHeaders(request._scope["headers"])
-            mutable_headers["X-User-Id"] = str(user_id)
-            
-            # 요청 scope의 headers를 새로운 헤더로 교체
-            request._scope["headers"] = mutable_headers.raw
+            # request.scope['headers']는 (b'key', b'value') 튜플의 리스트임
+            # 기존 헤더 리스트에 새로운 헤더 튜플을 추가
+            request.scope['headers'].append(
+                (b'x-user-id', str(user_id).encode('utf-8'))
+            )
             
         except JWTError as e:
             logger.warning(f"JWT validation failed: {str(e)}")

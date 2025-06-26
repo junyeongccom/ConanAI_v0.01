@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import and_
 
 from app.domain.model.answer_entity import Answer
+from app.domain.model.answer_schema import AnswerResponse
 
 logger = logging.getLogger("disclosure-service")
 
@@ -78,7 +79,7 @@ class AnswerRepository:
         self, 
         user_id: UUID, 
         requirement_id: str
-    ) -> Optional[Answer]:
+    ) -> Optional[AnswerResponse]:
         """
         사용자와 요구사항 ID로 답변을 조회합니다.
         
@@ -87,23 +88,26 @@ class AnswerRepository:
             requirement_id: 요구사항 ID
             
         Returns:
-            Answer ORM 객체 또는 None
+            AnswerResponse DTO 또는 None
         """
         try:
-            answer = self.db.query(Answer).filter(
+            answer_orm = self.db.query(Answer).filter(
                 and_(
                     Answer.user_id == user_id,
                     Answer.requirement_id == requirement_id
                 )
             ).first()
             
-            return answer
+            # 조회 직후, 세션이 살아있을 때 즉시 DTO로 변환
+            if answer_orm:
+                return AnswerResponse.model_validate(answer_orm)
+            return None
             
         except Exception as e:
             logger.error(f"답변 조회 실패: user_id={user_id}, requirement_id={requirement_id}, error={str(e)}")
             raise e
     
-    def get_answers_by_user_id(self, user_id: UUID) -> List[Answer]:
+    def get_answers_by_user_id(self, user_id: UUID) -> List[AnswerResponse]:
         """
         사용자 ID로 모든 답변을 조회합니다.
         
@@ -111,11 +115,12 @@ class AnswerRepository:
             user_id: 사용자 UUID
             
         Returns:
-            List[Answer]: Answer ORM 객체 리스트
+            List[AnswerResponse]: AnswerResponse DTO 리스트
         """
         try:
-            answers = self.db.query(Answer).filter(Answer.user_id == user_id).all()
-            return answers
+            answers_orm = self.db.query(Answer).filter(Answer.user_id == user_id).all()
+            # 조회 직후, 세션이 살아있을 때 즉시 DTO로 변환
+            return [AnswerResponse.model_validate(answer) for answer in answers_orm]
             
         except Exception as e:
             logger.error(f"사용자 답변 목록 조회 실패: user_id={user_id}, error={str(e)}")
