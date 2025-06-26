@@ -1,5 +1,5 @@
 # 1. 빌드
-docker build -t gateway-service:latest ./gateway-service
+docker build -t gateway-service:latest ./gateway
 docker build -t frontend-service:latest ./frontend-service
 docker build -t dsdcheck-service:latest ./dsdcheck-service
 docker build -t dsdgen-service:latest ./dsdgen-service

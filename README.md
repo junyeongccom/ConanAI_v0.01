@@ -44,66 +44,67 @@ sky-c/
 │   │   └── shared/                # 공유 컴포넌트 및 유틸리티
 │   └── public/                    # 정적 자산 (이미지, 지도 데이터 등)
 │
-├── 🚪 gateway-service/             # API Gateway (포트: 8080)
+├── 🚪 gateway/                     # API Gateway (포트: 8080)
 │   └── app/
 │       ├── api/                   # 라우팅 및 프록시
 │       ├── domain/                # 서비스 팩토리 및 타입 정의
 │       ├── foundation/            # JWT 인증 미들웨어
 │       └── main.py                # FastAPI 애플리케이션
 │
-├── 🔐 auth-service/               # 인증 서비스 (포트: 8084)
-│   └── app/
-│       ├── api/                   # Google OAuth 콜백 처리
-│       ├── domain/                # 사용자 관리 도메인 로직
-│       │   ├── controller/        # 인증 컨트롤러
-│       │   ├── service/           # 인증 비즈니스 로직
-│       │   ├── repository/        # 사용자 데이터 액세스
-│       │   └── model/             # 사용자 엔티티 및 스키마
-│       ├── foundation/            # JWT 유틸리티, 데이터베이스
-│       └── main.py
-│
-├── 📋 disclosure-service/         # 공시 데이터 관리 (포트: 8083)
-│   └── app/
-│       ├── api/                   # ISSB S2 지표 API
-│       ├── domain/                # 공시 도메인 로직
-│       │   ├── controller/        # 공시 컨트롤러
-│       │   ├── service/           # 공시 비즈니스 로직
-│       │   ├── repository/        # 공시 데이터 액세스
-│       │   └── model/             # 공시 엔티티 및 스키마
-│       ├── foundation/            # 데이터베이스, 초기 데이터 로더
-│       ├── data/                  # ISSB S2 마스터 데이터 (CSV)
-│       └── main.py
-│
-├── 🌡️ climate-service/            # 기후리스크 분석 (포트: 8087)
-│   └── app/
-│       ├── api/                   # 기후 데이터 API
-│       ├── domain/                # 기후리스크 도메인 로직
-│       │   ├── controller/        # 기후 컨트롤러
-│       │   ├── service/           # 기후 분석 비즈니스 로직
-│       │   ├── repository/        # 기후 데이터 액세스
-│       │   └── model/             # 기후 엔티티 및 스키마
-│       ├── foundation/            # 데이터베이스, 폭염 데이터 전처리
-│       │   └── schema/            # 폭염 테이블 생성 스크립트
-│       └── main.py
-│
-├── 💰 finimpact-service/          # 재무영향 분석 (포트: 8082)
-│   └── app/
-│       ├── api/                   # 재무영향 분석 API
-│       ├── domain/                # 재무영향 도메인 로직
-│       │   ├── controller/        # 재무영향 컨트롤러
-│       │   ├── service/           # 재무영향 계산 비즈니스 로직
-│       │   ├── repository/        # 재무 데이터 액세스
-│       │   └── model/             # 재무영향 엔티티 및 스키마
-│       └── main.py
-│
-├── 🤖 chatbot-service/            # AI 챗봇 (포트: 8081)
-│   └── app/
-│       ├── api/                   # 챗봇 API
-│       ├── domain/                # 채팅 도메인 로직
-│       │   ├── controller/        # 채팅 컨트롤러
-│       │   ├── service/           # 채팅 비즈니스 로직
-│       │   └── model/             # 채팅 스키마
-│       └── main.py
+├── 📁 service/                    # 마이크로서비스들
+│   ├── 🔐 auth-service/           # 인증 서비스 (포트: 8084)
+│   │   └── app/
+│   │       ├── api/               # Google OAuth 콜백 처리
+│   │       ├── domain/            # 사용자 관리 도메인 로직
+│   │       │   ├── controller/    # 인증 컨트롤러
+│   │       │   ├── service/       # 인증 비즈니스 로직
+│   │       │   ├── repository/    # 사용자 데이터 액세스
+│   │       │   └── model/         # 사용자 엔티티 및 스키마
+│   │       ├── foundation/        # JWT 유틸리티, 데이터베이스
+│   │       └── main.py
+│   │
+│   ├── 📋 disclosure-service/     # 공시 데이터 관리 (포트: 8083)
+│   │   └── app/
+│   │       ├── api/               # ISSB S2 지표 API
+│   │       ├── domain/            # 공시 도메인 로직
+│   │       │   ├── controller/    # 공시 컨트롤러
+│   │       │   ├── service/       # 공시 비즈니스 로직
+│   │       │   ├── repository/    # 공시 데이터 액세스
+│   │       │   └── model/         # 공시 엔티티 및 스키마
+│   │       ├── foundation/        # 데이터베이스, 초기 데이터 로더
+│   │       ├── data/              # ISSB S2 마스터 데이터 (CSV)
+│   │       └── main.py
+│   │
+│   ├── 🌡️ climate-service/        # 기후리스크 분석 (포트: 8087)
+│   │   └── app/
+│   │       ├── api/               # 기후 데이터 API
+│   │       ├── domain/            # 기후리스크 도메인 로직
+│   │       │   ├── controller/    # 기후 컨트롤러
+│   │       │   ├── service/       # 기후 분석 비즈니스 로직
+│   │       │   ├── repository/    # 기후 데이터 액세스
+│   │       │   └── model/         # 기후 엔티티 및 스키마
+│   │       ├── foundation/        # 데이터베이스, 폭염 데이터 전처리
+│   │       │   └── schema/        # 폭염 테이블 생성 스크립트
+│   │       └── main.py
+│   │
+│   ├── 💰 finimpact-service/      # 재무영향 분석 (포트: 8082)
+│   │   └── app/
+│   │       ├── api/               # 재무영향 분석 API
+│   │       ├── domain/            # 재무영향 도메인 로직
+│   │       │   ├── controller/    # 재무영향 컨트롤러
+│   │       │   ├── service/       # 재무영향 계산 비즈니스 로직
+│   │       │   ├── repository/    # 재무 데이터 액세스
+│   │       │   └── model/         # 재무영향 엔티티 및 스키마
+│   │       └── main.py
+│   │
+│   └── 🤖 chatbot-service/        # AI 챗봇 (포트: 8081)
+│       └── app/
+│           ├── api/               # 챗봇 API
+│           ├── domain/            # 채팅 도메인 로직
+│           │   ├── controller/    # 채팅 컨트롤러
+│           │   ├── service/       # 채팅 비즈니스 로직
+│           │   └── model/         # 채팅 스키마
+│           └── main.py
 │
 ├── 🎓 training-service/           # AI 모델 훈련 서비스
 │   ├── app/
@@ -118,7 +119,7 @@ sky-c/
 │   ├── logs/                      # 훈련 로그
 │   └── checkpoints/               # 모델 체크포인트
 │
-├── 🔄 n8n-service/                # 워크플로우 자동화 (포트: 5678)
+├── 🔄 n8n/                        # 워크플로우 자동화 (포트: 5678)
 │   ├── workflows/                 # n8n 워크플로우 정의
 │   └── Dockerfile                 # 커스텀 n8n 이미지
 │
@@ -337,7 +338,7 @@ heatwave_summary         -- 폭염일수 요약 데이터 (지역별, 시나리�
 
 ### 🔄 자동 스키마 관리
 - **컨테이너 시작 시 자동 초기화**: PostgreSQL 컨테이너 실행 시 스키마 자동 생성
-- **마스터 데이터 자동 로드**: disclosure-service에서 CSV 파일 기반 초기 데이터 로드
+- **마스터 데이터 자동 로드**: service/disclosure-service에서 CSV 파일 기반 초기 데이터 로드
 - **데이터 무결성**: 외래키 제약조건 및 데이터 검증 규칙 적용
 
 ## 🚀 빠른 시작
@@ -360,8 +361,10 @@ cd SKY-C_v0.01
 2. **환경 변수 설정**
 ```bash
 # 각 서비스별 환경 변수 파일 생성 (예시)
-cp auth-service/.env.example auth-service/.env
-cp disclosure-service/.env.example disclosure-service/.env
+cp service/auth-service/.env.example service/auth-service/.env
+cp service/disclosure-service/.env.example service/disclosure-service/.env
+cp gateway/.env.example gateway/.env
+cp n8n/.env.example n8n/.env
 # ... 기타 서비스들
 ```
 

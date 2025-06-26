@@ -254,21 +254,28 @@ docker-compose.local.yml
 *.local.ts
 *.local.json
 
-# Auth Service 관련
+# Service 폴더 내 모든 서비스 관련
 # -----------------------------------------------------------------------------
-auth-service/.env
-auth-service/.env.*
-auth-service/logs/
-auth-service/temp/
-auth-service/**/*.pyc
+service/**/.env
+service/**/.env.*
+service/**/logs/
+service/**/temp/
+service/**/*.pyc
 
 # Gateway Service 관련
 # -----------------------------------------------------------------------------
-gateway-service/.env
-gateway-service/.env.*
-gateway-service/logs/
-gateway-service/temp/
-gateway-service/**/*.pyc
+gateway/.env
+gateway/.env.*
+gateway/logs/
+gateway/temp/
+gateway/**/*.pyc
+
+# N8N Service 관련
+# -----------------------------------------------------------------------------
+n8n/.env
+n8n/.env.*
+n8n/logs/
+n8n/temp/
 
 # Frontend Service 관련
 # -----------------------------------------------------------------------------

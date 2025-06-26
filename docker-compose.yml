@@ -33,12 +33,12 @@ services:
 
   gateway:
     build:
-      context: ./gateway-service
+      context: ./gateway
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     env_file:
-      - ./gateway-service/.env
+      - ./gateway/.env
     depends_on:
       - postgres
     networks:
@@ -46,12 +46,12 @@ services:
 
   chatbot:
     build:
-      context: ./chatbot-service
+      context: ./service/chatbot-service
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
     env_file:
-      - ./chatbot-service/.env
+      - ./service/chatbot-service/.env
     depends_on:
       - postgres
     networks:
@@ -66,12 +66,12 @@ services:
 
   finimpact:
     build:
-      context: ./finimpact-service
+      context: ./service/finimpact-service
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
     env_file:
-      - ./finimpact-service/.env
+      - ./service/finimpact-service/.env
     depends_on:
       - postgres
     networks:
@@ -79,12 +79,12 @@ services:
 
   disclosure:
     build:
-      context: ./disclosure-service
+      context: ./service/disclosure-service
       dockerfile: Dockerfile
     ports:
       - "8083:8083"
     env_file:
-      - ./disclosure-service/.env
+      - ./service/disclosure-service/.env
     depends_on:
       - postgres
     networks:
@@ -92,12 +92,12 @@ services:
 
   climate-service:
     build:
-      context: ./climate-service
+      context: ./service/climate-service
       dockerfile: Dockerfile
     ports:
       - "8087:8087"
     env_file:
-      - ./climate-service/.env
+      - ./service/climate-service/.env
     depends_on:
       - postgres
     networks:
@@ -105,12 +105,12 @@ services:
 
   auth:
     build:
-      context: ./auth-service
+      context: ./service/auth-service
       dockerfile: Dockerfile
     ports:
       - "8084:8084"
     env_file:
-      - ./auth-service/.env
+      - ./service/auth-service/.env
     depends_on:
       - postgres
     networks:
@@ -118,17 +118,17 @@ services:
 
   n8n:
     build:
-      context: ./n8n-service
+      context: ./n8n
       dockerfile: Dockerfile
     container_name: hc_n8n
     ports:
       - "5678:5678"
     env_file:
-      - ./n8n-service/.env
+      - ./n8n/.env
     volumes:
       - n8n_data:/home/node/.n8n
       - n8n_workflows:/data/workflows
-      - ./n8n-service/workflows:/data/workflows/init
+      - ./n8n/workflows:/data/workflows/init
     networks:
       - app-network
   training-service:

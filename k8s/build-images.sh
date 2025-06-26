@@ -7,22 +7,22 @@ CLUSTER_NAME="conan"
 
 # 1. Gateway 서비스 빌드
 echo "📦 Gateway 서비스 빌드 중..."
-docker build -t aws-develope-gateway:local ./gateway-service
+docker build -t aws-develope-gateway:local ./gateway
 k3d image import aws-develope-gateway:local -c $CLUSTER_NAME
 
 # 2. Chatbot 서비스 빌드
 echo "📦 Chatbot 서비스 빌드 중..."
-docker build -t aws-develope-chatbot:local ./chatbot-service
+docker build -t aws-develope-chatbot:local ./service/chatbot-service
 k3d image import aws-develope-chatbot:local -c $CLUSTER_NAME
 
 # 3. Finance Impact 서비스 빌드
 echo "📦 Finance Impact 서비스 빌드 중..."
-docker build -t aws-develope-finimpact:local ./finimpact-service
+docker build -t aws-develope-finimpact:local ./service/finimpact-service
 k3d image import aws-develope-finimpact:local -c $CLUSTER_NAME
 
 # 4. n8n 서비스 빌드
 echo "📦 n8n 서비스 빌드 중..."
-docker build -t n8n-custom:latest ./n8n-service
+docker build -t n8n-custom:latest ./n8n
 k3d image import n8n-custom:latest -c $CLUSTER_NAME
 
 # 5. Frontend 빌드

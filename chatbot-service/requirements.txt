@@ -1,8 +1,0 @@
-fastapi
-uvicorn[standard]
-pydantic
-python-dotenv
-transformers
-torch # GPU 사용 시, 또는 tensorflow-cpu / tensorflow
-peft # LoRA 모델 사용 시 필수
-accelerate # transformers와 함께 사용하여 모델 로딩 최적화

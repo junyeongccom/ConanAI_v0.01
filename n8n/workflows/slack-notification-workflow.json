@@ -1,0 +1,89 @@
+{
+  "name": "Slack Notification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-notification",
+        "options": {}
+      },
+      "id": "f1c8c8a8-8c8a-4c8a-8c8a-8c8a8c8a8c8a",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });\n\nlet message = '';\n\nif (input.message === 'upload_success') {\n  message = `📦 Excel 파일 '${input.filename}' 업로드 및 변환이 완료되었습니다. [${now}]`;\n} else if (input.message === 'upload_failure') {\n  message = `❌ Excel 파일 '${input.filename}' 업로드 중 오류가 발생했습니다.\\n오류: ${input.error} [${now}]`;\n} else {\n  message = `🔥 업로드 및 변환이 완료되었습니다. [${now}]`;\n}\n\nreturn {\n  json: {\n    text: message\n  }\n};"
+      },
+      "id": "a2b3c4d5-e6f7-8901-2345-6789abcdef01",
+      "name": "Message Transform",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "b3c4d5e6-f789-0123-4567-89abcdef0123",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message Transform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Transform": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "timezone": "Asia/Seoul"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "slack-notification-workflow",
+  "tags": [
+    {
+      "createdAt": "2025-06-04T05:49:00.000Z",
+      "updatedAt": "2025-06-04T05:49:00.000Z",
+      "id": "slack",
+      "name": "slack"
+    },
+    {
+      "createdAt": "2025-06-04T05:49:00.000Z", 
+      "updatedAt": "2025-06-04T05:49:00.000Z",
+      "id": "notification",
+      "name": "notification"
+    }
+  ]
+} 
