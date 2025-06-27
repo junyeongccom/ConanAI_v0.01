@@ -1,5 +1,6 @@
 # 인증 관련 컨트롤러 - 요청/응답 처리 계층
-from fastapi import HTTPException, status, Response, RedirectResponse
+from fastapi import HTTPException, status, Response
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any
 import os
@@ -46,8 +47,15 @@ class AuthController:
                     detail="Google 인증에 실패했습니다."
                 )
             
-            # 1. 응답 객체에 HttpOnly 쿠키 설정 (가장 중요!)
-            response.set_cookie(
+            # 1. 리다이렉트 응답 생성
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+            redirect_response = RedirectResponse(
+                url=f"{frontend_url}/",  # 메인페이지로 리다이렉트
+                status_code=302
+            )
+            
+            # 2. 리다이렉트 응답에 HttpOnly 쿠키 설정 (가장 중요!)
+            redirect_response.set_cookie(
                 key="access_token",
                 value=token_data.access_token,
                 httponly=True,
@@ -57,13 +65,10 @@ class AuthController:
                 max_age=7 * 24 * 60 * 60  # 7일
             )
             
-            # 2. 성공 시 프론트엔드 성공 페이지로 리다이렉트
-            from fastapi.responses import RedirectResponse
-            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-            return RedirectResponse(
-                url=f"{frontend_url}/auth/success",
-                status_code=302
-            )
+            print(f"🍪 쿠키 설정 완료: access_token (길이: {len(token_data.access_token)})")
+            print(f"🔄 리다이렉트 대상: {frontend_url}/")
+            
+            return redirect_response
             
         except HTTPException:
             raise
