@@ -10,8 +10,8 @@ class RedisClient:
     @classmethod
     def get_pool(cls):
         if cls._pool is None:
-            redis_host = os.getenv("REDIS_HOST")
-            redis_port = int(os.getenv("REDIS_PORT"))
+            redis_host = os.getenv("REDIS_HOST", "redis")  # Docker 서비스명 기본값
+            redis_port = int(os.getenv("REDIS_PORT", "6379"))  # Redis 기본 포트
 
             print(f"🔄 Redis 연결 풀 생성 중... -> {redis_host}:{redis_port}")
 

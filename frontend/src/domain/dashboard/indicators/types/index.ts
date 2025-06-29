@@ -51,6 +51,7 @@ export interface TableInputSchema {
 
 export interface StructuredListSchema {
   fields: StructuredField[];
+  item_label?: string;
 }
 
 export type InputSchema = TableInputSchema | StructuredListSchema | null;

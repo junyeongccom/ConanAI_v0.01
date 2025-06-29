@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
+import { Label } from "@/shared/components/ui/label";
+import { Checkbox } from "@/shared/components/ui/checkbox";
+import { Input } from "@/shared/components/ui/input";
 
 interface GhgScope12ApproachInputRendererProps {
   requirement: any;
@@ -20,41 +23,15 @@ export function GhgScope12ApproachInputRenderer({ requirement }: GhgScope12Appro
   const rows = requirement.input_schema?.rows || [];
   const columns = requirement.input_schema?.columns || [];
 
-  // 값 변경 핸들러
+  // 값 변경 핸들러 - 공통 훅 사용
   const handleValueChange = (rowKey: string, path: string, value: string) => {
-    // 중첩된 경로로 값 설정
-    const pathArray = path.split('.');
-    const newData = { ...currentData };
-    
-    if (!newData[rowKey]) {
-      newData[rowKey] = {};
-    }
-    
-    let current = newData[rowKey];
-    for (let i = 0; i < pathArray.length - 1; i++) {
-      if (!current[pathArray[i]]) {
-        current[pathArray[i]] = {};
-      }
-      current = current[pathArray[i]];
-    }
-    
-    current[pathArray[pathArray.length - 1]] = value;
-    
-    // 바로 전역 상태 업데이트 액션 호출
-    updateCurrentAnswer(requirement.requirement_id, newData);
+    console.log(`💡 Scope12 값 변경: ${rowKey}.${path} = ${value}`);
+    updateCurrentAnswer(requirement.requirement_id, { ...currentData, [rowKey]: { ...currentData[rowKey], [path]: value } });
   };
 
-  // 값 가져오기
+  // 값 가져오기 - 공통 훅 사용
   const getValue = (rowKey: string, path: string): string => {
-    const pathArray = path.split('.');
-    let current = currentData[rowKey];
-    
-    for (const key of pathArray) {
-      if (!current || typeof current !== 'object') return '';
-      current = current[key];
-    }
-    
-    return current || '';
+    return currentData[rowKey]?.[path] || '';
   };
 
   // 중첩된 컬럼들을 펼쳐서 입력 필드 경로 생성

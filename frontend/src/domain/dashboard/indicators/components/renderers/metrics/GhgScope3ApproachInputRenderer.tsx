@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
 
 interface GhgScope3ApproachInputRendererProps {
@@ -10,179 +9,128 @@ interface GhgScope3ApproachInputRendererProps {
 }
 
 export function GhgScope3ApproachInputRenderer({ requirement }: GhgScope3ApproachInputRendererProps) {
-  const { currentAnswers } = useAnswers();
-  const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
+  const { requirement_id, input_schema } = requirement;
+  const { currentAnswers, updateCurrentAnswer } = useAnswerStore();
   
-  // 전역 상태에서 직접 데이터를 가져옴
-  const currentData = currentAnswers[requirement.requirement_id] || {};
-  
+  const [data, setData] = useState(() => currentAnswers[requirement_id] || {});
+
+  // 1. 전역 상태 -> 로컬 상태 동기화
+  useEffect(() => {
+    const globalValue = currentAnswers[requirement_id] || {};
+    if (JSON.stringify(globalValue) !== JSON.stringify(data)) {
+      setData(globalValue);
+    }
+  }, [currentAnswers, requirement_id]);
+
+  // 2. 로컬 상태 -> 전역 상태 디바운스 업데이트
+  useEffect(() => {
+    const globalValue = currentAnswers[requirement_id] || {};
+    if (JSON.stringify(data) === JSON.stringify(globalValue) || Object.keys(data).length === 0) {
+      return;
+    }
+
+    const handler = setTimeout(() => {
+      console.log(`[Debounce] Saving Scope3 for ${requirement_id}...`);
+      updateCurrentAnswer(requirement_id, data);
+    }, 800);
+
+    return () => clearTimeout(handler);
+  }, [data, requirement_id, currentAnswers, updateCurrentAnswer]);
+
   const lastClickTimeRef = useRef<Record<string, number>>({});
   
-  // input_schema에서 행과 컬럼 정보 가져오기
-  const rows = requirement.input_schema?.rows || [];
-  const columns = requirement.input_schema?.columns || [];
+  const rows = input_schema?.rows || [];
+  const columns = input_schema?.columns || [];
 
-  // 값 변경 핸들러
-  const handleValueChange = (rowKey: string, entryIndex: number, path: string, value: string) => {
-    const currentEntries = currentData[rowKey]?.entries || [];
-    const currentEntry = currentEntries[entryIndex] || {};
-    
-    // 중첩된 경로로 값 설정 (불변성 보장)
-    const pathArray = path.split('.');
-    const updatedEntry = { ...currentEntry };
-    
-    // 중첩된 객체 구조를 불변성을 유지하며 업데이트
-    let current = updatedEntry;
-    for (let i = 0; i < pathArray.length - 1; i++) {
-      const key = pathArray[i];
-      current[key] = { ...current[key] };
-      current = current[key];
-    }
-    current[pathArray[pathArray.length - 1]] = value;
-    
-    // 새로운 entries 배열 생성
-    const newEntries = [...currentEntries];
-    newEntries[entryIndex] = updatedEntry;
-    
-    // 완전한 불변성을 보장하는 새로운 객체 생성
-    const newData = {
-      ...currentData,
-      [rowKey]: {
-        ...currentData[rowKey],
-        entries: newEntries
+  const handleValueChange = (rowKey: string, entryIndex: number, path: string, value: any) => {
+    setData(prevData => {
+      const newEntries = [...(prevData[rowKey]?.entries || [])];
+      // 중첩된 객체 경로에 값을 설정하는 로직
+      const pathParts = path.split('.');
+      let current = newEntries[entryIndex] || {};
+      let temp = current;
+      for (let i = 0; i < pathParts.length - 1; i++) {
+        temp[pathParts[i]] = { ...temp[pathParts[i]] };
+        temp = temp[pathParts[i]];
       }
-    };
-    
-    // 바로 전역 상태 업데이트 액션 호출
-    updateCurrentAnswer(requirement.requirement_id, newData);
+      temp[pathParts[pathParts.length - 1]] = value;
+
+      newEntries[entryIndex] = current;
+
+      return { ...prevData, [rowKey]: { ...prevData[rowKey], entries: newEntries } };
+    });
   };
 
-  // 행 추가 핸들러
-  const handleAddEntry = (e: React.MouseEvent, rowKey: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // 중복 클릭 방지 (500ms 내 같은 키에 대한 클릭 무시)
+  const handleAddEntry = (rowKey: string) => {
     const now = Date.now();
-    const lastClickTime = lastClickTimeRef.current[rowKey] || 0;
-    if (now - lastClickTime < 500) {
-      return;
-    }
+    if (now - (lastClickTimeRef.current[rowKey] || 0) < 500) return;
     lastClickTimeRef.current[rowKey] = now;
-    
-    const currentEntries = currentData[rowKey]?.entries || [];
-    
-    // 완전한 불변성을 보장하는 새로운 객체 생성
-    const newData = {
-      ...currentData,
-      [rowKey]: {
-        ...currentData[rowKey],
-        entries: [...currentEntries, {}] // 기존 배열을 복사하고 새 항목 추가
-      }
-    };
-    
-    // 바로 전역 상태 업데이트 액션 호출
-    updateCurrentAnswer(requirement.requirement_id, newData);
+
+    setData(prevData => {
+      const currentEntries = prevData[rowKey]?.entries || [];
+      const newEntries = [...currentEntries, { id: `scope3_item_${Date.now()}` }];
+      return { ...prevData, [rowKey]: { ...prevData[rowKey], entries: newEntries } };
+    });
   };
 
-  // 행 삭제 핸들러
-  const handleRemoveEntry = (e: React.MouseEvent, rowKey: string, entryIndex: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // 중복 클릭 방지
+  const handleRemoveEntry = (rowKey: string, entryIndex: number) => {
     const removeKey = `${rowKey}-${entryIndex}`;
     const now = Date.now();
-    const lastClickTime = lastClickTimeRef.current[removeKey] || 0;
-    if (now - lastClickTime < 500) {
-      return;
-    }
+    if (now - (lastClickTimeRef.current[removeKey] || 0) < 500) return;
     lastClickTimeRef.current[removeKey] = now;
-    
-    const currentEntries = currentData[rowKey]?.entries || [];
-    
-    // 최소 1개 항목은 유지
-    if (currentEntries.length <= 1) {
-      return;
-    }
-    
-    // 완전한 불변성을 보장하는 새로운 객체 생성
-    const newData = {
-      ...currentData,
-      [rowKey]: {
-        ...currentData[rowKey],
-        entries: currentEntries.filter((_, index) => index !== entryIndex) // 새로운 배열 생성
-      }
-    };
-    
-    // 바로 전역 상태 업데이트 액션 호출
-    updateCurrentAnswer(requirement.requirement_id, newData);
-  };
 
-  // 값 가져오기
-  const getValue = (rowKey: string, entryIndex: number, path: string): string => {
-    if (!currentData[rowKey] || !currentData[rowKey].entries || !currentData[rowKey].entries[entryIndex]) {
-      return '';
-    }
-    
-    const pathArray = path.split('.');
-    let current = currentData[rowKey].entries[entryIndex];
-    
-    for (const key of pathArray) {
-      if (!current || typeof current !== 'object') return '';
-      current = current[key];
-    }
-    
-    return current || '';
-  };
-
-  // 중첩된 컬럼들을 펼쳐서 입력 필드 경로 생성
-  const flattenColumns = (columns: any[], parentPath: string = ''): Array<{path: string, label: string, isTextarea?: boolean}> => {
-    const flattened: Array<{path: string, label: string, isTextarea?: boolean}> = [];
-    
-    columns.forEach((col: any) => {
-      const currentPath = parentPath ? `${parentPath}.${col.key}` : col.key;
-      
-      if (col.sub_columns && col.sub_columns.length > 0) {
-        flattened.push(...flattenColumns(col.sub_columns, currentPath));
-      } else {
-        flattened.push({
-          path: currentPath,
-          label: col.label,
-          isTextarea: col.key === 'key_assumptions'
-        });
-      }
+    setData(prevData => {
+      const currentEntries = prevData[rowKey]?.entries || [];
+      if (currentEntries.length <= 1) return prevData;
+      const newEntries = currentEntries.filter((_, index) => index !== entryIndex);
+      return { ...prevData, [rowKey]: { ...prevData[rowKey], entries: newEntries } };
     });
-    
-    return flattened;
+  };
+
+  const getValue = (rowKey: string, entryIndex: number, path: string): any => {
+    // 중첩된 객체 경로에서 값을 가져오는 로직
+    const pathParts = path.split('.');
+    let current = data[rowKey]?.entries?.[entryIndex];
+    for (const part of pathParts) {
+      if (current === undefined || current === null) return '';
+      current = current[part];
+    }
+    return current ?? '';
+  };
+  
+  const flattenColumns = (cols: any[], parentPath: string = ''): any[] => {
+    return cols.reduce((acc, col) => {
+      const currentPath = parentPath ? `${parentPath}.${col.key}` : col.key;
+      if (col.sub_columns?.length > 0) {
+        return [...acc, ...flattenColumns(col.sub_columns, currentPath)];
+      }
+      return [...acc, { ...col, path: currentPath }];
+    }, []);
   };
 
   const flatColumns = flattenColumns(columns);
 
-  // 초기 데이터 구조 확인 및 생성
   useEffect(() => {
     if (rows.length > 0) {
-      let needsUpdate = false;
-      const newData = { ...currentData };
-      
-      rows.forEach((row: any) => {
-        if (!newData[row.key] || !Array.isArray(newData[row.key]?.entries)) {
-          newData[row.key] = { entries: [{}] };
-          needsUpdate = true;
-        }
+      setData(prevData => {
+        let needsUpdate = false;
+        const newData = { ...prevData };
+        rows.forEach((row: any) => {
+          if (!newData[row.key] || !Array.isArray(newData[row.key]?.entries) || newData[row.key].entries.length === 0) {
+            newData[row.key] = { entries: [{ id: `scope3_item_${Date.now()}` }] };
+            needsUpdate = true;
+          }
+        });
+        return needsUpdate ? newData : prevData;
       });
-      
-      if (needsUpdate) {
-        updateCurrentAnswer(requirement.requirement_id, newData);
-      }
     }
-  }, [rows, currentData, requirement.requirement_id, updateCurrentAnswer]);
+  }, [rows]);
 
   return (
     <div className="mt-2">
       <div className="space-y-8">
         {rows.map((row: any) => {
-          const entries = currentData[row.key]?.entries || [{}];
+          const entries = data[row.key]?.entries || [{}];
           
           return (
             <div key={row.key} className="border border-gray-300 rounded-lg p-4 bg-gray-50">
@@ -190,25 +138,23 @@ export function GhgScope3ApproachInputRenderer({ requirement }: GhgScope3Approac
                 <h4 className="text-lg font-semibold text-gray-900">{row.label}</h4>
                 <button
                   type="button"
-                  onClick={(e) => handleAddEntry(e, row.key)}
-                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onClick={() => handleAddEntry(row.key)}
+                  className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   + 행 추가
                 </button>
               </div>
               
               <div className="space-y-4">
-                {entries.map((_, entryIndex: number) => (
-                  <div key={entryIndex} className="bg-white border border-gray-200 rounded-lg p-4">
+                {entries.map((entry: any, entryIndex: number) => (
+                  <div key={entry.id || entryIndex} className="bg-white border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-gray-600">
-                        항목 {entryIndex + 1}
-                      </span>
+                      <span className="text-sm font-medium text-gray-600">항목 {entryIndex + 1}</span>
                       {entries.length > 1 && (
                         <button
                           type="button"
-                          onClick={(e) => handleRemoveEntry(e, row.key, entryIndex)}
-                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                          onClick={() => handleRemoveEntry(row.key, entryIndex)}
+                          className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
                         >
                           삭제
                         </button>
@@ -218,25 +164,21 @@ export function GhgScope3ApproachInputRenderer({ requirement }: GhgScope3Approac
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {flatColumns.map((col) => (
                         <div key={col.path} className="space-y-1">
-                          <label className="block text-sm font-medium text-gray-700">
-                            {col.label}
-                          </label>
+                          <label className="block text-sm font-medium text-gray-700">{col.label}</label>
                           {col.isTextarea ? (
                             <TextareaAutosize
                               minRows={3}
                               maxRows={6}
-                              className="w-full p-3 border border-gray-300 rounded-md text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="w-full p-2 border border-gray-300 rounded-md text-sm"
                               value={getValue(row.key, entryIndex, col.path)}
                               onChange={(e) => handleValueChange(row.key, entryIndex, col.path, e.target.value)}
-                              placeholder="상세 내용을 입력하세요"
                             />
                           ) : (
                             <input
                               type="text"
-                              className="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="w-full p-2 border border-gray-300 rounded-md text-sm"
                               value={getValue(row.key, entryIndex, col.path)}
                               onChange={(e) => handleValueChange(row.key, entryIndex, col.path, e.target.value)}
-                              placeholder="입력하세요"
                             />
                           )}
                         </div>

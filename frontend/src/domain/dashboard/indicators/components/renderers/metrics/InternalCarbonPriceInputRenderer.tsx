@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
 
 interface InternalCarbonPriceInputRendererProps {
@@ -10,63 +9,42 @@ interface InternalCarbonPriceInputRendererProps {
 }
 
 export function InternalCarbonPriceInputRenderer({ requirement }: InternalCarbonPriceInputRendererProps) {
-  const { currentAnswers } = useAnswers();
-  const updateCurrentAnswer = useAnswerStore((state) => state.updateCurrentAnswer);
-  
-  // 전역 상태에서 직접 데이터를 가져옴
-  const currentData = currentAnswers[requirement.requirement_id] || {};
-  
-  // input_schema에서 행 정보 가져오기
-  const rows = requirement.input_schema?.rows || [];
+  const { requirement_id, input_schema } = requirement;
+  const { currentAnswers, updateCurrentAnswer } = useAnswerStore();
 
-  // 로컬 상태 관리 (하이브리드 상태 패턴)
-  const [localValues, setLocalValues] = useState<Record<string, string>>(currentData);
+  const [data, setData] = useState(() => currentAnswers[requirement_id] || {});
 
-  // 전역 상태 -> 로컬 상태 동기화 (초기값 설정)
+  // 1. 전역 상태 -> 로컬 상태 동기화
   useEffect(() => {
-    const globalData = currentAnswers[requirement.requirement_id] || {};
-    
-    // 전역 상태와 로컬 상태가 다를 때만 업데이트
-    const hasChanges = Object.keys(globalData).some(key => 
-      globalData[key] !== localValues[key]
-    ) || Object.keys(localValues).some(key => 
-      localValues[key] !== (globalData[key] || '')
-    );
-
-    if (hasChanges) {
-      setLocalValues(globalData);
+    const globalValue = currentAnswers[requirement_id] || {};
+    if (JSON.stringify(globalValue) !== JSON.stringify(data)) {
+      setData(globalValue);
     }
-  }, [currentAnswers, requirement.requirement_id]);
+  }, [currentAnswers, requirement_id]);
 
-  // 로컬 상태 -> 전역 상태 동기화 (디바운싱)
+  // 2. 로컬 상태 -> 전역 상태 디바운스 업데이트
   useEffect(() => {
-    // 초기 로딩 시에는 실행하지 않음
-    if (Object.keys(localValues).length === 0) return;
-
-    // 현재 전역 상태와 로컬 상태가 같다면 실행하지 않음
-    const currentGlobalData = currentAnswers[requirement.requirement_id] || {};
-    const hasRealChanges = Object.keys(localValues).some(key => 
-      localValues[key] !== (currentGlobalData[key] || '')
-    );
-
-    if (!hasRealChanges) return;
+    const globalValue = currentAnswers[requirement_id] || {};
+    if (JSON.stringify(data) === JSON.stringify(globalValue) || Object.keys(data).length === 0) {
+      return;
+    }
 
     const handler = setTimeout(() => {
-      console.log(`[Debounce] Saving ${requirement.requirement_id}...`);
-      updateCurrentAnswer(requirement.requirement_id, localValues);
-    }, 500); // 500ms 지연
+      console.log(`[Debounce] Saving InternalCarbonPrice for ${requirement_id}...`);
+      updateCurrentAnswer(requirement_id, data);
+    }, 800);
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [localValues, requirement.requirement_id, updateCurrentAnswer, currentAnswers]);
+    return () => clearTimeout(handler);
+  }, [data, requirement_id, currentAnswers, updateCurrentAnswer]);
+  
+  const rows = input_schema?.rows || [];
 
-  // 값 변경 핸들러 (로컬 상태만 업데이트)
-  const handleValueChange = (rowKey: string, inputValue: string) => {
-    setLocalValues(prev => ({
-      ...prev,
-      [rowKey]: inputValue
-    }));
+  const handleValueChange = (rowKey: string, value: string) => {
+    setData(prevData => ({ ...prevData, [rowKey]: value }));
+  };
+
+  const getValue = (rowKey: string): string => {
+    return data[rowKey] || '';
   };
 
   return (
@@ -80,8 +58,8 @@ export function InternalCarbonPriceInputRenderer({ requirement }: InternalCarbon
             <TextareaAutosize
               minRows={3}
               maxRows={8}
-              className="w-full p-3 border border-gray-200 rounded-md text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={localValues[row.key] || ''}
+              className="w-full p-2 border border-gray-200 rounded-md text-sm"
+              value={getValue(row.key)}
               onChange={(e) => handleValueChange(row.key, e.target.value)}
               placeholder={`${row.label}에 대해 상세히 작성해주세요`}
             />

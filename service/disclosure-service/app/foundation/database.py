@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 # 데이터베이스 URL 설정
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    # 기본값 설정 (개발 환경용)
-    DATABASE_URL = "postgresql://hc_user:hc_password@localhost:5432/hc_db"
+    # 기본값 설정 (Docker 환경용)
+    DATABASE_URL = "postgresql://hc_user:hc_password@postgres:5432/hc_db"
     logger.warning("DATABASE_URL environment variable is not set. Using default connection string.")
 
 # SQLAlchemy 엔진 생성

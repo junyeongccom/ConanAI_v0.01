@@ -58,7 +58,7 @@ export default function Header() {
   const navRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!user;
-  const userName = user?.name;
+  const userName = user?.name || user?.username;
   const userEmail = user?.email;
 
   // 디버깅을 위한 로그

@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
+import { Input } from "@/shared/components/ui/input";
 
 interface PerformanceTrackingInputRendererProps {
   requirement: any;
@@ -53,19 +55,19 @@ export function PerformanceTrackingInputRenderer({ requirement }: PerformanceTra
     }
   }, [sourceData, currentData, requirement.requirement_id, updateCurrentAnswer]);
 
-  // 값 변경 핸들러
+  // 값 변경 핸들러 - 공통 훅 사용
   const handleValueChange = (rowIndex: number, columnKey: string, value: string) => {
-    if (!Array.isArray(currentData)) return;
-    
-    // 현재 전역 상태를 기반으로 새로운 데이터 생성
-    const newData = [...currentData];
-    newData[rowIndex] = {
-      ...newData[rowIndex],
-      [columnKey]: value
-    };
-    
-    // 바로 전역 상태 업데이트 액션 호출
-    updateCurrentAnswer(requirement.requirement_id, newData);
+    console.log(`💡 PerformanceTracking 값 변경: [${rowIndex}].${columnKey} = ${value}`);
+    updateCurrentAnswer(requirement.requirement_id, [
+      ...currentData.slice(0, rowIndex),
+      { ...currentData[rowIndex], [columnKey]: value },
+      ...currentData.slice(rowIndex + 1)
+    ]);
+  };
+
+  // 값 가져오기 - 공통 훅 사용
+  const getValue = (rowIndex: number, columnKey: string): string => {
+    return currentData[rowIndex][columnKey] || '';
   };
 
   if (!Array.isArray(currentData) || currentData.length === 0) {
@@ -107,7 +109,7 @@ export function PerformanceTrackingInputRenderer({ requirement }: PerformanceTra
                       <input
                         type="text"
                         className="w-full p-2 border border-gray-300 rounded text-sm"
-                        value={row[col.key] || ''}
+                        value={getValue(rowIndex, col.key)}
                         onChange={(e) => handleValueChange(rowIndex, col.key, e.target.value)}
                         placeholder={col.placeholder || '실적을 입력하세요'}
                       />
