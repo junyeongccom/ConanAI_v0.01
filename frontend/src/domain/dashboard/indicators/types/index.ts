@@ -36,6 +36,7 @@ export interface TableColumn {
   placeholder?: string;
   type: string;
   options?: string[];
+  is_source_column?: boolean;
 }
 
 export interface StructuredField {
@@ -59,11 +60,14 @@ export interface TableInputSchema {
     label_suffix: string;
     source_req_id: string;
   }>;
+  source_requirement?: string;
+  source_field_to_display?: string;
 }
 
 export interface StructuredListSchema {
   fields: StructuredField[];
   item_label?: string;
+  type: 'structured_list';
 }
 
 export type InputSchema = TableInputSchema | StructuredListSchema | null;

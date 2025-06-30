@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { isTableInputSchema, isStructuredListSchema } from '../../types';
+import { isTableInputSchema, isStructuredListSchema, TableColumn } from '../../types';
 import { useAnswers } from '@/shared/hooks/useAnswerHooks';
 import useAnswerStore from '@/shared/store/answerStore';
 
@@ -115,23 +115,40 @@ const InlineTableInputRenderer = ({ requirement }: any) => {
     return <div className="mt-2 p-4 bg-red-50 border border-red-200 rounded-md"><p className="text-red-600 text-sm">테이블 입력 스키마 정보가 없습니다.</p></div>;
     }
 
-  // 동적 컬럼 생성 로직
-  const staticColumns = inputSchema.columns || [];
-  const dynamicColumns = (inputSchema.dynamic_columns_from || [])
-    .map((dynamicColDef: any) => {
+  // 동적/연동 컬럼 생성 로직
+  const { source_requirement, source_field_to_display, dynamic_columns_from } = inputSchema;
+  const sourceData = (source_requirement && currentAnswers[source_requirement]) || [];
+
+  const staticColumns: TableColumn[] = inputSchema.columns || [];
+  let combinedColumns: TableColumn[] = [...staticColumns];
+
+  // 1. 다른 질문의 답변을 가져와 컬럼으로 표시
+  if (source_requirement && source_field_to_display && Array.isArray(sourceData)) {
+    const sourceColumn: TableColumn = {
+      name: 'source_display_column',
+      label: '목표 지표',
+      type: 'text',
+      is_source_column: true 
+    };
+    combinedColumns = [sourceColumn, ...combinedColumns];
+  }
+
+  // 2. 다른 질문의 답변을 '헤더'로 사용하는 동적 컬럼
+  const dynamicColumns = (dynamic_columns_from || [])
+    .map((dynamicColDef: any): TableColumn | null => {
       const yearValue = currentAnswers[dynamicColDef.source_req_id];
       if (yearValue) {
         return {
           name: dynamicColDef.value_key,
           label: `${dynamicColDef.label_prefix || ''}${yearValue}${dynamicColDef.label_suffix || ''}`,
-          type: 'text' 
+          type: 'text'
         };
       }
       return null;
     })
-    .filter(Boolean);
+    .filter((col): col is TableColumn => col !== null);
 
-  const allColumns = [...staticColumns, ...dynamicColumns];
+  const allColumns: TableColumn[] = [...combinedColumns, ...dynamicColumns];
 
     return (
       <div className="mt-2">
@@ -152,17 +169,27 @@ const InlineTableInputRenderer = ({ requirement }: any) => {
               {rows.map((row: any, rowIndex: number) => (
               // 🚨 인덱스 대신 고유 ID를 key로 사용
               <tr key={row.id || rowIndex}>
-                  {allColumns.map((col: any) => (
-                    <td key={col.name} className="px-3 py-2 border-r border-gray-300">
+                  {allColumns.map((col: any) => {
+                    if (col.is_source_column && source_field_to_display) {
+                      const displayValue = sourceData[rowIndex]?.[source_field_to_display] || '';
+                      return (
+                        <td key={col.name} className="px-3 py-2 border-r border-gray-300 bg-gray-50 text-sm align-top">
+                          {displayValue}
+                        </td>
+                      );
+                    }
+                    return (
+                      <td key={col.name} className="px-3 py-2 border-r border-gray-300 align-top">
                         <FieldRenderer
                           fieldSchema={col}
                           value={row[col.name]}
                           onChange={(newValue) => handleInputChange(rowIndex, col.name, newValue)}
                           className="text-sm"
                         />
-                    </td>
-                  ))}
-                    <td className="px-3 py-2">
+                      </td>
+                    );
+                  })}
+                    <td className="px-3 py-2 align-top">
                   <button type="button" onClick={() => removeRow(rowIndex)} className="text-red-500 hover:text-red-700" disabled={rows.length <= 1}>
                         <Trash2 size={16} />
                       </button>
