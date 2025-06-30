@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 # 라우터 임포트
-from app.api.finimpact_router import router as finimpact_router
+from app.api.report_router import router as report_router
 
 # 환경 변수 로드
 load_dotenv()
@@ -15,12 +15,12 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 )
-logger = logging.getLogger("finimpact_service")
+logger = logging.getLogger("report_service")
 
 # FastAPI 애플리케이션 생성
 app = FastAPI(
-    title="Finance Impact Service",
-    description="폭염으로 인한 잠재적 재무영향 산출 서비스 API",
+    title="Report Service",
+    description="TCFD 보고서 생성을 위한 서비스 API",
     version="1.0.0",
 )
 
@@ -34,7 +34,7 @@ app.add_middleware(
 )
 
 # 라우터 등록
-app.include_router(finimpact_router, tags=["finimpact"])
+app.include_router(report_router, tags=["report"])
 
 # 직접 실행 시 Uvicorn 서버로 실행
 if __name__ == "__main__":

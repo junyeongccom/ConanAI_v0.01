@@ -86,21 +86,21 @@ logs-chatbot:
 restart-chatbot:
 	docker-compose down chatbot && docker-compose up -d --build chatbot
 
-## finimpact
-build-finimpact:
-	docker-compose build finimpact
+## report
+build-report:
+	docker-compose build report
 
-up-finimpact:
-	docker-compose up -d finimpact
+up-report:
+	docker-compose up -d report
 
-down-finimpact:
-	docker-compose stop finimpact
+down-report:
+	docker-compose stop report
 
-logs-finimpact:
-	docker-compose logs -f finimpact
+logs-report:
+	docker-compose logs -f report
 
-restart-finimpact:
-	docker-compose down finimpact && docker-compose up -d --build finimpact
+restart-report:
+	docker-compose down report && docker-compose up -d --build report
 
 ## disclosure
 build-disclosure:
