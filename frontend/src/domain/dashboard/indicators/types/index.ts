@@ -46,7 +46,19 @@ export interface StructuredField {
 }
 
 export interface TableInputSchema {
-  columns: TableColumn[];
+  type: 'table_input';
+  columns: Array<{
+    name: string;
+    type: 'text' | 'number' | 'select';
+    label: string;
+    options?: string[];
+  }>;
+  dynamic_columns_from?: Array<{
+    value_key: string;
+    label_prefix: string;
+    label_suffix: string;
+    source_req_id: string;
+  }>;
 }
 
 export interface StructuredListSchema {

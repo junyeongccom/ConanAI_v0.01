@@ -115,7 +115,23 @@ const InlineTableInputRenderer = ({ requirement }: any) => {
     return <div className="mt-2 p-4 bg-red-50 border border-red-200 rounded-md"><p className="text-red-600 text-sm">테이블 입력 스키마 정보가 없습니다.</p></div>;
     }
 
-  const allColumns = inputSchema.columns || [];
+  // 동적 컬럼 생성 로직
+  const staticColumns = inputSchema.columns || [];
+  const dynamicColumns = (inputSchema.dynamic_columns_from || [])
+    .map((dynamicColDef: any) => {
+      const yearValue = currentAnswers[dynamicColDef.source_req_id];
+      if (yearValue) {
+        return {
+          name: dynamicColDef.value_key,
+          label: `${dynamicColDef.label_prefix || ''}${yearValue}${dynamicColDef.label_suffix || ''}`,
+          type: 'text' 
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+
+  const allColumns = [...staticColumns, ...dynamicColumns];
 
     return (
       <div className="mt-2">
