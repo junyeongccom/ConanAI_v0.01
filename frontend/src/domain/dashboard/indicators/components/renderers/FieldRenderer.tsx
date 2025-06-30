@@ -267,7 +267,7 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       return <GhgGuidelineInputRenderer requirement={fieldSchema} />;
     case 'ghg_gases_input':
       return <GhgGasesInputRenderer requirement={fieldSchema} />;
-    case 'ghg_scope1_2_approach_input':
+    case 'ghg_scope12_approach_input':
       return <GhgScope12ApproachInputRenderer requirement={fieldSchema} />;
     case 'ghg_scope3_approach_input':
       return <GhgScope3ApproachInputRenderer requirement={fieldSchema} />;
@@ -304,33 +304,22 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
  * 외부에서는 이 컴포넌트에게 requirement 객체만 넘겨주면 됩니다.
  */
 export const RequirementInputForm = ({ requirement, className }: { requirement: any, className?: string }) => {
-  const { input_type } = requirement;
+  const { updateCurrentAnswer } = useAnswerStore();
 
-  // input_type에 따라 적절한 렌더러를 분기
-  switch (input_type) {
-    case 'ghg_emissions_input':
-      return <GhgEmissionsInputRenderer requirement={requirement} />;
-    case 'ghg_guideline_input':
-      return <GhgGuidelineInputRenderer requirement={requirement} />;
-    case 'ghg_gases_input':
-      return <GhgGasesInputRenderer requirement={requirement} />;
-    case 'ghg_scope1_2_approach_input':
-      return <GhgScope12ApproachInputRenderer requirement={requirement} />;
-    case 'ghg_scope3_approach_input':
-      return <GhgScope3ApproachInputRenderer requirement={requirement} />;
-    case 'performance_tracking_input':
-      return <PerformanceTrackingInputRenderer requirement={requirement} />;
-    case 'internal_carbon_price_input':
-      return <InternalCarbonPriceInputRenderer requirement={requirement} />;
+  const handleSimpleChange = (newValue: any) => {
+    updateCurrentAnswer(requirement.requirement_id, newValue);
+  };
+  
+  const { currentAnswers } = useAnswers();
+  const value = currentAnswers[requirement.requirement_id];
 
-    default:
-      return (
-        <TextInputField
-          value={requirement.value}
-          onChange={(newValue) => requirement.onChange(newValue)}
-          placeholder={requirement.placeholder}
-          className={`w-full p-2 border border-gray-300 rounded-md text-sm ${className}`}
-        />
-      );
-  }
+  // 기본 렌더링 로직
+  return (
+    <FieldRenderer
+      fieldSchema={requirement}
+      value={value}
+      onChange={handleSimpleChange}
+      className={className}
+    />
+  );
 } 
