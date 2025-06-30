@@ -251,115 +251,23 @@ const InlineStructuredListRenderer = ({ requirement }: any) => {
     );
 };
 
-
 /**
- * FieldRenderer: '멍청한' 라우터 컴포넌트
- * 이 컴포넌트는 상태를 관리하지 않으며, fieldSchema.type에 따라 적절한 렌더러를 반환하는 역할만 합니다.
- * 복합 타입(table, list)의 경우, 상태를 직접 관리하는 '스마트' 컴포넌트를 렌더링합니다.
- * 단순 타입의 경우, 부모로부터 받은 value와 onChange를 그대로 전달받는 '멍청한' 컴포넌트를 렌더링합니다.
+ * FieldRenderer: 다양한 타입의 필드를 렌더링하는 핵심 컴포넌트
+ * 이 컴포넌트는 `data_required_type`에 따라 적절한 렌더러를 선택하여 렌더링합니다.
  */
 export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: FieldRendererProps) {
-  let type = fieldSchema.type || fieldSchema.data_required_type;
-  const placeholder = fieldSchema.placeholder || fieldSchema.input_placeholder_ko || '';
+  // 렌더링 타입을 결정합니다. 이제 `data_required_type`을 사용합니다.
+  const type = fieldSchema.data_required_type;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    onChange(e.target.value);
-  };
-  
-  const handleGenericChange = (newValue: any) => {
-    onChange(newValue);
-  };
-
-  const commonInputProps = {
-    className: `w-full p-2 border border-gray-300 rounded-md text-sm ${className}`,
-    placeholder,
-  };
-
+  // 특수 input_type에 대한 렌더러 분기
   switch (type) {
-    case 'table_input':
-      return <InlineTableInputRenderer requirement={fieldSchema} />;
-
-    case 'structured_list':
-      return <InlineStructuredListRenderer requirement={fieldSchema} />;
-
-    case 'text_long':
-      return (
-        <TextareaField
-          value={value}
-          onChange={handleGenericChange}
-          placeholder={placeholder}
-          className={`w-full p-2 border border-gray-300 rounded-md text-sm resize-none ${className}`}
-        />
-      );
-
-    case 'number':
-      return (
-        <TextInputField
-          type="number"
-          value={value}
-          onChange={handleGenericChange}
-          placeholder={placeholder}
-          className={commonInputProps.className}
-        />
-      );
-
-    case 'date':
-      return (
-        <input
-          type="date"
-          className={commonInputProps.className}
-          value={value || ''}
-          onChange={handleChange}
-        />
-      );
-
-    case 'select':
-      if (fieldSchema.options && Array.isArray(fieldSchema.options)) {
-        return (
-          <select
-            className={`w-full p-2 border border-gray-300 rounded-md text-sm ${className}`}
-            value={value || ''}
-            onChange={handleChange}
-          >
-            <option value="">선택하세요</option>
-            {fieldSchema.options.map((option: string) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        );
-      }
-      return (
-        <TextInputField
-          value={value}
-          onChange={handleGenericChange}
-          placeholder={placeholder}
-          className={commonInputProps.className}
-        />
-      );
-
-    case 'boolean':
-      return (
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            className="mr-2 rounded border-gray-300 text-blue-600"
-            checked={value === true || value === 'true'}
-            onChange={(e) => handleGenericChange(e.target.checked)}
-          />
-          <span className="text-sm text-gray-700">예 / 아니오</span>
-        </div>
-      );
-
-    // --- 지표 및 목표 파트의 전용 타입들 (자체 상태 관리) ---
     case 'ghg_emissions_input':
       return <GhgEmissionsInputRenderer requirement={fieldSchema} />;
     case 'ghg_guideline_input':
       return <GhgGuidelineInputRenderer requirement={fieldSchema} />;
     case 'ghg_gases_input':
       return <GhgGasesInputRenderer requirement={fieldSchema} />;
-    case 'ghg_scope12_approach_input':
+    case 'ghg_scope1_2_approach_input':
       return <GhgScope12ApproachInputRenderer requirement={fieldSchema} />;
     case 'ghg_scope3_approach_input':
       return <GhgScope3ApproachInputRenderer requirement={fieldSchema} />;
@@ -367,14 +275,61 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       return <PerformanceTrackingInputRenderer requirement={fieldSchema} />;
     case 'internal_carbon_price_input':
       return <InternalCarbonPriceInputRenderer requirement={fieldSchema} />;
+    case 'table_input':
+      return <InlineTableInputRenderer requirement={fieldSchema} />;
+    case 'structured_list':
+      return <InlineStructuredListRenderer requirement={fieldSchema} />;
+  }
+
+  // 기본 렌더러 분기 (data_required_type이 지정되지 않은 경우)
+  const schema = fieldSchema.input_schema || fieldSchema;
+  const placeholder = schema.placeholder || fieldSchema.input_placeholder_ko || "내용을 입력해주세요.";
+  const defaultType = schema.type || "text";
+
+  switch (defaultType) {
+    case "textarea":
+      return <TextareaField value={value} onChange={onChange} placeholder={placeholder} className={`w-full p-2 border border-gray-300 rounded-md text-sm resize-none ${className}`} />;
+    
+    case "number":
+      return <TextInputField value={value} onChange={onChange} placeholder={placeholder} className={`w-full p-2 border border-gray-300 rounded-md text-sm ${className}`} type="number" />;
+
+    case "text":
+    default:
+      return <TextInputField value={value} onChange={onChange} placeholder={placeholder} className={`w-full p-2 border border-gray-300 rounded-md text-sm ${className}`} />;
+  }
+}
+
+/**
+ * RequirementInputForm: 이 컴포넌트는 컨트롤러 역할을 하며, 상태 관리의 주체입니다.
+ * 외부에서는 이 컴포넌트에게 requirement 객체만 넘겨주면 됩니다.
+ */
+export const RequirementInputForm = ({ requirement, className }: { requirement: any, className?: string }) => {
+  const { input_type } = requirement;
+
+  // input_type에 따라 적절한 렌더러를 분기
+  switch (input_type) {
+    case 'ghg_emissions_input':
+      return <GhgEmissionsInputRenderer requirement={requirement} />;
+    case 'ghg_guideline_input':
+      return <GhgGuidelineInputRenderer requirement={requirement} />;
+    case 'ghg_gases_input':
+      return <GhgGasesInputRenderer requirement={requirement} />;
+    case 'ghg_scope1_2_approach_input':
+      return <GhgScope12ApproachInputRenderer requirement={requirement} />;
+    case 'ghg_scope3_approach_input':
+      return <GhgScope3ApproachInputRenderer requirement={requirement} />;
+    case 'performance_tracking_input':
+      return <PerformanceTrackingInputRenderer requirement={requirement} />;
+    case 'internal_carbon_price_input':
+      return <InternalCarbonPriceInputRenderer requirement={requirement} />;
 
     default:
       return (
         <TextInputField
-          value={value}
-          onChange={handleGenericChange}
-          placeholder={placeholder}
-          className={commonInputProps.className}
+          value={requirement.value}
+          onChange={(newValue) => requirement.onChange(newValue)}
+          placeholder={requirement.placeholder}
+          className={`w-full p-2 border border-gray-300 rounded-md text-sm ${className}`}
         />
       );
   }
