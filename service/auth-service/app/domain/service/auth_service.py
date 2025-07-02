@@ -182,8 +182,6 @@ class AuthService:
                 user_id=updated_user.user_id,
                 email=updated_user.email,
                 username=updated_user.username,
-                company_name=updated_user.company_name,
-                industry_type=updated_user.industry_type,
                 created_at=updated_user.created_at,
                 updated_at=updated_user.updated_at,
                 last_login_at=updated_user.last_login_at
@@ -274,8 +272,6 @@ class AuthService:
                 user_id=user.user_id,
                 email=user.email,
                 username=user.username,
-                company_name=user.company_name,
-                industry_type=user.industry_type,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
                 last_login_at=user.last_login_at

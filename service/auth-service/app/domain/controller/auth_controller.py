@@ -200,8 +200,6 @@ class AuthController:
                 "user_id": str(user.user_id),
                 "email": user.email,
                 "username": user.username,
-                "company_name": user.company_name,
-                "industry_type": user.industry_type,
                 "created_at": user.created_at,
                 "last_login_at": user.last_login_at
             }

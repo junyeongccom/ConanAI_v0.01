@@ -13,8 +13,6 @@ class UserResponse(BaseModel):
     user_id: uuid.UUID
     email: EmailStr
     username: Optional[str] = None
-    company_name: Optional[str] = None
-    industry_type: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     last_login_at: Optional[datetime] = None
@@ -44,8 +42,6 @@ class AuthCallbackUser(BaseModel):
     user_id: str
     email: str
     username: Optional[str] = None
-    company_name: Optional[str] = None
-    industry_type: Optional[str] = None
 
 class AuthCallbackResponse(BaseModel):
     """OAuth 콜백 성공 응답 모델"""

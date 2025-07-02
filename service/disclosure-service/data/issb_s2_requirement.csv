@@ -1310,3 +1310,33 @@ met-27,s2-m10,1,기후 관련 위험 및 기회에 대응하기 위해 투입된
   ]
 }",,,,
 met-28,s2-m19,2,수정사항이 있었다면 그 사유에 대해서 설명해주세요.,text_long,,,,,
+gen-1,s2-gen,1,"보고서의 발행 연도, 대상 기업, 보고 기간을 입력해 주세요.",structured_list,"{
+  ""fields"": [
+    {
+      ""name"": ""company_name"",
+      ""label"": ""기업명"",
+      ""type"": ""text"",
+      ""placeholder"": ""기업명을 입력하세요"",
+      ""required"": true
+    },
+    {
+      ""name"": ""report_year"",
+      ""label"": ""보고서 발행년도"",
+      ""type"": ""number"",
+      ""placeholder"": ""YYYY"",
+      ""required"": true
+    },
+    {
+      ""name"": ""start_date"",
+      ""label"": ""보고 시작일자"",
+      ""type"": ""date"",
+      ""required"": true
+    },
+    {
+      ""name"": ""end_date"",
+      ""label"": ""보고 종료일자"",
+      ""type"": ""date"",
+      ""required"": true
+    }
+  ]
+}",,,,

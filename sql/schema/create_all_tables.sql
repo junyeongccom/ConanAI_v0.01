@@ -10,8 +10,6 @@ CREATE TABLE IF NOT EXISTS member (
     google_id VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     username VARCHAR(255), -- Nullable, Unique 제약 해제
-    company_name VARCHAR(255),
-    industry_type VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     last_login_at TIMESTAMP WITH TIME ZONE
@@ -178,3 +176,51 @@ CREATE INDEX IF NOT EXISTS idx_heatwave_scenario ON heatwave_summary(scenario);
 CREATE INDEX IF NOT EXISTS idx_heatwave_region ON heatwave_summary(region_name);
 CREATE INDEX IF NOT EXISTS idx_heatwave_period ON heatwave_summary(year_period);
 CREATE INDEX IF NOT EXISTS idx_heatwave_composite ON heatwave_summary(scenario, region_name, year_period);
+
+
+-- 8. report_template Table (보고서 템플릿)
+CREATE TABLE report_template (
+    -- 보고서 콘텐츠의 고유 ID (기본 키)
+    report_content_id VARCHAR(255) PRIMARY KEY,
+
+    -- 보고서의 대분류 섹션 (예: '지배구조', '전략')
+    section_kr VARCHAR(255) NOT NULL,
+
+    -- 보고서 내 콘텐츠의 전체 순서
+    content_order INTEGER NOT NULL,
+    
+    -- 목차의 계층 깊이 (1: 대분류, 2: 중분류 등)
+    depth INTEGER DEFAULT 1,
+
+    -- 콘텐츠의 유형 (HEADING_1, PARAGRAPH, TABLE, FIGURE 등)
+    content_type VARCHAR(50) NOT NULL,
+
+    -- 고정적으로 들어가는 텍스트 (제목, 표 캡션, 고정 문단 등)
+    content_template TEXT,
+
+    -- 이 콘텐츠를 생성하는 데 필요한 requirement_id 목록 (JSON 배열 형식)
+    source_requirement_ids JSONB,
+
+    -- SLM에게 보낼 프롬프트의 템플릿
+    slm_prompt_template TEXT,
+    
+    -- 데이터 생성 및 수정 시간 추적을 위한 타임스탬프
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 인덱스 추가로 조회 성능 향상
+CREATE INDEX idx_report_template_content_order ON report_template (content_order);
+CREATE INDEX idx_report_template_section_kr ON report_template (section_kr);
+
+-- 각 컬럼에 대한 설명(주석) 추가
+COMMENT ON COLUMN report_template.report_content_id IS '보고서 콘텐츠의 고유 ID (기본 키)';
+COMMENT ON COLUMN report_template.section_kr IS '보고서의 대분류 섹션 (예: 지배구조, 전략)';
+COMMENT ON COLUMN report_template.content_order IS '보고서 내 콘텐츠의 전체 순서';
+COMMENT ON COLUMN report_template.depth IS '목차의 계층 깊이 (1: 대분류, 2: 중분류 등)';
+COMMENT ON COLUMN report_template.content_type IS '콘텐츠의 유형 (HEADING_1, PARAGRAPH, TABLE, FIGURE 등)';
+COMMENT ON COLUMN report_template.content_template IS '고정적으로 들어가는 텍스트 (제목, 표 캡션, 고정 문단 등)';
+COMMENT ON COLUMN report_template.source_requirement_ids IS '이 콘텐츠를 생성하는 데 필요한 requirement_id 목록 (JSON 배열 형식)';
+COMMENT ON COLUMN report_template.slm_prompt_template IS 'SLM에게 보낼 프롬프트의 템플릿';
+COMMENT ON COLUMN report_template.created_at IS '행 생성 시간';
+COMMENT ON COLUMN report_template.updated_at IS '행 마지막 수정 시간';

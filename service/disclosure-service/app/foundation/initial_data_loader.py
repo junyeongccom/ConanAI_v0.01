@@ -20,11 +20,11 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 
 # CSV 파일명 매핑
 CSV_FILES = {
-    "disclosure": "ISSB_S2 - issb_s2_disclosure.csv",
-    "requirement": "ISSB_S2 - issb_s2_requirement.csv", 
-    "term": "ISSB_S2 - issb_s2_term.csv",
-    "concept": "ISSB_S2 - climate_disclosure_concept.csv",
-    "adoption": "ISSB_S2 - issb_adoption_status.csv"
+    "disclosure": "issb_s2_disclosure.csv",
+    "requirement": "issb_s2_requirement.csv", 
+    "term": "issb_s2_term.csv",
+    "concept": "issb_s2_climate_disclosure_concept.csv",
+    "adoption": "issb_s2_adoption_status.csv"
 }
 
 
