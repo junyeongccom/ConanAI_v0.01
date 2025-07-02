@@ -2,10 +2,15 @@ import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 # 라우터 임포트
 from app.api.report_router import router as report_router
+
+# 데이터베이스 및 초기 데이터 로딩 임포트
+from app.foundation.database import get_db
+from app.foundation.initial_data_loader import load_report_templates
 
 # 환경 변수 로드
 load_dotenv()
@@ -17,11 +22,32 @@ logging.basicConfig(
 )
 logger = logging.getLogger("report_service")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI 애플리케이션 생명주기 관리"""
+    logger.info("🚀 Report API 서비스 시작")
+
+    # --- 데이터 로딩 로직 ---
+    try:
+        db_session = next(get_db())
+        logger.info("📋 보고서 템플릿 데이터 로딩 시작...")
+        load_report_templates(db_session)
+    except Exception as e:
+        logger.error(f"❌ 서비스 초기화 실패: 데이터 로딩 중 에러 - {e}")
+    finally:
+        db_session.close()
+    # ----------------------
+
+    yield
+
+    logger.info("🛑 Report API 서비스 종료")
+
 # FastAPI 애플리케이션 생성
 app = FastAPI(
     title="Report Service",
     description="TCFD 보고서 생성을 위한 서비스 API",
     version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS 미들웨어 설정
