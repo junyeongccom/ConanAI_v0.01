@@ -94,6 +94,21 @@ class ReportService:
             content = generated_paragraphs.get(template.report_content_id, "오류: 해당 문단을 생성하지 못했습니다.")
             return {"type": "paragraph", "content": content}
         
+        elif content_type == 'STATIC_PARAGRAPH':
+            source_id = template.source_requirement_ids[0] if template.source_requirement_ids else None
+            source_data = answers.get(source_id)
+
+            if not source_data or not isinstance(source_data, dict):
+                logger.warning(f"정적 콘텐츠 생성을 위한 소스 데이터(딕셔너리)를 찾을 수 없습니다: id='{template.report_content_id}', source_id='{source_id}'")
+                # 데이터가 없으면 플레이스홀더가 그대로 있는 원본 템플릿 반환
+                return {"type": "paragraph", "content": template.content_template} 
+
+            final_content = template.content_template
+            for key, value in source_data.items():
+                final_content = final_content.replace(f"{{{{{key}}}}}", str(value))
+
+            return {"type": "paragraph", "content": final_content}
+        
         elif content_type in ['HEADING_1', 'HEADING_2', 'HEADING_3', 'HEADING_4']:
             return {"type": content_type.lower(), "content": template.content_template}
 

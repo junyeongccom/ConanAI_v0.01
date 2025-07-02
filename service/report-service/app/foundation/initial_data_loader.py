@@ -1,72 +1,64 @@
-import pandas as pd
-from sqlalchemy.orm import Session
 import logging
-import json  # source_requirement_ids를 위해 추가
 import os
-
-from app.domain.model.report_entity import ReportTemplate  # ORM 모델 임포트
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
+# 이 함수는 원래 CSV를 로드하는 데 사용되었을 수 있습니다.
+# 현재는 구현이 없지만, 원래 파일 구조를 유지하기 위해 남겨둡니다.
 def load_report_templates(db: Session):
-    """보고서 템플릿 CSV 데이터를 데이터베이스에 로딩"""
-    csv_path = "app/platform/data/report_template.csv"
-    
+    logger.info("CSV로부터 보고서 템플릿 로딩을 건너뜁니다 (구현 없음).")
+    pass
+
+def upsert_static_templates(db: Session):
+    """DB에 정적 템플릿 데이터를 UPSERT합니다."""
+    logger.info("정적 보고서 템플릿 데이터 UPSERT 시도...")
+    UPSERT_SQL = """
+    INSERT INTO report_template (report_content_id, section_kr, content_order, depth, content_type, content_template, source_requirement_ids, slm_prompt_template)
+    VALUES
+        ('gen-p1', '일반 현황', 101, 2, 'STATIC_PARAGRAPH', '본 보고서는 2023년 6월 IFRS(International Financial Reporting Standards) 재단의 ISSB(International Sustainability Standards Board)에서 제정·공표한 IFRS S2 ''기후 관련 공시'' 요구사항에 대해 선제적으로 지속가능경영 현황을 공유하고 이해관계자와의 소통을 제고하기 위한 보고서입니다.''{{company_name}}''의 지속가능한 성장과 사회적 가치 창출을 위한 현재 또는 과거의 활동, 성과 외에도 미래에 대한 예측, 전망, 추정치에 관한 사항을 포함하고 있습니다. 미래와 관련된 사항들은 보고서 작성일을 기준으로 당사의 합리적 가정 및 예상, 기대에 기초한 것일 뿐이므로 알려지거나 알려지지 않은 위험과 불확실성을 수반하며, 예측, 전망, 추정치에 대한 실제 결과는 애초에 예측했던 것과는 상이할 수 있습니다.', '{"gen-1"}', NULL),
+        ('gen-p2', '일반 현황', 102, 2, 'STATIC_PARAGRAPH', '본 보고서는 ''{{company_name}}''와 ''{{company_name}}''의 연결대상 종속기업에 대한 정보를 포함하고 있습니다.', '{"gen-1"}', NULL),
+        ('gen-p3', '일반 현황', 103, 2, 'STATIC_PARAGRAPH', '본 보고서의 보고 기간은 ''{{start_date}}''부터 ''{{end_date}}''까지입니다.', '{"gen-1"}', NULL),
+        ('cover-title', '표지', 1, 1, 'STATIC_PARAGRAPH', '{{report_year}} {{company_name}} CLIMATE CHANGE REPORT', '{"gen-1"}', NULL)
+    ON CONFLICT (report_content_id) DO UPDATE SET
+        section_kr = EXCLUDED.section_kr,
+        content_order = EXCLUDED.content_order,
+        depth = EXCLUDED.depth,
+        content_type = EXCLUDED.content_type,
+        content_template = EXCLUDED.content_template,
+        source_requirement_ids = EXCLUDED.source_requirement_ids,
+        slm_prompt_template = EXCLUDED.slm_prompt_template,
+        updated_at = CURRENT_TIMESTAMP;
+    """
     try:
-        # CSV 파일 존재 여부 확인
-        if not os.path.exists(csv_path):
-            logger.error(f"❌ 보고서 템플릿 CSV 파일을 찾을 수 없습니다: {csv_path}")
-            return
-            
-        # CSV 파일 읽기
-        df = pd.read_csv(csv_path)
-        logger.info(f"📄 CSV 파일 로드 완료: {len(df)}개 행")
-
-        # NaN 값을 None으로 변환
-        df = df.where(pd.notnull(df), None)
-
-        new_templates_count = 0
-        for _, row in df.iterrows():
-            template_id = row['report_content_id']
-
-            # DB에 이미 존재하는지 확인
-            exists = db.query(ReportTemplate).filter_by(report_content_id=template_id).first()
-
-            if not exists:
-                # source_requirement_ids 컬럼을 Python 리스트(JSON)로 변환
-                source_ids = None
-                if row['source_requirement_ids']:
-                    try:
-                        # 문자열을 JSON(리스트)으로 파싱
-                        source_ids = json.loads(row['source_requirement_ids'].replace("'", '"'))
-                    except (json.JSONDecodeError, TypeError):
-                        # 파싱 실패 시 문자열 그대로 사용하거나 로깅
-                        logger.warning(f"Failed to parse source_requirement_ids for {template_id}: {row['source_requirement_ids']}")
-                        source_ids = row['source_requirement_ids']
-
-                new_template = ReportTemplate(
-                    report_content_id=template_id,
-                    section_kr=row['section_kr'],
-                    content_order=row['content_order'],
-                    depth=row['depth'],
-                    content_type=row['content_type'],
-                    content_template=row['content_template'],
-                    source_requirement_ids=source_ids,
-                    slm_prompt_template=row['slm_prompt_template']
-                )
-                db.add(new_template)
-                new_templates_count += 1
-                logger.debug(f"➕ 새 템플릿 추가: {template_id}")
-
-        if new_templates_count > 0:
-            db.commit()
-            logger.info(f"✅ {new_templates_count}개의 새로운 보고서 템플릿을 DB에 추가했습니다.")
-        else:
-            logger.info("ℹ️ 보고서 템플릿은 이미 최신 상태입니다.")
-
-    except FileNotFoundError:
-        logger.error(f"❌ 보고서 템플릿 CSV 파일을 찾을 수 없습니다: {csv_path}")
+        db.execute(text(UPSERT_SQL))
+        db.commit()
+        logger.info("정적 템플릿 데이터 UPSERT 성공.")
     except Exception as e:
+        logger.error(f"정적 템플릿 UPSERT 실패: {e}")
         db.rollback()
-        logger.error(f"❌ 보고서 템플릿 로딩 중 에러 발생: {e}")
-        raise 
+        raise
+
+def run_all_loaders():
+    """모든 데이터 로더를 실행하는 메인 함수"""
+    from app.foundation.database import get_db
+
+    logger.info("데이터 로더 스크립트 실행 시작.")
+    db_session = next(get_db())
+    try:
+        load_report_templates(db_session)
+        upsert_static_templates(db_session)
+    finally:
+    db_session.close~   ()
+    logger.info("데이터 로더 스크립트 실행 완료.")
+
+
+if __name__ == "__main__":
+    # .env 파일 로드를 위해 경로 설정
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(script_dir, '..', '..', '..'))
+    load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
+    
+    run_all_loaders() 

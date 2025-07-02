@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 from app.api.report_router import router as report_router
 
 # 데이터베이스 및 초기 데이터 로딩 임포트
-from app.foundation.database import get_db, engine, Base
-from app.foundation.initial_data_loader import load_report_templates
+from app.foundation.database import get_db
+from app.foundation.initial_data_loader import load_report_templates, upsert_static_templates
 from app.foundation.user_context_middleware import UserContextMiddleware
 
 # 환경 변수 로드
@@ -29,10 +29,14 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Report API 서비스 시작")
 
     # --- 데이터 로딩 로직 ---
+    db_session = next(get_db())
     try:
-        db_session = next(get_db())
         logger.info("📋 보고서 템플릿 데이터 로딩 시작...")
         load_report_templates(db_session)
+
+        # ⬇️ 정적 템플릿 데이터 UPSERT 함수를 호출합니다.
+        upsert_static_templates(db_session)
+
     except Exception as e:
         logger.error(f"❌ 서비스 초기화 실패: 데이터 로딩 중 에러 - {e}")
     finally:
