@@ -4,7 +4,7 @@ from enum import Enum
 
 class ServiceType(str, Enum):
     CHATBOT = "chatbot"
-    FINIMPACT = "finimpact"
+    REPORT = "report"
     DISCLOSURE = "disclosure"
     AUTH = "auth"
     CLIMATE = "climate-service"
@@ -12,7 +12,7 @@ class ServiceType(str, Enum):
 
 SERVICE_URLS = {
     ServiceType.CHATBOT: os.getenv("CHATBOT_SERVICE_URL", "http://chatbot:8081"),
-    ServiceType.FINIMPACT: os.getenv("REPORT_SERVICE_URL", "http://report:8082"),
+    ServiceType.REPORT: os.getenv("REPORT_SERVICE_URL", "http://report:8082"),
     ServiceType.DISCLOSURE: os.getenv("DISCLOSURE_SERVICE_URL", "http://disclosure:8083"),
     ServiceType.AUTH: os.getenv("AUTH_SERVICE_URL", "http://auth:8084"),
     ServiceType.CLIMATE: os.getenv("CLIMATE_SERVICE_URL", "http://climate-service:8087"),

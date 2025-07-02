@@ -9,8 +9,9 @@ from dotenv import load_dotenv
 from app.api.report_router import router as report_router
 
 # 데이터베이스 및 초기 데이터 로딩 임포트
-from app.foundation.database import get_db
+from app.foundation.database import get_db, engine, Base
 from app.foundation.initial_data_loader import load_report_templates
+from app.foundation.user_context_middleware import UserContextMiddleware
 
 # 환경 변수 로드
 load_dotenv()
@@ -59,8 +60,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 미들웨어 추가
+app.add_middleware(UserContextMiddleware)
+
 # 라우터 등록
-app.include_router(report_router, tags=["report"])
+app.include_router(report_router)
 
 # 직접 실행 시 Uvicorn 서버로 실행
 if __name__ == "__main__":
