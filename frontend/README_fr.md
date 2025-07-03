@@ -76,7 +76,7 @@ frontend/
 │   │   │   └── adoption-status/     # ISSB 도입 현황
 │   │   ├── service/                 # 핵심 서비스 페이지
 │   │   │   ├── climate-risk/        # 지역별 기후리스크 평가
-│   │   │   ├── financial-impact/    # 재무영향 분석
+│   │   │   ├── report/              # 재무영향 보고서 생성
 │   │   │   └── tcfd-report/         # TCFD 보고서 생성
 │   │   ├── report/                  # 보고서 관리
 │   │   ├── my-page/                 # 마이페이지
@@ -90,7 +90,7 @@ frontend/
 │   │   │   └── indicators/          # ISSB S2 지표 입력 시스템
 │   │   ├── service/                 # 핵심 서비스
 │   │   │   ├── climate-risk/        # 기후리스크 분석
-│   │   │   ├── financial-impact/    # 재무영향 평가
+│   │   │   ├── report/              # 재무영향 보고서
 │   │   │   └── tcfd-report/         # TCFD 보고서
 │   │   ├── basic/                   # 기본 정보 컴포넌트
 │   │   ├── login/                   # 로그인 컴포넌트
@@ -261,7 +261,7 @@ npm cache clean --force
 - **Auth Service**: http://localhost:8084
 - **Disclosure Service**: http://localhost:8083
 - **Climate Service**: http://localhost:8087
-- **Financial Impact Service**: http://localhost:8085
+- **Report Service**: http://localhost:8082
 - **Gateway**: http://localhost:8080
 
 ### 환경 변수 설정

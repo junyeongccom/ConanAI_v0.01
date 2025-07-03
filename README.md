@@ -32,7 +32,7 @@ sky-c/
 │   │   │   │   └── indicators/    # ISSB S2 지표 입력 시스템
 │   │   │   ├── service/           # 핵심 서비스
 │   │   │   │   ├── climate-risk/  # 기후리스크 평가
-│   │   │   │   ├── financial-impact/ # 재무영향 분석
+│   │   │   │   ├── report/        # 재무영향 보고서 생성
 │   │   │   │   └── tcfd-report/   # TCFD 보고서 생성
 │   │   │   ├── basic/             # 기본 정보
 │   │   │   │   ├── concepts/      # 기후공시 개념
@@ -87,14 +87,14 @@ sky-c/
 │   │       │   └── schema/        # 폭염 테이블 생성 스크립트
 │   │       └── main.py
 │   │
-│   ├── 💰 finimpact-service/      # 재무영향 분석 (포트: 8082)
+│   ├── 💰 report-service/         # 재무영향 보고서 생성 (포트: 8082)
 │   │   └── app/
-│   │       ├── api/               # 재무영향 분석 API
-│   │       ├── domain/            # 재무영향 도메인 로직
-│   │       │   ├── controller/    # 재무영향 컨트롤러
-│   │       │   ├── service/       # 재무영향 계산 비즈니스 로직
-│   │       │   ├── repository/    # 재무 데이터 액세스
-│   │       │   └── model/         # 재무영향 엔티티 및 스키마
+│   │       ├── api/               # 보고서 생성 API
+│   │       ├── domain/            # 보고서 도메인 로직
+│   │       │   ├── controller/    # 보고서 컨트롤러
+│   │       │   ├── service/       # 보고서 생성 비즈니스 로직
+│   │       │   ├── repository/    # 보고서 데이터 액세스
+│   │       │   └── model/         # 보고서 엔티티 및 스키마
 │   │       └── main.py
 │   │
 │   └── 🤖 chatbot-service/        # AI 챗봇 (포트: 8081)
@@ -336,10 +336,10 @@ issb_adoption_status     -- 국가별 ISSB 도입 현황
 heatwave_summary         -- 폭염일수 요약 데이터 (지역별, 시나리오별)
 ```
 
-### 🔄 자동 스키마 관리
-- **컨테이너 시작 시 자동 초기화**: PostgreSQL 컨테이너 실행 시 스키마 자동 생성
-- **마스터 데이터 자동 로드**: service/disclosure-service에서 CSV 파일 기반 초기 데이터 로드
-- **데이터 무결성**: 외래키 제약조건 및 데이터 검증 규칙 적용
+### ☁️ 외부 데이터베이스 연동
+- **관리형 데이터베이스**: **Supabase**의 관리형 PostgreSQL을 메인 데이터베이스로 사용합니다.
+- **데이터 마이그레이션**: 로컬에서 개발된 스키마는 `backup.sql`과 같은 백업 파일을 통해 Supabase로 이전됩니다.
+- **마스터 데이터 자동 로드**: `service/disclosure-service`에서 CSV 파일 기반 초기 데이터 로드를 지원합니다.
 
 ## 🚀 빠른 시작
 
@@ -359,13 +359,12 @@ cd SKY-C_v0.01
 ```
 
 2. **환경 변수 설정**
+- 로컬 `PostgreSQL` 컨테이너가 제거되었으므로, 모든 백엔드 서비스는 **외부 데이터베이스(Supabase 등)**를 바라보도록 설정해야 합니다.
+- 각 서비스 폴더(`service/*`, `gateway`)에 `.env` 파일을 생성하고 `DATABASE_URL`을 설정합니다.
 ```bash
-# 각 서비스별 환경 변수 파일 생성 (예시)
-cp service/auth-service/.env.example service/auth-service/.env
-cp service/disclosure-service/.env.example service/disclosure-service/.env
-cp gateway/.env.example gateway/.env
-cp n8n/.env.example n8n/.env
-# ... 기타 서비스들
+# .env 파일 예시 (e.g., service/auth-service/.env)
+# 비밀번호에 특수문자('#' 등)가 포함된 경우, URL 인코딩(%23)이 필요합니다.
+DATABASE_URL=postgresql://사용자:비밀번호@호스트:포트/데이터베이스명
 ```
 
 3. **전체 시스템 실행**
@@ -394,7 +393,7 @@ make up-gateway
 make up-auth
 make up-disclosure
 make up-climate
-make up-finimpact
+make up-report
 make up-chatbot
 make up-n8n
 make up-training
@@ -439,7 +438,7 @@ make shell-training
 | **Auth** | http://localhost:8084/docs | 인증 및 사용자 관리 API |
 | **Disclosure** | http://localhost:8083/docs | ISSB S2 지표 및 공시 데이터 API |
 | **Climate** | http://localhost:8087/docs | 기후리스크 분석 API |
-| **FinImpact** | http://localhost:8082/docs | 재무영향 분석 API |
+| **Report** | http://localhost:8082/docs | 재무영향 보고서 생성 API |
 | **Chatbot** | http://localhost:8081/docs | AI 챗봇 API |
 
 ## ☸️ Kubernetes 배포
@@ -467,13 +466,12 @@ kubectl get ingress
 
 ```
 k8s/
-├── postgres.yaml          # PostgreSQL 데이터베이스
 ├── frontend.yaml          # Next.js 프론트엔드
 ├── gateway.yaml           # API Gateway
 ├── auth.yaml              # 인증 서비스  
 ├── disclosure.yaml        # 공시 데이터 서비스
 ├── climate.yaml           # 기후 분석 서비스
-├── finimpact.yaml         # 재무영향 서비스
+├── report.yaml            # 재무영향 보고서 서비스
 ├── chatbot.yaml           # AI 챗봇 서비스
 ├── n8n.yaml               # 워크플로우 자동화
 ├── ingress.yaml           # Ingress 설정
