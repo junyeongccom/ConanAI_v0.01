@@ -95,18 +95,29 @@ class ReportService:
             return {"type": "paragraph", "content": content}
         
         elif content_type == 'STATIC_PARAGRAPH':
-            source_id = template.source_requirement_ids[0] if template.source_requirement_ids else None
-            source_data = answers.get(source_id)
+            final_content = template.content_template or ""
 
-            if not source_data or not isinstance(source_data, dict):
-                logger.warning(f"정적 콘텐츠 생성을 위한 소스 데이터(딕셔너리)를 찾을 수 없습니다: id='{template.report_content_id}', source_id='{source_id}'")
-                # 데이터가 없으면 플레이스홀더가 그대로 있는 원본 템플릿 반환
-                return {"type": "paragraph", "content": template.content_template} 
+            # 템플릿이 치환할 데이터를 필요로 하는지 확인 (source_requirement_ids가 비어있지 않은 경우)
+            if template.source_requirement_ids:
+                # 첫 번째 source_id를 가져옴 (gen-1)
+                source_id = template.source_requirement_ids[0]
+                source_data = answers.get(source_id)
 
-            final_content = template.content_template
-            for key, value in source_data.items():
-                final_content = final_content.replace(f"{{{{{key}}}}}", str(value))
+                # 답변 데이터가 정상적인 딕셔너리 형태인지 확인 (structured_list는 리스트 안에 딕셔너리가 있음)
+                data_to_fill = None
+                if isinstance(source_data, list) and source_data:
+                    data_to_fill = source_data[0]
+                elif isinstance(source_data, dict):
+                    data_to_fill = source_data
 
+                if data_to_fill:
+                    # 플레이스홀더 (예: {{company_name}}) 를 실제 값으로 치환
+                    for key, value in data_to_fill.items():
+                        final_content = final_content.replace(f"{{{{{key}}}}}", str(value))
+                else:
+                    logger.warning(f"정적 콘텐츠 '{template.report_content_id}'의 소스 데이터 '{source_id}'를 찾을 수 없거나 형식이 다릅니다.")
+
+            # source_requirement_ids가 없는 템플릿은 그대로 final_content가 반환됨
             return {"type": "paragraph", "content": final_content}
         
         elif content_type in ['HEADING_1', 'HEADING_2', 'HEADING_3', 'HEADING_4']:
