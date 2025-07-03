@@ -1,20 +1,4 @@
 services:
-  postgres:
-    image: postgres:15
-    container_name: hc_postgres_new
-    restart: always
-    environment:
-      POSTGRES_USER: hc_user
-      POSTGRES_PASSWORD: hc_password
-      POSTGRES_DB: hc_db
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./sql/schema/create_all_tables.sql:/docker-entrypoint-initdb.d/create_all_tables.sql
-    ports:
-      - "5432:5432"
-    networks:
-      - app-network
-
   redis:
     image: redis:7-alpine
     container_name: redis-server
@@ -52,7 +36,6 @@ services:
     env_file:
       - ./gateway/.env
     depends_on:
-      - postgres
       - redis
     networks:
       - app-network
@@ -65,8 +48,6 @@ services:
       - "8081:8081"
     env_file:
       - ./service/chatbot-service/.env
-    depends_on:
-      - postgres
     networks:
       - app-network
     deploy:
@@ -86,8 +67,6 @@ services:
       - "8082:8082"
     env_file:
       - ./service/report-service/.env
-    depends_on:
-      - postgres
     networks:
       - app-network
 
@@ -99,8 +78,6 @@ services:
       - "8083:8083"
     env_file:
       - ./service/disclosure-service/.env
-    depends_on:
-      - postgres
     networks:
       - app-network
 
@@ -112,8 +89,6 @@ services:
       - "8087:8087"
     env_file:
       - ./service/climate-service/.env
-    depends_on:
-      - postgres
     networks:
       - app-network
 
@@ -126,7 +101,6 @@ services:
     env_file:
       - ./service/auth-service/.env
     depends_on:
-      - postgres
       - redis
     networks:
       - app-network
@@ -146,6 +120,13 @@ services:
       - ./n8n/workflows:/data/workflows/init
     networks:
       - app-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
   training-service:
     build: ./training-service
     env_file:
@@ -166,7 +147,6 @@ services:
               count: 1 # GPU 1개 사용
               capabilities: [gpu] # GPU 사용 권한
 volumes:
-  pgdata:
   redis-data:
   n8n_data:
   n8n_workflows:
