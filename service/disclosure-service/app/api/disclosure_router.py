@@ -196,6 +196,26 @@ async def get_requirements_for_disclosure(
     return await controller.get_requirements_for_disclosure(disclosure_id)
 
 
+@router.get("/disclosure-data/requirements/{requirement_id}",
+           response_model=RequirementResponse,
+           summary="요구사항 상세 조회")
+async def get_requirement_by_id(
+    requirement_id: str,
+    controller: DisclosureController = Depends(get_disclosure_controller)
+):
+    """
+    ID로 특정 요구사항의 상세 정보를 조회합니다.
+    주로 input_schema를 얻기 위해 사용됩니다.
+    
+    Args:
+        requirement_id: 요구사항 ID (예: s2-g1-1, s2-s1-1)
+        
+    Returns:
+        RequirementResponse: 요구사항의 모든 상세 정보
+    """
+    return await controller.get_requirement_by_id(requirement_id)
+
+
 # ISSB S2 용어 관련 엔드포인트
 @router.get("/disclosure-data/terms", 
            response_model=List[TermResponse], 

@@ -177,6 +177,24 @@ class DisclosureController:
                 detail=f"요구사항 조회 중 오류 발생: {str(e)}"
             )
     
+    async def get_requirement_by_id(self, requirement_id: str) -> RequirementResponse:
+        """ID로 특정 요구사항을 조회합니다."""
+        try:
+            requirement = self.disclosure_service.get_requirement_by_id(requirement_id)
+            if not requirement:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"ID {requirement_id}에 해당하는 요구사항을 찾을 수 없습니다."
+                )
+            return requirement
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"요구사항 조회 중 오류 발생: {str(e)}"
+            )
+    
     # 용어 관련 메서드
     async def get_terms(self, keyword: Optional[str] = None) -> List[TermResponse]:
         """ISSB S2 용어 목록을 조회합니다."""

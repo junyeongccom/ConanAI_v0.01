@@ -73,6 +73,13 @@ class DisclosureService:
         }
 
     # ISSB S2 Requirement 관련 서비스 메서드
+    def get_requirement_by_id(self, requirement_id: str) -> Optional[RequirementResponse]:
+        """ID로 요구사항을 조회합니다."""
+        requirement = self.repo.get_requirement_by_id(requirement_id)
+        if requirement:
+            return RequirementResponse.from_orm(requirement)
+        return None
+
     def get_requirements_by_disclosure_id(self, disclosure_id: str) -> List[RequirementResponse]:
         """공시 ID로 관련 요구사항들을 조회합니다."""
         requirements = self.repo.get_requirements_by_disclosure_id(disclosure_id)

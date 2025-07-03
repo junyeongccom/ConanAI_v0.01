@@ -8,6 +8,7 @@ from app.foundation.database import get_db
 from app.foundation.disclosure_service_client import DisclosureServiceClient
 from app.platform.slm_client import SLMClient
 from app.domain.generators.text_generator import TextGenerator
+from app.domain.generators.table_generator import TableGenerator
 from app.domain.repository.report_repository import ReportRepository
 from app.domain.service.report_service import ReportService
 from app.domain.controller.report_controller import ReportController
@@ -29,6 +30,10 @@ def get_slm_client() -> SLMClient:
 def get_text_generator(slm_client: Annotated[SLMClient, Depends(get_slm_client)]) -> TextGenerator:
     return TextGenerator(slm_client=slm_client)
 
+def get_table_generator() -> TableGenerator:
+    """TableGenerator 인스턴스를 생성합니다."""
+    return TableGenerator()
+
 # --- 리포지토리 의존성 (Stateless) ---
 
 def get_report_repository() -> ReportRepository:
@@ -40,14 +45,16 @@ def get_report_repository() -> ReportRepository:
 def get_report_service(
     report_repository: Annotated[ReportRepository, Depends(get_report_repository)],
     disclosure_client: Annotated[DisclosureServiceClient, Depends(get_disclosure_service_client)],
-    text_generator: Annotated[TextGenerator, Depends(get_text_generator)]
+    text_generator: Annotated[TextGenerator, Depends(get_text_generator)],
+    table_generator: Annotated[TableGenerator, Depends(get_table_generator)]
 ) -> ReportService:
     """ReportService 의존성 주입 (DB 세션은 메소드 호출 시 전달)"""
     print("✅ 2. 의존성 생성: ReportService 인스턴스 생성 시도")
     return ReportService(
         report_repository=report_repository,
         disclosure_client=disclosure_client,
-        text_generator=text_generator
+        text_generator=text_generator,
+        table_generator=table_generator
     )
 
 def get_report_controller(report_service: ReportService = Depends(get_report_service)) -> ReportController:

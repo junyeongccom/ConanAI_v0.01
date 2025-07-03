@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { useReportStore } from '@/shared/store/reportStore';
 import { Loader2, Terminal } from 'lucide-react';
+import { ReportTable } from '@/shared/components/ui/ReportTable';
 
 /**
  * 동적으로 생성된 보고서 콘텐츠를 렌더링하는 컴포넌트
@@ -61,10 +62,15 @@ const ReportDisplay = () => {
               </p>
             );
           case 'table':
-            return <div key={index} className="my-4 p-4 bg-gray-100 rounded text-sm not-prose">
-              <p className='font-bold'>[테이블 데이터]</p>
-              <pre className='whitespace-pre-wrap'>{JSON.stringify(item.content, null, 2)}</pre>
-            </div>;
+            if (!item.content?.headers || !item.content?.rows) return null;
+            return (
+              <ReportTable
+                key={index}
+                title={item.content.title}
+                headers={item.content.headers}
+                rows={item.content.rows}
+              />
+            );
           case 'error':
             return (
               <div role="alert" key={index} className="not-prose my-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700">

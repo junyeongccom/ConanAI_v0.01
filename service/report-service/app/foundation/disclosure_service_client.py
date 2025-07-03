@@ -51,4 +51,33 @@ class DisclosureServiceClient:
                 return None
             except Exception as e:
                 logger.error(f"Disclosure Service 통신 중 예외 발생: {e}")
+                return None
+    
+    async def get_requirement_by_id(self, requirement_id: str) -> Optional[Dict[str, Any]]:
+        """
+        disclosure-service에 API를 요청하여 특정 요구사항의 상세 정보를 가져옵니다.
+        이 정보에는 테이블 헤더를 구성하는 데 필요한 input_schema가 포함됩니다.
+
+        Args:
+            requirement_id: 조회할 요구사항의 ID
+
+        Returns:
+            요구사항 데이터 딕셔너리 또는 실패 시 None
+        """
+        api_url = f"{self.base_url}/disclosure-data/requirements/{requirement_id}"
+
+        async with httpx.AsyncClient() as client:
+            try:
+                logger.info(f"disclosure-service에 요구사항 정보 요청: id={requirement_id}")
+                response = await client.get(api_url)
+                response.raise_for_status()
+
+                logger.info(f"disclosure-service로부터 요구사항 정보 수신 완료: id={requirement_id}")
+                return response.json()
+
+            except httpx.HTTPStatusError as e:
+                logger.error(f"Disclosure Service 요구사항 API 호출 실패: {e.response.status_code} - {e.response.text}")
+                return None
+            except Exception as e:
+                logger.error(f"Disclosure Service 요구사항 통신 중 예외 발생: {e}")
                 return None 

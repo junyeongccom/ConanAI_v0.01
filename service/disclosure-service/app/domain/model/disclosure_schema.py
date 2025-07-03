@@ -1,6 +1,6 @@
 # IFRS S2 지표 및 지속가능성 공시 스키마 
-from pydantic import BaseModel
-from typing import Optional, List, Dict
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from uuid import UUID
 from decimal import Decimal
@@ -40,9 +40,11 @@ class RequirementResponse(BaseModel):
     requirement_order: int
     requirement_text_ko: str
     data_required_type: str
-    input_schema: Optional[dict] = None
+    input_type: Optional[str] = None
+    input_schema: Optional[Dict[str, Any]] = None
     input_placeholder_ko: Optional[str] = None
     input_guidance_ko: Optional[str] = None
+    label: Optional[str] = None
 
     class Config:
         from_attributes = True

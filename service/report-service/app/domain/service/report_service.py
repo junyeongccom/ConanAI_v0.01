@@ -1,3 +1,4 @@
+import json
 import logging
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
@@ -6,6 +7,7 @@ from app.foundation.disclosure_service_client import DisclosureServiceClient
 from app.domain.repository.report_repository import ReportRepository
 from app.domain.model.report_entity import ReportTemplate
 from app.domain.generators.text_generator import TextGenerator
+from app.domain.generators.table_generator import TableGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,8 @@ class ReportService:
         self,
         report_repository: ReportRepository,
         disclosure_client: DisclosureServiceClient,
-        text_generator: TextGenerator
+        text_generator: TextGenerator,
+        table_generator: TableGenerator
     ):
         """
         ReportService 생성자
@@ -25,11 +28,13 @@ class ReportService:
             report_repository (ReportRepository): 보고서 템플릿 리포지토리
             disclosure_client (DisclosureServiceClient): 공시 서비스 클라이언트
             text_generator (TextGenerator): 텍스트 생성기
+            table_generator (TableGenerator): 테이블 생성기
         """
         self.report_repository = report_repository
         self.disclosure_client = disclosure_client
         self.text_generator = text_generator
-        logger.info("ReportService 초기화 완료 (Batch-enabled TextGenerator)")
+        self.table_generator = table_generator
+        logger.info("ReportService 초기화 완료 (Text/Table Generators 탑재)")
 
     async def generate_report(self, user_id: str, db: Session) -> List[Dict[str, Any]]:
         # 1. 데이터 수집 (기존과 동일)
@@ -73,7 +78,6 @@ class ReportService:
         # 4. 최종 보고서 조립
         report_contents: List[Dict[str, Any]] = []
         for template in report_templates:
-            # 🚨 이제 user_answers 대신 변환된 answers_dict를 전달
             content_item = await self._generate_content_item(template, answers_dict, generated_paragraphs)
             if content_item:
                 report_contents.append(content_item)
@@ -84,7 +88,7 @@ class ReportService:
     async def _generate_content_item(
         self, 
         template: ReportTemplate, 
-        answers: Dict[str, Any],
+        answers_dict: Dict[str, Any],
         generated_paragraphs: Dict[str, str]
     ) -> Optional[Dict[str, Any]]:
         """템플릿과 생성된 텍스트를 기반으로 최종 보고서 콘텐츠 항목을 생성합니다."""
@@ -101,7 +105,7 @@ class ReportService:
             if template.source_requirement_ids:
                 # 첫 번째 source_id를 가져옴 (gen-1)
                 source_id = template.source_requirement_ids[0]
-                source_data = answers.get(source_id)
+                source_data = answers_dict.get(source_id)
 
                 # 답변 데이터가 정상적인 딕셔너리 형태인지 확인 (structured_list는 리스트 안에 딕셔너리가 있음)
                 data_to_fill = None
@@ -124,9 +128,70 @@ class ReportService:
             return {"type": content_type.lower(), "content": template.content_template}
 
         elif content_type == 'TABLE':
-            # 테이블 생성 로직은 여기에 구현될 수 있습니다.
-            # 지금은 플레이스홀더를 반환합니다.
-            return {"type": "table", "content": "테이블 생성 미구현"} 
+            empty_table = {"type": "table", "content": {"title": template.content_template, "headers": [], "rows": []}}
+            if not template.source_requirement_ids:
+                logger.warning(f"테이블 템플릿 '{template.report_content_id}'에 source_requirement_ids가 없습니다.")
+                return empty_table
+
+            # 테이블 유형을 결정하기 위해 첫 번째 source_id를 사용합니다.
+            primary_source_id = template.source_requirement_ids[0]
+
+            requirement_info = await self.disclosure_client.get_requirement_by_id(primary_source_id)
+            if not requirement_info:
+                logger.error(f"Requirement 정보를 찾을 수 없습니다: id='{primary_source_id}'")
+                return empty_table
+
+            # 2. 답변 데이터 파싱
+            parsed_answer_data = None
+            answer_value = answers_dict.get(primary_source_id)
+            if answer_value:
+                if isinstance(answer_value, str):
+                    try:
+                        # 비어있는 문자열 "" 이 들어올 경우 파싱하지 않도록 처리
+                        if answer_value:
+                            parsed_answer_data = json.loads(answer_value)
+                    except json.JSONDecodeError:
+                        logger.error(f"테이블 데이터 JSON 파싱 실패: requirement_id='{primary_source_id}'")
+                else:
+                    parsed_answer_data = answer_value # 이미 JSON 객체(dict, list)인 경우
+
+            # 3. input_type에 따라 다른 테이블 생성기 호출
+            input_type = requirement_info.get('data_required_type')
+            input_schema = requirement_info.get('input_schema')
+            table_content = None
+
+            if not input_schema and input_type in ['table_input', 'internal_carbon_price_input']:
+                logger.error(f"테이블 생성을 위한 input_schema를 찾을 수 없습니다: id='{primary_source_id}'")
+                return empty_table
+            
+            if input_type == 'quantitative_target_input':
+                logger.info(f"'{primary_source_id}'는 quantitative_target_input 타입이므로 generate_quantitative_target_table을 호출합니다.")
+                table_content = await self.table_generator.generate_quantitative_target_table(
+                    template, parsed_answer_data
+                )
+            elif input_type == 'internal_carbon_price_input':
+                logger.info(f"'{primary_source_id}'는 internal_carbon_price_input 타입이므로 generate_internal_carbon_price_table을 호출합니다.")
+                table_content = await self.table_generator.generate_internal_carbon_price_table(
+                    template, parsed_answer_data, input_schema
+                )
+            elif input_type == 'ghg_emissions_input':
+                logger.info(f"'{primary_source_id}'는 ghg_emissions_input 타입이므로 generate_ghg_table을 호출합니다.")
+                table_content = await self.table_generator.generate_ghg_table(
+                    template, parsed_answer_data
+                )
+            elif input_type == 'table_input':
+                logger.info(f"'{primary_source_id}'는 table_input 타입이므로 generate_simple_table을 호출합니다.")
+                table_content = await self.table_generator.generate_simple_table(
+                    template, parsed_answer_data, input_schema
+                )
+            else:
+                logger.warning(f"'{primary_source_id}'에 대한 테이블 생성기가 없습니다. data_required_type: '{input_type}'")
+                return empty_table
+
+            if not table_content:
+                 return empty_table
+
+            return {"type": "table", "content": table_content}
         
         else:
             logger.warning(f"알 수 없는 콘텐츠 유형입니다: '{content_type}'")
@@ -159,7 +224,7 @@ class ReportService:
             "depth": template.depth,
             "content_type": template.content_type,
             "content_template": template.content_template,
-            "source_requirement_ids": template.source_requirement_ids,
+            "source_requirement_ids_jsonb": template.source_requirement_ids_jsonb,
             "slm_prompt_template": template.slm_prompt_template
         }
     
