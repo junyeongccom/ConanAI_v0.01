@@ -15,6 +15,7 @@ import { GhgScope12ApproachInputRenderer } from './metrics/GhgScope12ApproachInp
 import { GhgScope3ApproachInputRenderer } from './metrics/GhgScope3ApproachInputRenderer';
 import { PerformanceTrackingInputRenderer } from './metrics/PerformanceTrackingInputRenderer';
 import { InternalCarbonPriceInputRenderer } from './metrics/InternalCarbonPriceInputRenderer';
+import { QuantitativeTargetInputRenderer } from './metrics/QuantitativeTargetInputRenderer';
 
 interface FieldRendererProps {
   fieldSchema: any;
@@ -318,6 +319,8 @@ export function FieldRenderer({ fieldSchema, value, onChange, className = "" }: 
       return <PerformanceTrackingInputRenderer requirement={fieldSchema} />;
     case 'internal_carbon_price_input':
       return <InternalCarbonPriceInputRenderer requirement={fieldSchema} />;
+    case 'quantitative_target_input':
+      return <QuantitativeTargetInputRenderer requirement={fieldSchema} />;
     case 'table_input':
       return <InlineTableInputRenderer requirement={fieldSchema} />;
     case 'structured_list':

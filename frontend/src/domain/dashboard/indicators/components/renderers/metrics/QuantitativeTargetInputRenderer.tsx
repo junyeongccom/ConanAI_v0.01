@@ -23,23 +23,34 @@ export function QuantitativeTargetInputRenderer({ requirement }: QuantitativeTar
   const { requirement_id, input_schema } = requirement;
   const { currentAnswers, updateCurrentAnswer } = useAnswerStore();
 
+  const getSafeData = useCallback((value: any) => {
+    const defaultValue = { years: {}, rows: [] };
+    if (!value) {
+      return defaultValue;
+    }
+    return {
+      years: value.years || {},
+      rows: value.rows || [],
+    };
+  }, []);
+
   // 전체 데이터 구조: { years: {...}, rows: [...] }
-  const [data, setData] = useState(() => currentAnswers[requirement_id] || { years: {}, rows: [] });
+  const [data, setData] = useState(() => getSafeData(currentAnswers[requirement_id]));
 
   const yearFields = input_schema?.year_fields || [];
   const rowFields = input_schema?.row_fields || [];
 
   // 전역 상태가 변경되면 로컬 상태 업데이트
   useEffect(() => {
-    const globalValue = currentAnswers[requirement_id] || { years: {}, rows: [] };
+    const globalValue = getSafeData(currentAnswers[requirement_id]);
     if (JSON.stringify(globalValue) !== JSON.stringify(data)) {
       setData(globalValue);
     }
-  }, [currentAnswers, requirement_id]);
+  }, [currentAnswers, requirement_id, getSafeData]);
 
   // 로컬 상태 변경 시 디바운싱하여 전역 상태 업데이트
   useEffect(() => {
-    const globalValue = currentAnswers[requirement_id] || { years: {}, rows: [] };
+    const globalValue = getSafeData(currentAnswers[requirement_id]);
     if (JSON.stringify(data) === JSON.stringify(globalValue) || (Object.keys(data.years).length === 0 && data.rows.length === 0)) {
       return;
     }
@@ -50,7 +61,7 @@ export function QuantitativeTargetInputRenderer({ requirement }: QuantitativeTar
     }, 800);
 
     return () => clearTimeout(handler);
-  }, [data, requirement_id, currentAnswers, updateCurrentAnswer]);
+  }, [data, requirement_id, currentAnswers, updateCurrentAnswer, getSafeData]);
 
   const handleYearChange = (yearKey: string, value: string) => {
     setData(prev => ({ ...prev, years: { ...prev.years, [yearKey]: value } }));
@@ -94,22 +105,23 @@ export function QuantitativeTargetInputRenderer({ requirement }: QuantitativeTar
       </div>
 
       {/* 2. 테이블 입력 섹션 */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto border border-gray-300 rounded-md p-4">
         <h3 className="text-md font-semibold text-gray-800 mb-3">정량 목표 입력</h3>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               {rowFields.map((field: any) => (
-                <th key={field.name} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th key={field.name} className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  field.type === 'select' ? 'min-w-[150px]' : 'min-w-[180px]'
+                }`}>
                   {field.label}
                 </th>
               ))}
               {yearFields.map((field: any) => (
-                <th key={field.key} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th key={field.key} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                   {data.years[field.key] || field.label}
                 </th>
               ))}
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -117,12 +129,12 @@ export function QuantitativeTargetInputRenderer({ requirement }: QuantitativeTar
               <tr key={row.id || rowIndex}>
                 {/* 정적 필드 렌더링 */}
                 {rowFields.map((field: any) => (
-                  <td key={field.name} className="px-4 py-2 whitespace-nowrap">
+                  <td key={field.name} className="px-4 py-2">
                     {field.type === 'select' ? (
                       <select 
                         value={row[field.name]}
                         onChange={(e) => handleRowChange(rowIndex, field.name, e.target.value)}
-                        className="w-full p-2 border-gray-300 rounded-md text-sm"
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
                       >
                          <option value="">-- 선택 --</option>
                         {field.options.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
@@ -130,7 +142,7 @@ export function QuantitativeTargetInputRenderer({ requirement }: QuantitativeTar
                     ) : (
                       <TextareaAutosize
                         minRows={1}
-                        className="w-full p-2 border-gray-300 rounded-md text-sm"
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
                         value={row[field.name]}
                         onChange={(e) => handleRowChange(rowIndex, field.name, e.target.value)}
                       />
@@ -138,21 +150,23 @@ export function QuantitativeTargetInputRenderer({ requirement }: QuantitativeTar
                   </td>
                 ))}
                 {/* 동적 연도 값 필드 렌더링 */}
-                {yearFields.map((field: any) => (
-                  <td key={field.key} className="px-4 py-2 whitespace-nowrap">
-                    <TextareaAutosize
-                      minRows={1}
-                      className="w-full p-2 border-gray-300 rounded-md text-sm"
-                      value={row[`${field.key}_value`] || ''}
-                      onChange={(e) => handleRowChange(rowIndex, `${field.key}_value`, e.target.value)}
-                    />
+                {yearFields.map((field: any, index: number) => (
+                  <td key={field.key} className="px-4 py-2 align-top">
+                    <div className="flex items-start gap-1">
+                      <TextareaAutosize
+                        minRows={1}
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                        value={row[`${field.key}_value`] || ''}
+                        onChange={(e) => handleRowChange(rowIndex, `${field.key}_value`, e.target.value)}
+                      />
+                      {index === yearFields.length - 1 && (
+                        <Button variant="ghost" size="icon" onClick={() => removeRow(rowIndex)} className="flex-shrink-0">
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 ))}
-                <td className="px-4 py-2 whitespace-nowrap">
-                  <Button variant="ghost" size="icon" onClick={() => removeRow(rowIndex)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </td>
               </tr>
             ))}
           </tbody>
