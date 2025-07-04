@@ -3,8 +3,11 @@ import {
   createReport,
   getSavedReports, 
   getSavedReportById,
+  deleteReport,
+  updateReport,
   SavedReportBrief,
-  SavedReportDetail
+  SavedReportDetail,
+  SavedReportCreate,
 } from '@/shared/services/reportService';
 
 /**
@@ -40,6 +43,9 @@ interface ReportState {
   // --- 저장된 보고서 관련 액션 ---
   fetchSavedReports: () => Promise<void>;
   fetchReportById: (id: string) => Promise<void>;
+  updateReportContentItem: (index: number, newContent: any) => void;
+  updateReportTableContentItem: (itemIndex: number, rowIndex: number, cellIndex: number, newContent: string) => void;
+  updateReport: (id: string, reportData: Partial<SavedReportCreate>) => Promise<boolean>;
   clearCurrentReport: () => void;
   clearSavedReports: () => void;
 }
@@ -117,6 +123,94 @@ export const useReportStore = create<ReportState>((set) => ({
         savedReportError: '보고서 상세 정보를 불러오는데 실패했습니다.',
         isLoadingCurrentReport: false,
       });
+    }
+  },
+
+  /**
+   * 상세 보기 중인 보고서의 특정 항목(content)을 업데이트합니다.
+   * 이는 사용자가 수정 모드에서 입력 필드를 변경할 때 호출됩니다.
+   * @param index - 업데이트할 항목의 report_data 배열 인덱스
+   * @param newContent - 새로운 content 값
+   */
+  updateReportContentItem: (index: number, newContent: any) => {
+    set((state) => {
+      if (!state.currentReport || !state.currentReport.report_data) {
+        return {};
+      }
+
+      // 새로운 report_data 배열 생성
+      const newReportData = [...state.currentReport.report_data];
+      
+      // 해당 인덱스의 항목을 새로운 content로 업데이트
+      if (newReportData[index]) {
+        newReportData[index] = { ...newReportData[index], content: newContent };
+      }
+      
+      // currentReport 상태를 새로운 데이터로 업데이트
+      return {
+        currentReport: {
+          ...state.currentReport,
+          report_data: newReportData,
+        },
+      };
+    });
+  },
+
+  /**
+   * 테이블 타입의 보고서 항목 내부의 특정 셀 데이터를 업데이트합니다.
+   * @param itemIndex - report_data 배열에서 테이블 항목의 인덱스
+   * @param rowIndex - 테이블의 행 인덱스
+   * @param cellIndex - 테이블의 셀 인덱스
+   * @param newContent - 새로운 셀의 내용
+   */
+  updateReportTableContentItem: (itemIndex: number, rowIndex: number, cellIndex: number, newContent: string) => {
+    set((state) => {
+      if (!state.currentReport?.report_data) return {};
+
+      const newReportData = [...state.currentReport.report_data];
+      const tableItem = newReportData[itemIndex];
+
+      if (tableItem?.type === 'table' && tableItem.content?.rows) {
+        const newRows = [...tableItem.content.rows];
+        if (newRows[rowIndex]) {
+          const newRow = [...newRows[rowIndex]];
+          newRow[cellIndex] = newContent;
+          newRows[rowIndex] = newRow;
+
+          const newContentData = { ...tableItem.content, rows: newRows };
+          newReportData[itemIndex] = { ...tableItem, content: newContentData };
+          
+          return {
+            currentReport: {
+              ...state.currentReport,
+              report_data: newReportData,
+            }
+          }
+        }
+      }
+
+      return {}; // 변경사항이 없으면 기존 상태 반환
+    });
+  },
+
+  /**
+   * 특정 보고서를 API를 통해 업데이트하는 액션
+   * @param id - 업데이트할 보고서의 ID
+   * @param reportData - 업데이트할 데이터 (제목 등)
+   * @returns {Promise<boolean>} 성공 여부
+   */
+  updateReport: async (id: string, reportData: Partial<SavedReportCreate>) => {
+    set({ isLoadingCurrentReport: true, savedReportError: null });
+    try {
+      const updatedReport = await updateReport(id, reportData);
+      set({ currentReport: updatedReport, isLoadingCurrentReport: false });
+      return true; // 성공
+    } catch (error) {
+      set({
+        savedReportError: '보고서 업데이트에 실패했습니다.',
+        isLoadingCurrentReport: false,
+      });
+      return false; // 실패
     }
   },
 

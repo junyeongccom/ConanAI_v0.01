@@ -13,6 +13,7 @@ class SavedReportCreate(SavedReportBase):
 class SavedReportUpdate(BaseModel):
     title: Optional[str] = None
     status: Optional[str] = None
+    report_data: Optional[List[Dict[str, Any]]] = None
 
 class SavedReportInDB(SavedReportBase):
     id: UUID

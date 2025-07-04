@@ -52,9 +52,9 @@ class ReportController:
             return SavedReportDetail.from_orm(report)
         return None
 
-    def update_existing_report(self, db: Session, report_id: UUID, report_update: SavedReportUpdate, user_id: UUID) -> Optional[SavedReportDetail]:
-        logger.info(f"Controller: update_existing_report 호출됨, report_id={report_id}")
-        updated_report = self.report_service.update_saved_report(db, report_id, report_update, user_id)
+    def update_report(self, db: Session, report_id: UUID, report_update: SavedReportUpdate, user_id: UUID) -> Optional[SavedReportDetail]:
+        logger.info(f"Controller: update_report 호출됨, report_id={report_id}")
+        updated_report = self.report_service.update_report(db, report_id, report_update, user_id)
         if updated_report:
             return SavedReportDetail.from_orm(updated_report)
         return None

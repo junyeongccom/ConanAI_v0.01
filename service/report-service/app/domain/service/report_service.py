@@ -49,32 +49,16 @@ class ReportService:
         return self.report_repository.find_reports_by_user_id(db, user_id)
 
     def get_saved_report_detail(self, db: Session, report_id: UUID, user_id: UUID) -> Optional[Report]:
-        logger.info(f"보고서 상세 조회 시작: report_id='{report_id}', user_id='{user_id}'")
-        report = self.report_repository.find_report_by_id(db, report_id)
-        if report and report.user_id == user_id:
-            return report
-        logger.warning(f"보고서를 찾을 수 없거나 접근 권한이 없습니다: report_id='{report_id}', user_id='{user_id}'")
-        return None
+        logger.info(f"사용자 ID({user_id})의 보고서(ID: {report_id}) 상세 정보 조회")
+        return self.report_repository.find_report_by_id(db, report_id, user_id)
 
-    def update_saved_report(self, db: Session, report_id: UUID, report_update: SavedReportUpdate, user_id: UUID) -> Optional[Report]:
-        logger.info(f"보고서 업데이트 시작: report_id='{report_id}', user_id='{user_id}'")
-        report_to_update = self.report_repository.find_report_by_id(db, report_id)
-        
-        if not report_to_update or report_to_update.user_id != user_id:
-            logger.warning(f"업데이트할 보고서를 찾을 수 없거나 권한이 없습니다: report_id='{report_id}', user_id='{user_id}'")
-            return None
-            
-        return self.report_repository.update_report(db, report_id, report_update)
+    def update_report(self, db: Session, report_id: UUID, report_update: SavedReportUpdate, user_id: UUID) -> Optional[Report]:
+        logger.info(f"사용자 ID({user_id})의 보고서(ID: {report_id}) 업데이트")
+        return self.report_repository.update_report(db, report_id, user_id, report_update.model_dump(exclude_unset=True))
 
     def delete_saved_report(self, db: Session, report_id: UUID, user_id: UUID) -> bool:
-        logger.info(f"보고서 삭제 시작: report_id='{report_id}', user_id='{user_id}'")
-        report_to_delete = self.report_repository.find_report_by_id(db, report_id)
-        
-        if not report_to_delete or report_to_delete.user_id != user_id:
-            logger.warning(f"삭제할 보고서를 찾을 수 없거나 권한이 없습니다: report_id='{report_id}', user_id='{user_id}'")
-            return False
-            
-        return self.report_repository.delete_report(db, report_id)
+        logger.info(f"사용자 ID({user_id})의 보고서(ID: {report_id}) 삭제")
+        return self.report_repository.delete_report(db, report_id, user_id)
 
     # --- Report Generation Methods ---
 

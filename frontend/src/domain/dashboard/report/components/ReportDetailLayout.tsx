@@ -3,15 +3,26 @@
 import React from 'react';
 import { useReportDetail } from '../hooks/useReportDetail';
 import { Button } from '@/components/ui/button';
-import { Loader2, Terminal, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Loader2, Terminal, ArrowLeft, AlertCircle, Edit, Save, XCircle } from 'lucide-react';
 import { ReportContentItem } from '@/shared/store/reportStore';
 import { ReportTable } from '@/shared/components/ui/ReportTable';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
-
-const ReportDisplay = ({ reportContent }: { reportContent: ReportContentItem[] }) => (
+const ReportDisplay = ({ 
+  reportContent, 
+  isEditing,
+  onContentChange,
+  onTableCellChange
+}: { 
+  reportContent: ReportContentItem[],
+  isEditing: boolean,
+  onContentChange: (index: number, newContent: string) => void,
+  onTableCellChange: (itemIndex: number, rowIndex: number, cellIndex: number, newContent: string) => void;
+}) => (
     <div className="prose prose-lg max-w-none bg-white p-6 sm:p-8 rounded-lg shadow-md mt-6">
       {reportContent.map((item, index) => {
         switch (item.type) {
@@ -24,10 +35,33 @@ const ReportDisplay = ({ reportContent }: { reportContent: ReportContentItem[] }
           case 'heading_4':
             return <h4 key={index} className="text-lg font-medium my-3 text-gray-800">{item.content}</h4>;
           case 'paragraph':
-            return <p key={index} className="whitespace-pre-wrap">{item.content}</p>;
+            if (isEditing) {
+              return (
+                <Textarea
+                  key={index}
+                  value={item.content || ''}
+                  onChange={(e) => onContentChange(index, e.target.value)}
+                  className="w-full text-base p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  rows={Math.max(3, (item.content || '').split('\n').length)}
+                />
+              );
+            }
+            return <p key={index} className="whitespace-pre-wrap">{item.content || ''}</p>;
           case 'table':
+            // 테이블 수정은 아직 지원하지 않음
             if (!item.content?.headers || !item.content?.rows) return null;
-            return <ReportTable key={index} title={item.content.title} headers={item.content.headers} rows={item.content.rows} />;
+            return (
+              <ReportTable 
+                key={index} 
+                title={item.content.title} 
+                headers={item.content.headers} 
+                rows={item.content.rows} 
+                isEditing={isEditing}
+                onCellChange={(rowIndex, cellIndex, value) => 
+                  onTableCellChange(index, rowIndex, cellIndex, value)
+                }
+              />
+            );
           case 'error':
               return (
                 <div role="alert" key={index} className="not-prose my-4 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700">
@@ -50,10 +84,22 @@ interface ReportDetailLayoutProps {
 }
 
 export const ReportDetailLayout = ({ reportId }: ReportDetailLayoutProps) => {
-    const { report, isLoading, error } = useReportDetail(reportId);
+    const { 
+      report, 
+      isLoading, 
+      error,
+      isEditing,
+      editedTitle,
+      toggleEditing,
+      handleTitleChange,
+      handleContentChange,
+      handleTableCellChange,
+      handleSaveChanges,
+      handleCancelEdit,
+    } = useReportDetail(reportId);
     const router = useRouter();
 
-    if (isLoading) {
+    if (isLoading && !report) {
         return (
           <div className="flex flex-col items-center justify-center p-8">
             <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
@@ -87,20 +133,59 @@ export const ReportDetailLayout = ({ reportId }: ReportDetailLayoutProps) => {
     }
 
     return (
-        <div className="container mx-auto p-4 sm:p-6">
-            <div className="flex items-center gap-4 mb-6">
-                <Button variant="outline" size="icon" onClick={() => router.back()}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">{report.title}</h1>
-                    <p className="text-sm text-gray-500">
-                        최종 수정일: {format(new Date(report.updated_at), 'yyyy년 MM월 dd일 HH:mm', { locale: ko })}
-                    </p>
+        <div className="container mx-auto p-4 sm:p-6 relative">
+            {isLoading && (
+              <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-4">
+                  <Button variant="outline" size="icon" onClick={() => !isEditing && router.back()}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                      {isEditing ? (
+                        <Input 
+                          value={editedTitle}
+                          onChange={handleTitleChange}
+                          className="text-2xl font-bold"
+                        />
+                      ) : (
+                        <h1 className="text-2xl font-bold text-gray-800">{report.title}</h1>
+                      )}
+                      <p className="text-sm text-gray-500">
+                          최종 수정일: {format(new Date(report.updated_at), 'yyyy년 MM월 dd일 HH:mm', { locale: ko })}
+                      </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isEditing ? (
+                    <>
+                      <Button onClick={handleSaveChanges} size="sm">
+                        <Save className="mr-2 h-4 w-4" />
+                        저장
+                      </Button>
+                      <Button variant="outline" onClick={handleCancelEdit} size="sm">
+                        <XCircle className="mr-2 h-4 w-4" />
+                        취소
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="outline" onClick={toggleEditing} size="sm">
+                      <Edit className="mr-2 h-4 w-4" />
+                      수정
+                    </Button>
+                  )}
                 </div>
             </div>
             
-            <ReportDisplay reportContent={report.report_data} />
+            <ReportDisplay 
+              reportContent={report.report_data}
+              isEditing={isEditing}
+              onContentChange={handleContentChange}
+              onTableCellChange={handleTableCellChange}
+            />
         </div>
     );
 } 

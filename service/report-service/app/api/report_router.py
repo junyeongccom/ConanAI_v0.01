@@ -101,12 +101,12 @@ def get_saved_report_by_id(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="해당 보고서를 찾을 수 없거나 접근 권한이 없습니다.")
     return report
 
-@router.patch(
+@router.put(
     "/reports/saved/{report_id}",
     response_model=SavedReportDetail,
-    summary="보고서 정보 업데이트"
+    summary="보고서 전체 업데이트"
 )
-def update_existing_report(
+def update_report(
     report_id: UUID,
     report_update: SavedReportUpdate,
     user_id: UUID = Depends(get_current_user_id),
@@ -114,10 +114,10 @@ def update_existing_report(
     controller: ReportController = Depends(get_report_controller)
 ):
     """
-    보고서의 제목 또는 상태를 업데이트합니다.
+    보고서의 전체 내용(제목, 상태, 데이터)을 업데이트합니다.
     """
-    logger.info(f"Router: /reports/saved/{report_id} (PATCH) 호출됨, user_id={user_id}")
-    updated_report = controller.update_existing_report(db=db, report_id=report_id, report_update=report_update, user_id=user_id)
+    logger.info(f"Router: /reports/saved/{report_id} (PUT) 호출됨, user_id={user_id}")
+    updated_report = controller.update_report(db=db, report_id=report_id, report_update=report_update, user_id=user_id)
     if not updated_report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="업데이트할 보고서를 찾을 수 없거나 권한이 없습니다.")
     return updated_report

@@ -7,14 +7,17 @@ import {
     TableHeader,
     TableRow,
   } from "@/shared/components/ui/table";
+import { Input } from "@/components/ui/input";
   
   interface ReportTableProps {
     title: string;
     headers: string[];
     rows: (string | number | null)[][];
+    isEditing?: boolean;
+    onCellChange?: (rowIndex: number, cellIndex: number, value: string) => void;
   }
   
-  export function ReportTable({ title, headers, rows }: ReportTableProps) {
+  export function ReportTable({ title, headers, rows, isEditing = false, onCellChange }: ReportTableProps) {
     // 헤더가 비어있으면 렌더링하지 않음 (행이 비어있는 것은 허용)
     if (!headers || headers.length === 0) {
       return null;
@@ -38,8 +41,17 @@ import {
                 rows.map((row, rowIndex) => (
                     <TableRow key={rowIndex} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
                         {row.map((cell, cellIndex) => (
-                        <TableCell key={cellIndex} className="border-r text-gray-800 dark:text-gray-200">
-                            {cell}
+                        <TableCell key={cellIndex} className="border-r text-gray-800 dark:text-gray-200 p-1">
+                            {isEditing ? (
+                              <Input
+                                type="text"
+                                value={cell ?? ''}
+                                onChange={(e) => onCellChange?.(rowIndex, cellIndex, e.target.value)}
+                                className="w-full h-full bg-transparent border-0 focus:ring-2 focus:ring-blue-500"
+                              />
+                            ) : (
+                              cell
+                            )}
                         </TableCell>
                         ))}
                     </TableRow>

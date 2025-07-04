@@ -101,4 +101,20 @@ export const deleteReport = async (reportId: string): Promise<void> => {
     console.error("보고서 삭제 API 호출 실패:", error);
     throw new Error("Failed to delete report");
   }
+};
+
+/**
+ * 특정 보고서를 업데이트합니다.
+ * @param reportId - 업데이트할 보고서의 ID
+ * @param reportData - 업데이트할 보고서 데이터
+ * @returns {Promise<SavedReportDetail>} 업데이트된 보고서의 상세 정보
+ */
+export const updateReport = async (reportId: string, reportData: Partial<SavedReportCreate>): Promise<SavedReportDetail> => {
+  try {
+    const response = await api.put<SavedReportDetail>(`/api/report/reports/saved/${reportId}`, reportData);
+    return response;
+  } catch (error) {
+    console.error("보고서 업데이트 API 호출 실패:", error);
+    throw new Error("Failed to update report");
+  }
 }; 

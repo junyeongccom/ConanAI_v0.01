@@ -1,9 +1,10 @@
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from app.domain.model.report_entity import ReportTemplate, Report
 from app.domain.model.report_schema import SavedReportCreate, SavedReportUpdate
 from uuid import UUID
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +64,12 @@ class ReportRepository:
             logger.error(f"보고서 생성 실패: {e}", exc_info=True)
             raise
 
-    def find_report_by_id(self, db: Session, report_id: UUID) -> Optional[Report]:
+    def find_report_by_id(self, db: Session, report_id: UUID, user_id: UUID) -> Optional[Report]:
+        """주어진 보고서 ID와 사용자 ID로 특정 보고서를 조회합니다."""
         try:
-            return db.query(Report).filter(Report.id == report_id).first()
+            return db.query(Report).filter(Report.id == report_id, Report.user_id == user_id).first()
         except Exception as e:
-            logger.error(f"ID({report_id})로 보고서 조회 실패: {e}", exc_info=True)
+            logger.error(f"ID({report_id}) 및 사용자 ID({user_id})로 보고서 조회 실패: {e}", exc_info=True)
             raise
     
     def find_reports_by_user_id(self, db: Session, user_id: UUID) -> List[Report]:
@@ -77,34 +79,46 @@ class ReportRepository:
             logger.error(f"사용자 ID({user_id})로 보고서 목록 조회 실패: {e}", exc_info=True)
             raise
 
-    def update_report(self, db: Session, report_id: UUID, report_update: SavedReportUpdate) -> Optional[Report]:
-        try:
-            db_report = self.find_report_by_id(db, report_id)
-            if not db_report:
-                return None
+    def update_report(self, db: Session, report_id: UUID, user_id: UUID, update_data: Dict[str, Any]) -> Optional[Report]:
+        """ID와 사용자 ID로 보고서를 찾아 내용을 업데이트합니다."""
+        logger.info(f"DB 업데이트 시작: report_id={report_id}, user_id={user_id}")
+        
+        report_to_update = db.query(Report).filter(Report.id == report_id, Report.user_id == user_id).first()
+        
+        if not report_to_update:
+            logger.warning(f"DB에서 업데이트할 보고서를 찾지 못함: report_id={report_id}, user_id={user_id}")
+            return None
+        
+        for key, value in update_data.items():
+            setattr(report_to_update, key, value)
             
-            update_data = report_update.dict(exclude_unset=True)
-            for key, value in update_data.items():
-                setattr(db_report, key, value)
-
+        report_to_update.updated_at = datetime.utcnow()
+        
+        try:
             db.commit()
-            db.refresh(db_report)
-            return db_report
+            db.refresh(report_to_update)
+            logger.info(f"DB 업데이트 성공: report_id={report_id}")
+            return report_to_update
         except Exception as e:
+            logger.error(f"DB 업데이트 중 에러 발생: {e}", exc_info=True)
             db.rollback()
-            logger.error(f"보고서(ID: {report_id}) 업데이트 실패: {e}", exc_info=True)
-            raise
+            return None
 
-    def delete_report(self, db: Session, report_id: UUID) -> bool:
-        try:
-            db_report = self.find_report_by_id(db, report_id)
-            if not db_report:
-                return False
+    def delete_report(self, db: Session, report_id: UUID, user_id: UUID) -> bool:
+        """ID와 사용자 ID로 보고서를 찾아 삭제합니다."""
+        logger.info(f"DB 삭제 시작: report_id={report_id}, user_id={user_id}")
+        report_to_delete = db.query(Report).filter(Report.id == report_id, Report.user_id == user_id).first()
+
+        if not report_to_delete:
+            logger.warning(f"DB에서 삭제할 보고서를 찾지 못함: report_id={report_id}, user_id={user_id}")
+            return False
             
-            db.delete(db_report)
+        try:
+            db.delete(report_to_delete)
             db.commit()
+            logger.info(f"DB 삭제 성공: report_id={report_id}")
             return True
         except Exception as e:
+            logger.error(f"DB 삭제 중 에러 발생: {e}", exc_info=True)
             db.rollback()
-            logger.error(f"보고서(ID: {report_id}) 삭제 실패: {e}", exc_info=True)
-            raise 
+            return False 
