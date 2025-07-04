@@ -2,10 +2,12 @@ import json
 import logging
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
+from uuid import UUID
 
 from app.foundation.disclosure_service_client import DisclosureServiceClient
 from app.domain.repository.report_repository import ReportRepository
-from app.domain.model.report_entity import ReportTemplate
+from app.domain.model.report_entity import ReportTemplate, Report
+from app.domain.model.report_schema import SavedReportCreate, SavedReportUpdate
 from app.domain.generators.text_generator import TextGenerator
 from app.domain.generators.table_generator import TableGenerator
 
@@ -35,6 +37,46 @@ class ReportService:
         self.text_generator = text_generator
         self.table_generator = table_generator
         logger.info("ReportService 초기화 완료 (Text/Table Generators 탑재)")
+
+    # --- Saved Report Service Methods ---
+
+    def create_saved_report(self, db: Session, user_id: UUID, report_create: SavedReportCreate) -> Report:
+        logger.info(f"사용자 ID({user_id})의 새 보고서 저장 시작: 제목='{report_create.title}'")
+        return self.report_repository.create_report(db, user_id, report_create)
+
+    def get_saved_reports_for_user(self, db: Session, user_id: UUID) -> List[Report]:
+        logger.info(f"사용자 ID({user_id})의 저장된 보고서 목록 조회")
+        return self.report_repository.find_reports_by_user_id(db, user_id)
+
+    def get_saved_report_detail(self, db: Session, report_id: UUID, user_id: UUID) -> Optional[Report]:
+        logger.info(f"보고서 상세 조회 시작: report_id='{report_id}', user_id='{user_id}'")
+        report = self.report_repository.find_report_by_id(db, report_id)
+        if report and report.user_id == user_id:
+            return report
+        logger.warning(f"보고서를 찾을 수 없거나 접근 권한이 없습니다: report_id='{report_id}', user_id='{user_id}'")
+        return None
+
+    def update_saved_report(self, db: Session, report_id: UUID, report_update: SavedReportUpdate, user_id: UUID) -> Optional[Report]:
+        logger.info(f"보고서 업데이트 시작: report_id='{report_id}', user_id='{user_id}'")
+        report_to_update = self.report_repository.find_report_by_id(db, report_id)
+        
+        if not report_to_update or report_to_update.user_id != user_id:
+            logger.warning(f"업데이트할 보고서를 찾을 수 없거나 권한이 없습니다: report_id='{report_id}', user_id='{user_id}'")
+            return None
+            
+        return self.report_repository.update_report(db, report_id, report_update)
+
+    def delete_saved_report(self, db: Session, report_id: UUID, user_id: UUID) -> bool:
+        logger.info(f"보고서 삭제 시작: report_id='{report_id}', user_id='{user_id}'")
+        report_to_delete = self.report_repository.find_report_by_id(db, report_id)
+        
+        if not report_to_delete or report_to_delete.user_id != user_id:
+            logger.warning(f"삭제할 보고서를 찾을 수 없거나 권한이 없습니다: report_id='{report_id}', user_id='{user_id}'")
+            return False
+            
+        return self.report_repository.delete_report(db, report_id)
+
+    # --- Report Generation Methods ---
 
     async def generate_report(self, user_id: str, db: Session) -> List[Dict[str, Any]]:
         # 1. 데이터 수집 (기존과 동일)
@@ -133,60 +175,108 @@ class ReportService:
                 logger.warning(f"테이블 템플릿 '{template.report_content_id}'에 source_requirement_ids가 없습니다.")
                 return empty_table
 
-            # 테이블 유형을 결정하기 위해 첫 번째 source_id를 사용합니다.
-            primary_source_id = template.source_requirement_ids[0]
+            # --- Joined Table 감지 로직 ---
+            driver_id = None
+            driver_req_info = None
+            # source_requirement_ids를 순회하며 'source_requirement' 키를 가진 '드라이버' 요구사항을 찾습니다.
+            for req_id in template.source_requirement_ids:
+                req_info = await self.disclosure_client.get_requirement_by_id(req_id)
+                if req_info and req_info.get('input_schema', {}).get('source_requirement'):
+                    driver_id = req_id
+                    driver_req_info = req_info
+                    break  # 첫 번째 드라이버를 찾으면 중단
 
-            requirement_info = await self.disclosure_client.get_requirement_by_id(primary_source_id)
-            if not requirement_info:
-                logger.error(f"Requirement 정보를 찾을 수 없습니다: id='{primary_source_id}'")
-                return empty_table
-
-            # 2. 답변 데이터 파싱
-            parsed_answer_data = None
-            answer_value = answers_dict.get(primary_source_id)
-            if answer_value:
-                if isinstance(answer_value, str):
-                    try:
-                        # 비어있는 문자열 "" 이 들어올 경우 파싱하지 않도록 처리
-                        if answer_value:
-                            parsed_answer_data = json.loads(answer_value)
-                    except json.JSONDecodeError:
-                        logger.error(f"테이블 데이터 JSON 파싱 실패: requirement_id='{primary_source_id}'")
-                else:
-                    parsed_answer_data = answer_value # 이미 JSON 객체(dict, list)인 경우
-
-            # 3. input_type에 따라 다른 테이블 생성기 호출
-            input_type = requirement_info.get('data_required_type')
-            input_schema = requirement_info.get('input_schema')
             table_content = None
+            # --- 드라이버 발견 시: Joined Table 생성 로직 실행 ---
+            if driver_id and driver_req_info:
+                logger.info(f"'{driver_id}'를 드라이버로 하는 Joined Table 생성을 시작합니다.")
+                input_schema = driver_req_info.get('input_schema')
+                
+                # 드라이버 요구사항에 대한 답변을 파싱
+                driver_answer_value = answers_dict.get(driver_id)
+                parsed_driver_answer_data = None
+                if driver_answer_value:
+                    if isinstance(driver_answer_value, str) and driver_answer_value:
+                        try:
+                            parsed_driver_answer_data = json.loads(driver_answer_value)
+                        except json.JSONDecodeError:
+                            logger.error(f"Joined Table의 드라이버 데이터 JSON 파싱 실패: id='{driver_id}'")
+                    else:
+                        parsed_driver_answer_data = driver_answer_value
 
-            if not input_schema and input_type in ['table_input', 'internal_carbon_price_input']:
-                logger.error(f"테이블 생성을 위한 input_schema를 찾을 수 없습니다: id='{primary_source_id}'")
-                return empty_table
+                # 새로운 joined_table 생성기 호출 (전체 답변 딕셔너리를 전달)
+                table_content = await self.table_generator.generate_joined_table(
+                    template,
+                    parsed_driver_answer_data,
+                    answers_dict,
+                    input_schema
+                )
             
-            if input_type == 'quantitative_target_input':
-                logger.info(f"'{primary_source_id}'는 quantitative_target_input 타입이므로 generate_quantitative_target_table을 호출합니다.")
-                table_content = await self.table_generator.generate_quantitative_target_table(
-                    template, parsed_answer_data
-                )
-            elif input_type == 'internal_carbon_price_input':
-                logger.info(f"'{primary_source_id}'는 internal_carbon_price_input 타입이므로 generate_internal_carbon_price_table을 호출합니다.")
-                table_content = await self.table_generator.generate_internal_carbon_price_table(
-                    template, parsed_answer_data, input_schema
-                )
-            elif input_type == 'ghg_emissions_input':
-                logger.info(f"'{primary_source_id}'는 ghg_emissions_input 타입이므로 generate_ghg_table을 호출합니다.")
-                table_content = await self.table_generator.generate_ghg_table(
-                    template, parsed_answer_data
-                )
-            elif input_type == 'table_input':
-                logger.info(f"'{primary_source_id}'는 table_input 타입이므로 generate_simple_table을 호출합니다.")
-                table_content = await self.table_generator.generate_simple_table(
-                    template, parsed_answer_data, input_schema
-                )
+            # --- 드라이버 미발견 시: 기존 테이블 생성 로직 실행 ---
             else:
-                logger.warning(f"'{primary_source_id}'에 대한 테이블 생성기가 없습니다. data_required_type: '{input_type}'")
-                return empty_table
+                primary_source_id = template.source_requirement_ids[0]
+                requirement_info = await self.disclosure_client.get_requirement_by_id(primary_source_id)
+                if not requirement_info:
+                    logger.error(f"Requirement 정보를 찾을 수 없습니다: id='{primary_source_id}'")
+                    return empty_table
+
+                # 답변 데이터 파싱
+                parsed_answer_data = None
+                answer_value = answers_dict.get(primary_source_id)
+                if answer_value:
+                    if isinstance(answer_value, str) and answer_value:
+                        try:
+                            parsed_answer_data = json.loads(answer_value)
+                        except json.JSONDecodeError:
+                            logger.error(f"테이블 데이터 JSON 파싱 실패: requirement_id='{primary_source_id}'")
+                    else:
+                        parsed_answer_data = answer_value
+
+                input_type = requirement_info.get('data_required_type')
+                input_schema = requirement_info.get('input_schema')
+
+                if not input_schema and input_type in ['table_input', 'internal_carbon_price_input', 'ghg_emissions_input']:
+                    logger.error(f"테이블 생성을 위한 input_schema를 찾을 수 없습니다: id='{primary_source_id}'")
+                    return empty_table
+                
+                if input_type == 'quantitative_target_input':
+                    logger.info(f"'{primary_source_id}'는 quantitative_target_input 타입이므로 generate_quantitative_target_table을 호출합니다.")
+                    table_content = await self.table_generator.generate_quantitative_target_table(
+                        template, parsed_answer_data
+                    )
+                elif input_type == 'internal_carbon_price_input':
+                    logger.info(f"'{primary_source_id}'는 internal_carbon_price_input 타입이므로 generate_internal_carbon_price_table을 호출합니다.")
+                    table_content = await self.table_generator.generate_internal_carbon_price_table(
+                        template, parsed_answer_data, input_schema
+                    )
+                elif input_type == 'ghg_emissions_input':
+                    logger.info(f"'{primary_source_id}'는 ghg_emissions_input 타입이므로 generate_ghg_table을 호출합니다.")
+                    table_content = await self.table_generator.generate_ghg_table(
+                        template, parsed_answer_data, input_schema
+                    )
+                elif input_type == 'ghg_gases_input':
+                    logger.info(f"'{primary_source_id}'는 ghg_gases_input 타입이므로 generate_ghg_gases_table을 호출합니다.")
+                    table_content = await self.table_generator.generate_ghg_gases_table(
+                        template, parsed_answer_data, input_schema
+                    )
+                elif input_type == 'ghg_scope12_approach_input':
+                    logger.info(f"'{primary_source_id}'는 ghg_scope12_approach_input 타입이므로 generate_ghg_scope12_approach_table을 호출합니다.")
+                    table_content = await self.table_generator.generate_ghg_scope12_approach_table(
+                        template, parsed_answer_data, input_schema
+                    )
+                elif input_type == 'ghg_scope3_approach_input':
+                    logger.info(f"'{primary_source_id}'는 ghg_scope3_approach_input 타입이므로 generate_ghg_scope3_approach_table을 호출합니다.")
+                    table_content = await self.table_generator.generate_ghg_scope3_approach_table(
+                        template, parsed_answer_data, input_schema
+                    )
+                elif input_type == 'table_input':
+                    logger.info(f"'{primary_source_id}'는 table_input 타입이므로 generate_simple_table을 호출합니다.")
+                    table_content = await self.table_generator.generate_simple_table(
+                        template, parsed_answer_data, input_schema
+                    )
+                else:
+                    logger.warning(f"'{primary_source_id}'에 대한 테이블 생성기가 없습니다. data_required_type: '{input_type}'")
+                    return empty_table
 
             if not table_content:
                  return empty_table

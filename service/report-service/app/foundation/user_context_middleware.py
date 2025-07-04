@@ -31,6 +31,7 @@ class UserContextMiddleware(BaseHTTPMiddleware):
         # report-service에 맞게 수정
         self.user_required_paths = {
             "/reports",
+            "/reports/saved",
         }
     
     def _is_exempt_path(self, path: str) -> bool:
@@ -47,12 +48,13 @@ class UserContextMiddleware(BaseHTTPMiddleware):
         """경로가 사용자 컨텍스트를 필요로 하는지 확인"""
         return any(path.startswith(prefix) for prefix in self.user_required_paths)
     
-    def _validate_user_id(self, user_id_str: str) -> Optional[str]:
-        """사용자 ID 형식 검증 (report-service는 UUID가 아닌 일반 문자열을 사용)"""
-        if isinstance(user_id_str, str) and user_id_str:
-            return user_id_str
-        logger.warning(f"잘못된 User ID 형식: {user_id_str}")
-        return None
+    def _validate_user_id(self, user_id_str: str) -> Optional[uuid.UUID]:
+        """사용자 ID가 유효한 UUID 형식인지 검증하고 UUID 객체로 변환"""
+        try:
+            return uuid.UUID(user_id_str)
+        except (ValueError, TypeError):
+            logger.warning(f"잘못된 UUID 형식의 User ID: '{user_id_str}'")
+            return None
     
     async def dispatch(self, request: Request, call_next):
         path = request.url.path

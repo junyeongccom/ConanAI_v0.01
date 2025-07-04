@@ -32,7 +32,7 @@ class DisclosureServiceClient:
         # 서비스 간 통신 시, 게이트웨이가 하던 것처럼 X-User-Id 헤더를 추가하여
         # disclosure-service의 UserContextMiddleware가 사용자를 식별하게 함
         headers = {
-            "X-User-Id": user_id
+            "X-User-Id": str(user_id)  # UUID를 문자열로 변환
         }
 
         async with httpx.AsyncClient() as client:

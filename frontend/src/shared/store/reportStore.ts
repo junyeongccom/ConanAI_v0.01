@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import { createReport } from '@/shared/services/reportService';
+import { 
+  createReport,
+  getSavedReports, 
+  getSavedReportById,
+  SavedReportBrief,
+  SavedReportDetail
+} from '@/shared/services/reportService';
 
 /**
  * 보고서 콘텐츠 항목의 타입 정의
@@ -17,22 +23,44 @@ export interface ReportContentItem {
  * 보고서 스토어의 상태(State)와 액션(Action) 타입 정의
  */
 interface ReportState {
+  // --- 보고서 생성 관련 상태 ---
   reportContent: ReportContentItem[] | null;
   isGenerating: boolean;
   error: string | null;
   generateReport: () => Promise<void>;
   resetReport: () => void;
+
+  // --- 저장된 보고서 관련 상태 ---
+  savedReports: SavedReportBrief[];
+  currentReport: SavedReportDetail | null;
+  isLoadingSavedReports: boolean;
+  isLoadingCurrentReport: boolean;
+  savedReportError: string | null;
+  
+  // --- 저장된 보고서 관련 액션 ---
+  fetchSavedReports: () => Promise<void>;
+  fetchReportById: (id: string) => Promise<void>;
+  clearCurrentReport: () => void;
+  clearSavedReports: () => void;
 }
 
 /**
- * 보고서 생성을 위한 Zustand 스토어
+ * 보고서 생성 및 관리를 위한 Zustand 스토어
  */
 export const useReportStore = create<ReportState>((set) => ({
-  // 초기 상태
+  // --- 초기 상태 ---
   reportContent: null,
   isGenerating: false,
   error: null,
   
+  savedReports: [],
+  currentReport: null,
+  isLoadingSavedReports: false,
+  isLoadingCurrentReport: false,
+  savedReportError: null,
+  
+  // --- 액션 구현 ---
+
   /**
    * 보고서 생성 프로세스를 시작하는 액션
    */
@@ -59,4 +87,50 @@ export const useReportStore = create<ReportState>((set) => ({
   resetReport: () => {
     set({ reportContent: null, isGenerating: false, error: null });
   },
+
+  /**
+   * 저장된 모든 보고서 목록을 가져오는 액션
+   */
+  fetchSavedReports: async () => {
+    set({ isLoadingSavedReports: true, savedReportError: null });
+    try {
+      const reports = await getSavedReports();
+      set({ savedReports: reports, isLoadingSavedReports: false });
+    } catch (error) {
+      set({ 
+        savedReportError: '저장된 보고서 목록을 불러오는데 실패했습니다.', 
+        isLoadingSavedReports: false 
+      });
+    }
+  },
+
+  /**
+   * ID로 특정 보고서의 상세 정보를 가져오는 액션
+   */
+  fetchReportById: async (id: string) => {
+    set({ isLoadingCurrentReport: true, savedReportError: null, currentReport: null });
+    try {
+      const report = await getSavedReportById(id);
+      set({ currentReport: report, isLoadingCurrentReport: false });
+    } catch (error) {
+      set({
+        savedReportError: '보고서 상세 정보를 불러오는데 실패했습니다.',
+        isLoadingCurrentReport: false,
+      });
+    }
+  },
+
+  /**
+   * 현재 보고 있는 보고서 상세 정보를 초기화하는 액션
+   */
+  clearCurrentReport: () => {
+    set({ currentReport: null });
+  },
+  
+  /**
+   * 저장된 보고서 목록 상태를 초기화하는 액션
+   */
+  clearSavedReports: () => {
+    set({ savedReports: [], isLoadingSavedReports: false, savedReportError: null });
+  }
 })); 

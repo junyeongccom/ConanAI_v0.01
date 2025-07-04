@@ -1,5 +1,6 @@
 import logging
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, Request, HTTPException
 from sqlalchemy.orm import Session
@@ -62,9 +63,11 @@ def get_report_controller(report_service: ReportService = Depends(get_report_ser
     return ReportController(report_service=report_service)
 
 # --- 유틸리티 의존성 ---
-def get_current_user_id(request: Request) -> str:
-    """UserContextMiddleware로부터 user_id를 가져오는 의존성"""
+def get_current_user_id(request: Request) -> UUID:
+    """UserContextMiddleware로부터 user_id(UUID)를 가져오는 의존성"""
     user_id = getattr(request.state, 'user_id', None)
-    if not user_id:
-        raise HTTPException(status_code=500, detail="사용자 컨텍스트가 없습니다.")
+    if not isinstance(user_id, UUID):
+        # 미들웨어에서 UUID로 변환되었어야 함
+        logger.error(f"사용자 컨텍스트에 유효한 UUID가 없습니다. 실제 타입: {type(user_id)}")
+        raise HTTPException(status_code=500, detail="서버 내부 오류: 사용자 컨텍스트가 유효하지 않습니다.")
     return user_id 
