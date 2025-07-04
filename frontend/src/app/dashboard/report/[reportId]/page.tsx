@@ -13,7 +13,5 @@ interface PageProps {
  * - URL에서 reportId를 추출하여 레이아웃 컴포넌트에 전달합니다.
  */
 export default function ReportDetailPage({ params }: PageProps) {
-  const { reportId } = params;
-
-  return <ReportDetailLayout reportId={reportId} />;
+  return <ReportDetailLayout reportId={params.reportId} />;
 } 

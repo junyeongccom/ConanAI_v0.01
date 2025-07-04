@@ -65,6 +65,12 @@ const ErrorDisplay = ({ error }: { error: string }) => (
 export const SavedReportList = () => {
   const { reports, isLoading, error, handleDeleteReport, handleNavigateToNewReport } = useSavedReports();
 
+  const confirmAndDelete = (reportId: string, reportTitle: string) => {
+    if (window.confirm(`'${reportTitle}' 보고서를 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+      handleDeleteReport(reportId);
+    }
+  };
+
   if (isLoading) return <ReportsSkeleton />;
   if (error) return <ErrorDisplay error={error} />;
   if (reports.length === 0) return <NoReports onNavigate={handleNavigateToNewReport} />;
@@ -89,27 +95,13 @@ export const SavedReportList = () => {
             <Link href={`/dashboard/report/${report.id}` as Route} passHref>
               <Button variant="outline">보고서 보기</Button>
             </Link>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="icon">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    이 작업은 되돌릴 수 없습니다. '{report.title}' 보고서가 영구적으로 삭제됩니다.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>취소</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleDeleteReport(report.id)}>
-                    삭제
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button 
+              variant="destructive" 
+              size="icon" 
+              onClick={() => confirmAndDelete(report.id, report.title)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </CardFooter>
         </Card>
       ))}

@@ -1,4 +1,4 @@
-import apiClient from '@/shared/services/apiClient';
+import api from '@/shared/services/apiClient';
 import { ReportContentItem } from '@/shared/store/reportStore';
 
 interface CreateReportResponse {
@@ -37,7 +37,7 @@ export const createReport = async (): Promise<ReportContentItem[]> => {
     // API 클라이언트를 사용하여 POST 요청을 보냅니다.
     // 백엔드 응답은 { message: string, data: ReportContentItem[] } 형식이므로,
     // 실제 콘텐츠인 response.data를 반환합니다.
-    const response = await apiClient.post<CreateReportResponse>('/api/report/reports');
+    const response = await api.post<CreateReportResponse>('/api/report/reports');
     return response.data;
   } catch (error) {
     console.error("보고서 생성 API 호출 실패:", error);
@@ -53,7 +53,7 @@ export const createReport = async (): Promise<ReportContentItem[]> => {
  */
 export const saveReport = async (reportData: SavedReportCreate): Promise<SavedReportDetail> => {
   try {
-    const response = await apiClient.post<SavedReportDetail>('/api/report/reports/saved', reportData);
+    const response = await api.post<SavedReportDetail>('/api/report/reports/saved', reportData);
     return response;
   } catch (error) {
     console.error("보고서 저장 API 호출 실패:", error);
@@ -67,7 +67,7 @@ export const saveReport = async (reportData: SavedReportCreate): Promise<SavedRe
  */
 export const getSavedReports = async (): Promise<SavedReportBrief[]> => {
   try {
-    const response = await apiClient.get<SavedReportBrief[]>('/api/report/reports/saved');
+    const response = await api.get<SavedReportBrief[]>('/api/report/reports/saved');
     return response;
   } catch (error) {
     console.error("저장된 보고서 목록 조회 API 호출 실패:", error);
@@ -82,7 +82,7 @@ export const getSavedReports = async (): Promise<SavedReportBrief[]> => {
  */
 export const getSavedReportById = async (reportId: string): Promise<SavedReportDetail> => {
   try {
-    const response = await apiClient.get<SavedReportDetail>(`/api/report/reports/saved/${reportId}`);
+    const response = await api.get<SavedReportDetail>(`/api/report/reports/saved/${reportId}`);
     return response;
   } catch (error) {
     console.error("보고서 상세 정보 조회 API 호출 실패:", error);
@@ -96,7 +96,7 @@ export const getSavedReportById = async (reportId: string): Promise<SavedReportD
  */
 export const deleteReport = async (reportId: string): Promise<void> => {
   try {
-    await apiClient.delete(`/api/report/reports/saved/${reportId}`);
+    await api.delete(`/api/report/reports/saved/${reportId}`);
   } catch (error) {
     console.error("보고서 삭제 API 호출 실패:", error);
     throw new Error("Failed to delete report");
