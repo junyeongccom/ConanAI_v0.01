@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends, Body, HTTPException
+from fastapi import APIRouter, status, Depends, Body, HTTPException, Response
 import logging
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -100,6 +100,44 @@ def get_saved_report_by_id(
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="해당 보고서를 찾을 수 없거나 접근 권한이 없습니다.")
     return report
+
+@router.get(
+    "/reports/saved/{report_id}/pdf",
+    summary="특정 보고서 PDF로 내보내기",
+    response_description="생성된 보고서의 PDF 파일",
+    responses={
+        200: {
+            "content": {"application/pdf": {}},
+            "description": "PDF 파일 다운로드 성공",
+        },
+        404: {"description": "보고서를 찾을 수 없음"},
+    },
+)
+def export_report_to_pdf(
+    report_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+    controller: ReportController = Depends(get_report_controller)
+):
+    """
+    지정된 보고서 ID의 내용을 기반으로 PDF 파일을 생성하여 반환합니다.
+    """
+    logger.info(f"Router: /reports/saved/{report_id}/pdf (GET) 호출됨")
+    pdf_bytes = controller.generate_pdf_for_report(db, report_id, user_id)
+
+    if not pdf_bytes:
+        raise HTTPException(status_code=404, detail="PDF를 생성할 보고서를 찾을 수 없거나 생성에 실패했습니다.")
+
+    # 파일 이름을 위한 보고서 제목 가져오기 (간단한 버전)
+    report_detail = controller.get_saved_report_by_id(db, report_id, user_id)
+    file_name = f"{report_detail.title if report_detail else 'report'}.pdf"
+
+    return Response(
+        content=pdf_bytes, 
+        media_type='application/pdf',
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{file_name}"}
+    )
+
 
 @router.put(
     "/reports/saved/{report_id}",

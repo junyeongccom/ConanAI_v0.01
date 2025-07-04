@@ -3,7 +3,7 @@
 import React from 'react';
 import { useReportDetail } from '../hooks/useReportDetail';
 import { Button } from '@/components/ui/button';
-import { Loader2, Terminal, ArrowLeft, AlertCircle, Edit, Save, XCircle } from 'lucide-react';
+import { Loader2, Terminal, ArrowLeft, AlertCircle, Edit, Save, XCircle, Download } from 'lucide-react';
 import { ReportContentItem } from '@/shared/store/reportStore';
 import { ReportTable } from '@/shared/components/ui/ReportTable';
 import { useRouter } from 'next/navigation';
@@ -11,6 +11,8 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { getReportPdfUrl } from '@/shared/services/reportService';
+
 
 const ReportDisplay = ({ 
   reportContent, 
@@ -172,10 +174,18 @@ export const ReportDetailLayout = ({ reportId }: ReportDetailLayoutProps) => {
                       </Button>
                     </>
                   ) : (
-                    <Button variant="outline" onClick={toggleEditing} size="sm">
-                      <Edit className="mr-2 h-4 w-4" />
-                      수정
-                    </Button>
+                    <>
+                      <Button variant="outline" onClick={toggleEditing} size="sm">
+                        <Edit className="mr-2 h-4 w-4" />
+                        수정
+                      </Button>
+                      <a href={getReportPdfUrl(reportId)} download>
+                        <Button variant="outline" size="sm">
+                          <Download className="mr-2 h-4 w-4" />
+                          PDF 내보내기
+                        </Button>
+                      </a>
+                    </>
                   )}
                 </div>
             </div>

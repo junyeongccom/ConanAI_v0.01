@@ -1,0 +1,138 @@
+/* =================================
+   기본 및 페이지 설정
+   ================================= */
+@page {
+    size: A4 landscape; /* A4 가로 방향 */
+    margin: 1.5cm;
+}
+
+body {
+    font-family: 'Helvetica', 'Malgun Gothic', sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+.page-break {
+    page-break-after: always;
+}
+
+h1, h2, h3, h4 {
+    font-weight: bold;
+    color: #1a202c;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* =================================
+   페이지 헤더 및 푸터
+   ================================= */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.page-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.8em;
+    color: #666;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
+
+
+/* =================================
+   표지 페이지
+   ================================= */
+.cover-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    text-align: center;
+}
+.cover-page .logo {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    font-size: 2em;
+    font-weight: bold;
+}
+.cover-page h1 {
+    font-size: 4em;
+    color: #fd6f22; /* 주황색 포인트 컬러 */
+    margin-bottom: 0.2em;
+}
+.cover-page h2 {
+    font-size: 2.5em;
+    color: #1a202c;
+}
+.cover-page .subtitle {
+    font-size: 1.2em;
+    color: #4a5568;
+    margin-bottom: 2em;
+}
+
+/* =================================
+   목차(TOC) 및 본문 페이지
+   ================================= */
+.page-title {
+    font-size: 2.5rem;
+    color: #2c5282; /* 진한 파란색 */
+    border-bottom: 3px solid #2c5282;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.sub-title {
+    font-size: 1.8rem;
+    color: #2d3748;
+    margin-bottom: 1rem;
+}
+
+.toc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.toc-grid h3 {
+    color: #2c5282;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+
+.toc-grid ol {
+    list-style-position: inside;
+    padding-left: 0;
+}
+
+.content-body h2 {
+    margin-top: 2em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.3em;
+} 

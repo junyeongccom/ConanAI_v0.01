@@ -52,6 +52,15 @@ class ReportController:
             return SavedReportDetail.from_orm(report)
         return None
 
+    def generate_pdf_for_report(self, db: Session, report_id: UUID, user_id: UUID) -> Optional[bytes]:
+        """보고서 PDF 생성을 위한 서비스 호출"""
+        logger.info(f"Controller: PDF 생성 요청, report_id={report_id}")
+        pdf_bytes = self.report_service.generate_report_pdf(db, report_id, user_id)
+        if not pdf_bytes:
+            logger.error(f"Controller: PDF 생성 실패, 서비스가 None을 반환함, report_id={report_id}")
+            return None
+        return pdf_bytes
+
     def update_report(self, db: Session, report_id: UUID, report_update: SavedReportUpdate, user_id: UUID) -> Optional[SavedReportDetail]:
         logger.info(f"Controller: update_report 호출됨, report_id={report_id}")
         updated_report = self.report_service.update_report(db, report_id, report_update, user_id)

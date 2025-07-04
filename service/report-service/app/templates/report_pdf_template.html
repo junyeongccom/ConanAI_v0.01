@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report.title }}</title>
+    <link rel="stylesheet" href="report_pdf_style.css">
+</head>
+<body>
+    <!-- ===== 표지 ===== -->
+    <div class="page-break">
+        <div class="cover-page">
+            <header>
+                <div class="logo">Sky-C</div>
+            </header>
+            <main>
+                <h1>FROM ASPIRATION<br>TO ACTION.</h1>
+                <p class="subtitle">{{ report.created_at_formatted }} SUSTAINABILITY DISCLOSURE</p>
+                <h2>CLIMATE CHANGE</h2>
+            </main>
+        </div>
+    </div>
+
+    <!-- ===== 일반 현황 ===== -->
+    <div class="page-break">
+        <header class="page-header">
+            <span>{{ report.title }}</span>
+            <span>02</span>
+        </header>
+        <h1 class="page-title">일반 현황</h1>
+        <div class="content-grid">
+            <div class="main-content">
+                <!-- 이 부분은 DB에 저장된 정적 템플릿으로 채울 수 있습니다. -->
+            </div>
+            <aside class="side-content">
+                <div class="interactive-box">
+                    <h3>INTERACTIVE PDF</h3>
+                    <p>본 보고서는 웹 환경에 최적화된...</p>
+                    <ul>
+                        <li>목차</li>
+                        <li>이전 페이지</li>
+                        <li>보고서 내 연결 페이지</li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+        <footer class="page-footer">
+            <p>Cautionary Statement regarding Forward-looking Statements...</p>
+        </footer>
+    </div>
+
+    <!-- ===== 목차 ===== -->
+    <div class="page-break">
+        <header class="page-header">
+            <span>{{ report.title }}</span>
+            <span>03</span>
+        </header>
+        <h1 class="page-title">KT&G 지속가능성 공시</h1>
+        <h2 class="sub-title">기후</h2>
+        <div class="toc-grid">
+            <div>
+                <h3>거버넌스</h3>
+                <ol>
+                    <li>의사결정기구</li>
+                    <li>경영진 역할</li>
+                </ol>
+            </div>
+            <div>
+                <h3>전략</h3>
+                <ol>
+                    <li>기후 관련 위험과 기회</li>
+                    <li>사업모델과 가치사슬</li>
+                </ol>
+            </div>
+            <div>
+                <h3>위험관리</h3>
+                <ol>
+                    <li>기후 관련 위험 식별 및 평가</li>
+                    <li>기후 관련 위험 관리</li>
+                </ol>
+            </div>
+            <div>
+                <h3>지표 및 목표</h3>
+                <ol>
+                    <li>온실가스 배출량</li>
+                    <li>기후 관련 목표</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 본문 섹션 (동적 생성) ===== -->
+    {% for section in sections %}
+    <div class="page-break">
+        <header class="page-header">
+            <span>{{ report.title }}</span>
+            <span>{{ loop.index + 3 }}</span>
+        </header>
+        <h1 class="page-title">{{ section.title }}</h1>
+        <div class="content-body">
+            {% for item in section.content %}
+                {% if item.type == 'heading_1' %}<h1>{{ item.content }}</h1>
+                {% elif item.type == 'heading_2' %}<h2>{{ item.content }}</h2>
+                {% elif item.type == 'heading_3' %}<h3>{{ item.content }}</h3>
+                {% elif item.type == 'heading_4' %}<h4>{{ item.content }}</h4>
+                {% elif item.type == 'paragraph' %}<p>{{ item.content }}</p>
+                {% elif item.type == 'table' %}
+                    <h4>{{ item.content.title }}</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                {% for header in item.content.headers %}
+                                    <th>{{ header }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in item.content.rows %}
+                            <tr>
+                                {% for cell in row %}
+                                    <td>{{ cell }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+</body>
+</html> 

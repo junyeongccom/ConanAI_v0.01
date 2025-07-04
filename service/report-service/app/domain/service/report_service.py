@@ -3,6 +3,9 @@ import logging
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 from uuid import UUID
+from jinja2 import Environment, FileSystemLoader
+from weasyprint import HTML, CSS
+from datetime import datetime
 
 from app.foundation.disclosure_service_client import DisclosureServiceClient
 from app.domain.repository.report_repository import ReportRepository
@@ -36,7 +39,76 @@ class ReportService:
         self.disclosure_client = disclosure_client
         self.text_generator = text_generator
         self.table_generator = table_generator
-        logger.info("ReportService 초기화 완료 (Text/Table Generators 탑재)")
+        # Jinja2 환경 설정
+        self.jinja_env = Environment(loader=FileSystemLoader('app/templates/'))
+        logger.info("ReportService 초기화 완료 (Jinja2, Text/Table Generators 탑재)")
+
+    # --- PDF Generation Method ---
+    def generate_report_pdf(self, db: Session, report_id: UUID, user_id: UUID) -> Optional[bytes]:
+        """지정된 보고서 ID에 대한 PDF를 생성합니다."""
+        logger.info(f"PDF 생성 시작: report_id={report_id}")
+        
+        # 1. 보고서 데이터 조회
+        report = self.get_saved_report_detail(db, report_id, user_id)
+        if not report:
+            logger.warning(f"PDF 생성을 위한 보고서를 찾을 수 없음: report_id={report_id}")
+            return None
+
+        # 2. 데이터를 섹션별로 그룹화
+        # ReportTemplate에서 section_kr 정보를 가져와서 report_data를 재구성
+        all_templates = self.report_repository.find_all_ordered_by_content_order(db)
+        template_sections = {t.report_content_id: t.section_kr for t in all_templates}
+
+        sections_data = {}
+        for item in report.report_data:
+            # item['content']['title'] 등을 기준으로 section을 찾기보다,
+            # 원본 템플릿의 ID-섹션 매핑을 사용하는 것이 더 안정적일 수 있습니다.
+            # 여기서는 간단하게 제목을 기반으로 섹션을 추정합니다.
+            # 실제 구현에서는 더 견고한 매핑이 필요합니다.
+            if item['type'].startswith('heading_'):
+                # 간단한 예시: heading_2를 섹션 제목으로 간주
+                if item['type'] == 'heading_2':
+                    section_title = item['content']
+                    if section_title not in sections_data:
+                        sections_data[section_title] = []
+                # 현재 섹션에 콘텐츠 추가
+                current_section = list(sections_data.keys())[-1] if sections_data else "기타"
+                if current_section != item['content']:
+                    sections_data.setdefault(current_section, []).append(item)
+            else:
+                 current_section = list(sections_data.keys())[-1] if sections_data else "기타"
+                 sections_data.setdefault(current_section, []).append(item)
+        
+        # Jinja2 템플릿에 전달할 최종 데이터 구조
+        sections_for_template = [{"title": title, "content": content} for title, content in sections_data.items()]
+
+
+        # 3. HTML 템플릿 렌더링
+        template = self.jinja_env.get_template('report_pdf_template.html')
+        
+        # 날짜 포맷팅 추가
+        created_at_dt = datetime.fromisoformat(report.created_at.isoformat())
+
+        render_data = {
+            "report": {
+                "title": report.title,
+                "created_at_formatted": created_at_dt.strftime("%Y"),
+            },
+            "sections": sections_for_template,
+        }
+        html_content = template.render(render_data)
+
+        # 4. WeasyPrint로 PDF 생성
+        try:
+            # CSS 파일 경로를 명시적으로 전달
+            css_path = 'app/templates/report_pdf_style.css'
+            pdf_bytes = HTML(string=html_content, base_url='.').write_pdf(stylesheets=[CSS(css_path)])
+            logger.info(f"PDF 생성 완료: report_id={report_id}, size={len(pdf_bytes)} bytes")
+            return pdf_bytes
+        except Exception as e:
+            logger.error(f"PDF 생성 중 오류 발생: {e}", exc_info=True)
+            return None
+
 
     # --- Saved Report Service Methods ---
 

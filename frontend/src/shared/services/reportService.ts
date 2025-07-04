@@ -1,4 +1,4 @@
-import api from '@/shared/services/apiClient';
+import api, { apiClient } from '@/shared/services/apiClient';
 import { ReportContentItem } from '@/shared/store/reportStore';
 
 interface CreateReportResponse {
@@ -117,4 +117,15 @@ export const updateReport = async (reportId: string, reportData: Partial<SavedRe
     console.error("보고서 업데이트 API 호출 실패:", error);
     throw new Error("Failed to update report");
   }
+};
+
+/**
+ * 보고서 PDF 다운로드 URL을 생성합니다.
+ * @param reportId - PDF로 내보낼 보고서의 ID
+ * @returns {string} PDF 다운로드 URL
+ */
+export const getReportPdfUrl = (reportId: string): string => {
+  // API 클라이언트의 baseURL을 가져와서 전체 URL을 구성합니다.
+  const baseURL = apiClient.defaults.baseURL;
+  return `${baseURL}/api/report/reports/saved/${reportId}/pdf`;
 }; 
